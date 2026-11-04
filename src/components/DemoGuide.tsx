@@ -30,7 +30,7 @@ export function DemoGuide() {
   const next = STEPS[idx + 1]
 
   return (
-    <div className="fixed right-4 bottom-20 z-40 lg:right-6 lg:bottom-6">
+    <div className="fixed right-4 bottom-24 z-40 lg:right-6 lg:bottom-6">
       <AnimatePresence mode="wait">
         {open ? (
           <motion.div
@@ -39,27 +39,27 @@ export function DemoGuide() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.97 }}
             transition={{ duration: 0.2 }}
-            className="w-[min(300px,calc(100vw-2rem))] rounded-xl border border-sage-800 bg-sage-900 p-3.5 text-paper shadow-float"
+            className="w-[min(300px,calc(100vw-2rem))] rounded-[22px] bg-black p-4 text-white shadow-float"
           >
             <div className="mb-2 flex items-center gap-2">
-              <Compass className="size-3.5 text-sage-300" />
-              <span className="text-[11px] font-medium tracking-wide text-sage-300 uppercase">Roteiro · {idx + 1} de {STEPS.length}</span>
+              <Compass className="size-3.5 text-white/50" />
+              <span className="text-[12px] font-semibold text-white/50">Roteiro da demo · {idx + 1} de {STEPS.length}</span>
               <div className="ml-auto flex items-center gap-1">
                 {STEPS.map((s, i) => (
-                  <button key={s.to} aria-label={s.title} onClick={() => nav(s.to)} className={cn('h-1.5 rounded-full transition-all', i === idx ? 'w-4 bg-terra-500' : i < idx ? 'w-1.5 bg-sage-500' : 'w-1.5 bg-white/20')} />
+                  <button key={s.to} aria-label={s.title} onClick={() => nav(s.to)} className={cn('h-1.5 rounded-full transition-all', i === idx ? 'w-4 bg-lime' : i < idx ? 'w-1.5 bg-white/60' : 'w-1.5 bg-white/20')} />
                 ))}
-                <button onClick={close} aria-label="Fechar roteiro" className="ml-1.5 rounded p-1 text-sage-300 hover:bg-white/10 hover:text-paper"><X className="size-3.5" /></button>
+                <button onClick={close} aria-label="Fechar roteiro" className="ml-1.5 rounded p-1 text-white/50 hover:bg-white/10 hover:text-paper"><X className="size-3.5" /></button>
               </div>
             </div>
             <div className="text-[14px] font-semibold">{step.title}</div>
-            <p className="mt-1 text-[12.5px] leading-snug text-sage-200">{step.text}</p>
+            <p className="mt-1 text-[12.5px] leading-snug text-white/65">{step.text}</p>
             <div className="mt-3 flex items-center justify-end gap-2">
               {next ? (
-                <button onClick={() => nav(next.to)} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-paper px-3 text-[12.5px] font-semibold text-sage-900 hover:bg-white">
+                <button onClick={() => nav(next.to)} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-lime px-3.5 text-[12.5px] font-bold text-ink hover:bg-lime-2">
                   Próximo: {next.title} <ArrowRight className="size-3.5" />
                 </button>
               ) : (
-                <button onClick={close} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-paper px-3 text-[12.5px] font-semibold text-sage-900 hover:bg-white">
+                <button onClick={close} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-lime px-3.5 text-[12.5px] font-bold text-ink hover:bg-lime-2">
                   <Check className="size-3.5" /> Concluir
                 </button>
               )}
@@ -72,7 +72,7 @@ export function DemoGuide() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
             onClick={() => setOpen(true)}
-            className="flex h-10 items-center gap-2 rounded-full bg-sage-900 px-4 text-[13px] font-medium text-paper shadow-float hover:bg-sage-950"
+            className="flex h-10 items-center gap-2 rounded-full bg-black px-4 text-[13px] font-semibold text-white shadow-float hover:bg-black-2"
           >
             <Compass className="size-4" /> Roteiro
           </motion.button>

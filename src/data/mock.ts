@@ -22,9 +22,9 @@ export interface Vet {
 }
 
 export const VETS: Vet[] = [
-  { id: 'larissa', name: 'Dra. Larissa Menezes', short: 'Dra. Larissa', initials: 'LM', crmv: 'CRMV-AM 1284', focus: 'Clínica geral · Felinos', color: '#2f5443' },
-  { id: 'rafael', name: 'Dr. Rafael Cavalcante', short: 'Dr. Rafael', initials: 'RC', crmv: 'CRMV-AM 1517', focus: 'Clínica geral · Vacinação', color: '#b9542e' },
-  { id: 'bianca', name: 'Dra. Bianca Oliveira', short: 'Dra. Bianca', initials: 'BO', crmv: 'CRMV-AM 1932', focus: 'Geriatria · Dermatologia', color: '#3e6487' },
+  { id: 'larissa', name: 'Dra. Larissa Menezes', short: 'Dra. Larissa', initials: 'LM', crmv: 'CRMV-AM 1284', focus: 'Clínica geral · Felinos', color: '#7b6cf0' },
+  { id: 'rafael', name: 'Dr. Rafael Cavalcante', short: 'Dr. Rafael', initials: 'RC', crmv: 'CRMV-AM 1517', focus: 'Clínica geral · Vacinação', color: '#f2694c' },
+  { id: 'bianca', name: 'Dra. Bianca Oliveira', short: 'Dra. Bianca', initials: 'BO', crmv: 'CRMV-AM 1932', focus: 'Geriatria · Dermatologia', color: '#3d7afa' },
 ]
 export const VET = Object.fromEntries(VETS.map((v) => [v.id, v])) as Record<string, Vet>
 
@@ -125,19 +125,19 @@ export const TUTOR = Object.fromEntries(TUTORS.map((t) => [t.id, t])) as Record<
 
 export const PETS: Pet[] = [
   { id: 'thor', name: 'Thor', species: 'cão', breed: 'Golden Retriever', sex: 'M', neutered: true, birth: iso(-6 * 365 - 40), coat: 'Dourada', weightKg: 34.2, idealKg: [29, 34], bcs: 6, tutorId: 't1', photo: u('photo-1552053831-71594a27632d'), microchip: '963 0060 0012 4471', temperament: 'Dócil. Adora petisco de frango.', conditions: ['Otite recorrente (orelha esq.)'] },
-  { id: 'nina', name: 'Nina', species: 'gato', breed: 'Persa', sex: 'F', neutered: true, birth: iso(-11 * 365 - 120), coat: 'Branca', weightKg: 3.6, idealKg: [3.4, 4.2], bcs: 4, tutorId: 't2', photo: u('photo-1573865526739-10659fec78a5'), alerts: ['Doença renal crônica — estágio IRIS 2'], conditions: ['DRC estágio 2', 'Dieta renal'], temperament: 'Arisca no manejo. Usar toalha.' },
-  { id: 'bob', name: 'Bob', species: 'cão', breed: 'Shih Tzu', sex: 'M', neutered: true, birth: iso(-9 * 365 - 200), coat: 'Branca e caramelo', weightKg: 7.9, idealKg: [5.5, 7.2], bcs: 7, tutorId: 't4', photo: u('photo-1583337130417-3346a1be7dee'), alerts: ['Sopro cardíaco grau III/VI — em acompanhamento'], conditions: ['Degeneração mixomatosa de mitral (B1)', 'Sobrepeso'], temperament: 'Tranquilo. Tosse ao se agitar.' },
+  { id: 'nina', name: 'Nina', species: 'gato', breed: 'Persa', sex: 'F', neutered: true, birth: iso(-11 * 365 - 120), coat: 'Branca', weightKg: 3.6, idealKg: [3.4, 4.2], bcs: 4, tutorId: 't2', photo: u('photo-1573865526739-10659fec78a5'), alerts: ['Doença renal crônica: estágio IRIS 2'], conditions: ['DRC estágio 2', 'Dieta renal'], temperament: 'Arisca no manejo. Usar toalha.' },
+  { id: 'bob', name: 'Bob', species: 'cão', breed: 'Shih Tzu', sex: 'M', neutered: true, birth: iso(-9 * 365 - 200), coat: 'Branca e caramelo', weightKg: 7.9, idealKg: [5.5, 7.2], bcs: 7, tutorId: 't4', photo: u('photo-1583337130417-3346a1be7dee'), alerts: ['Sopro cardíaco grau III/VI: em acompanhamento'], conditions: ['Degeneração mixomatosa de mitral (B1)', 'Sobrepeso'], temperament: 'Tranquilo. Tosse ao se agitar.' },
   { id: 'pacoca', name: 'Paçoca', species: 'cão', breed: 'SRD', sex: 'F', neutered: false, birth: iso(-88), coat: 'Caramelo', weightKg: 4.1, idealKg: [3.5, 5], bcs: 5, tutorId: 't3', photo: u('photo-1561037404-61cd46aa615b'), temperament: 'Filhote, muito agitada.' },
   { id: 'mia', name: 'Mia', species: 'gato', breed: 'Siamês', sex: 'F', neutered: true, birth: iso(-420), coat: 'Seal point', weightKg: 3.3, idealKg: [3, 4], bcs: 5, tutorId: 't5', photo: u('photo-1513360371669-4adf3dd7dff8'), temperament: 'Vocal, mas cooperativa.' },
-  { id: 'pipoca', name: 'Pipoca', species: 'cão', breed: 'Yorkshire', sex: 'F', neutered: true, birth: iso(-12 * 365 - 30), coat: 'Azul e castanho', weightKg: 2.6, idealKg: [2.3, 3.2], bcs: 4, tutorId: 't6', photo: u('photo-1587300003388-59208cc962cb'), alerts: ['Colapso de traqueia — evitar coleira'], conditions: ['Colapso de traqueia', 'Doença periodontal'] },
+  { id: 'pipoca', name: 'Pipoca', species: 'cão', breed: 'Yorkshire', sex: 'F', neutered: true, birth: iso(-12 * 365 - 30), coat: 'Azul e castanho', weightKg: 2.6, idealKg: [2.3, 3.2], bcs: 4, tutorId: 't6', photo: u('photo-1587300003388-59208cc962cb'), alerts: ['Colapso de traqueia: evitar coleira'], conditions: ['Colapso de traqueia', 'Doença periodontal'] },
   { id: 'simba', name: 'Simba', species: 'gato', breed: 'SRD', sex: 'M', neutered: true, birth: iso(-6 * 365), coat: 'Laranja tigrado', weightKg: 6.1, idealKg: [4.5, 5.5], bcs: 7, tutorId: 't7', photo: u('photo-1574158622682-e40e69881006'), conditions: ['Sobrepeso'] },
-  { id: 'fred', name: 'Fred', species: 'cão', breed: 'Buldogue Francês', sex: 'M', neutered: false, birth: iso(-2 * 365 - 60), coat: 'Tigrado', weightKg: 12.4, idealKg: [10, 13], bcs: 5, tutorId: 't8', photo: u('photo-1583512603805-3cc6b41f3edb'), alerts: ['Braquicefálico — atenção ao calor'], conditions: ['Dermatite alérgica'] },
+  { id: 'fred', name: 'Fred', species: 'cão', breed: 'Buldogue Francês', sex: 'M', neutered: false, birth: iso(-2 * 365 - 60), coat: 'Tigrado', weightKg: 12.4, idealKg: [10, 13], bcs: 5, tutorId: 't8', photo: u('photo-1583512603805-3cc6b41f3edb'), alerts: ['Braquicefálico: atenção ao calor'], conditions: ['Dermatite alérgica'] },
   { id: 'amora', name: 'Amora', species: 'cão', breed: 'Spitz Alemão', sex: 'F', neutered: true, birth: iso(-5 * 365 - 100), coat: 'Laranja', weightKg: 3.4, idealKg: [2.5, 3.5], bcs: 5, tutorId: 't8', photo: u('photo-1591160690555-5debfba289f0') },
   { id: 'zeus', name: 'Zeus', species: 'cão', breed: 'Pastor Alemão', sex: 'M', neutered: false, birth: iso(-7 * 365 - 10), coat: 'Preta e castanha', weightKg: 38.5, idealKg: [30, 40], bcs: 5, tutorId: 't9', photo: u('photo-1589941013453-ec89f33b5e95'), alerts: ['Displasia coxofemoral'], temperament: 'Protetor. Tutor deve segurar.' },
   { id: 'kiara', name: 'Kiara', species: 'cão', breed: 'Labrador', sex: 'F', neutered: false, birth: iso(-380), coat: 'Chocolate', weightKg: 24.8, idealKg: [25, 32], bcs: 5, tutorId: 't10', photo: u('photo-1518717758536-85ae29035b6d') },
   { id: 'mel', name: 'Mel', species: 'cão', breed: 'SRD', sex: 'F', neutered: true, birth: iso(-4 * 365 - 200), coat: 'Caramelo', weightKg: 14.2, idealKg: [12, 15], bcs: 5, tutorId: 't11', photo: u('photo-1583511655857-d19b40a7a54e') },
   { id: 'tom', name: 'Tom', species: 'gato', breed: 'SRD', sex: 'M', neutered: true, birth: iso(-4 * 365 - 30), coat: 'Preta', weightKg: 4.8, idealKg: [4, 5.5], bcs: 5, tutorId: 't12', photo: u('photo-1533743983669-94fa5c4338ec') },
-  { id: 'frida', name: 'Frida', species: 'cão', breed: 'Dachshund', sex: 'F', neutered: true, birth: iso(-8 * 365 - 90), coat: 'Vermelha', weightKg: 8.9, idealKg: [7, 9], bcs: 6, tutorId: 't13', photo: u('photo-1612195583950-b8fd34c87093'), alerts: ['Hérnia de disco (2023) — evitar escadas'] },
+  { id: 'frida', name: 'Frida', species: 'cão', breed: 'Dachshund', sex: 'F', neutered: true, birth: iso(-8 * 365 - 90), coat: 'Vermelha', weightKg: 8.9, idealKg: [7, 9], bcs: 6, tutorId: 't13', photo: u('photo-1612195583950-b8fd34c87093'), alerts: ['Hérnia de disco (2023): evitar escadas'] },
   { id: 'cafe', name: 'Café', species: 'cão', breed: 'Poodle', sex: 'M', neutered: true, birth: iso(-10 * 365 - 15), coat: 'Marrom', weightKg: 6.4, idealKg: [5.5, 7], bcs: 5, tutorId: 't14', photo: u('photo-1594149929911-78975a43d4f5'), conditions: ['Catarata bilateral inicial'] },
   { id: 'belinha', name: 'Belinha', species: 'gato', breed: 'SRD tricolor', sex: 'F', neutered: false, birth: iso(-245), coat: 'Tricolor', weightKg: 2.9, idealKg: [2.8, 3.8], bcs: 5, tutorId: 't15', photo: u('photo-1592194996308-7b43878e84a6') },
   { id: 'bento', name: 'Bento', species: 'cão', breed: 'Beagle', sex: 'M', neutered: true, birth: iso(-3 * 365 - 70), coat: 'Tricolor', weightKg: 13.8, idealKg: [10, 14], bcs: 6, tutorId: 't16', photo: u('photo-1505628346881-b72b27e84530') },
@@ -190,23 +190,23 @@ export const DOSES: VaccineDose[] = [
   dose('thor', 'giardia', -300, 'rafael', 'Reforço anual', 65),
   // Nina
   dose('nina', 'v4', -350, 'larissa', 'Reforço anual', 15), dose('nina', 'raiva', -350, 'larissa', 'Reforço anual', 15),
-  // Bob — gripe atrasada
+  // Bob: gripe atrasada
   dose('bob', 'v10', -320, 'bianca', 'Reforço anual', 45), dose('bob', 'raiva', -320, 'bianca', 'Reforço anual', 45), dose('bob', 'gripe', -380, 'bianca', 'Reforço anual', -15),
-  // Paçoca — filhote em protocolo
+  // Paçoca: filhote em protocolo
   dose('pacoca', 'v10', -24, 'rafael', '1ª dose', 0),
   // Mia
   dose('mia', 'v5', -200, 'larissa', 'Reforço anual', 165), dose('mia', 'raiva', -200, 'larissa', 'Reforço anual', 165),
-  // Pipoca — raiva vence em 6 dias
+  // Pipoca: raiva vence em 6 dias
   dose('pipoca', 'v10', -300, 'bianca', 'Reforço anual', 65), dose('pipoca', 'raiva', -359, 'bianca', 'Reforço anual', 6),
-  // Simba — atrasado
+  // Simba: atrasado
   dose('simba', 'v4', -392, 'larissa', 'Reforço anual', -27), dose('simba', 'raiva', -392, 'larissa', 'Reforço anual', -27),
   // Fred
   dose('fred', 'v10', -355, 'rafael', 'Reforço anual', 10), dose('fred', 'raiva', -355, 'rafael', 'Reforço anual', 10), dose('fred', 'gripe', -170, 'rafael', 'Semestral (creche)', 12),
   // Amora
   dose('amora', 'v10', -100, 'rafael'), dose('amora', 'raiva', -100, 'rafael'),
-  // Zeus — raiva atrasada
+  // Zeus: raiva atrasada
   dose('zeus', 'v10', -330, 'rafael', 'Reforço anual', 35), dose('zeus', 'raiva', -372, 'rafael', 'Reforço anual', -7),
-  // Kiara — 2 doses giárdia
+  // Kiara: 2 doses giárdia
   dose('kiara', 'v10', -20, 'rafael'), dose('kiara', 'raiva', -20, 'rafael'), dose('kiara', 'giardia', -40, 'rafael', '1ª dose', -12),
   // Mel
   dose('mel', 'v10', -362, 'rafael', 'Reforço anual', 3), dose('mel', 'raiva', -290, 'rafael'),
@@ -216,7 +216,7 @@ export const DOSES: VaccineDose[] = [
   dose('frida', 'v10', -348, 'bianca', 'Reforço anual', 17), dose('frida', 'raiva', -348, 'bianca', 'Reforço anual', 17),
   // Café
   dose('cafe', 'v10', -200, 'bianca'), dose('cafe', 'raiva', -200, 'bianca'),
-  // Belinha — protocolo de filhote incompleto
+  // Belinha: protocolo de filhote incompleto
   dose('belinha', 'v4', -60, 'bianca', '2ª dose', -35),
   // Bento
   dose('bento', 'v10', -250, 'bianca'), dose('bento', 'raiva', -365, 'bianca', 'Reforço anual', 0), dose('bento', 'gripe', -180, 'bianca', 'Semestral (creche)', 2),
@@ -341,9 +341,9 @@ export const VISITS: Visit[] = [
   // ── HOJE · Dra. Larissa · Centro-Sul + Sul
   v(0, '08:00', 'larissa', 't1', ['thor'], 'Vacinação', 'Reforço anual V10 + antirrábica', 'concluida', 35, true, 260),
   v(0, '09:00', 'larissa', 't2', ['nina'], 'Fluidoterapia', 'Fluido SC + aferição de PA', 'concluida', 40, false, 180),
-  v(0, '10:05', 'larissa', 't4', ['bob'], 'Retorno', 'Retorno cardiológico — 21 dias de pimobendan', 'em-atendimento', 50, true, 240),
+  v(0, '10:05', 'larissa', 't4', ['bob'], 'Retorno', 'Retorno cardiológico: 21 dias de pimobendan', 'em-atendimento', 50, true, 240),
   v(0, '11:20', 'larissa', 't3', ['pacoca'], 'Vacinação', '2ª dose V10 + vermífugo', 'agendada', 35, false, 190),
-  v(0, '13:30', 'larissa', 't5', ['mia'], 'Curativo', 'Retirada de pontos — castração', 'agendada', 30, false, 150),
+  v(0, '13:30', 'larissa', 't5', ['mia'], 'Curativo', 'Retirada de pontos: castração', 'agendada', 30, false, 150),
   v(0, '14:30', 'larissa', 't17', ['luna'], 'Consulta', 'Vômitos esporádicos há 1 semana', 'agendada', 50, true, 240),
   v(0, '15:40', 'larissa', 't6', ['pipoca'], 'Coleta de exames', 'Hemograma + bioquímico pré-anestésico', 'agendada', 35, false, 210),
   v(0, '16:40', 'larissa', 't7', ['simba'], 'Check-up', 'Pesagem + vacinas atrasadas', 'agendada', 45, false, 280),
@@ -352,20 +352,20 @@ export const VISITS: Visit[] = [
   v(0, '10:00', 'rafael', 't10', ['kiara'], 'Vacinação', '2ª dose giárdia', 'a-caminho', 30, false, 170),
   v(0, '11:15', 'rafael', 't9', ['zeus'], 'Consulta', 'Claudicação posterior + raiva atrasada', 'agendada', 60, false, 290),
   v(0, '14:00', 'rafael', 't11', ['mel'], 'Vacinação', 'Reforço V10', 'agendada', 30, true, 170),
-  v(0, '15:00', 'rafael', 't18', ['bidu'], 'Retorno', 'Colírio — reavaliação do teste de Schirmer', 'agendada', 35, false, 200),
+  v(0, '15:00', 'rafael', 't18', ['bidu'], 'Retorno', 'Colírio: reavaliação do teste de Schirmer', 'agendada', 35, false, 200),
   // ── HOJE · Dra. Bianca · Leste + Norte
   v(0, '08:00', 'bianca', 't14', ['cafe'], 'Check-up', 'Check-up geriátrico semestral', 'concluida', 60, true, 320),
-  v(0, '09:30', 'bianca', 't13', ['frida'], 'Retorno', 'Fisioterapia — evolução de coluna', 'concluida', 45, false, 230),
+  v(0, '09:30', 'bianca', 't13', ['frida'], 'Retorno', 'Fisioterapia: evolução de coluna', 'concluida', 45, false, 230),
   v(0, '10:30', 'bianca', 't12', ['tom'], 'Consulta', 'Lesão na orelha (briga)', 'em-atendimento', 40, false, 230),
   v(0, '13:00', 'bianca', 't15', ['belinha'], 'Vacinação', '3ª dose V4 (atrasada)', 'agendada', 30, false, 180),
   v(0, '14:20', 'bianca', 't16', ['bento'], 'Vacinação', 'Antirrábica + gripe (creche)', 'agendada', 35, true, 230),
   // ── Próximos dias (amostra)
   v(1, '09:00', 'larissa', 't2', ['nina'], 'Fluidoterapia', 'Fluido SC', 'agendada', 40),
   v(1, '10:30', 'rafael', 't9', ['zeus'], 'Retorno', 'Reavaliação ortopédica', 'agendada', 45),
-  v(1, '14:00', 'bianca', 't4', ['bob'], 'Consulta', 'Holter — instalação', 'agendada', 60),
-  v(2, '08:30', 'larissa', 't1', ['thor'], 'Retorno', 'Otite — reavaliação', 'agendada', 30),
+  v(1, '14:00', 'bianca', 't4', ['bob'], 'Consulta', 'Holter: instalação', 'agendada', 60),
+  v(2, '08:30', 'larissa', 't1', ['thor'], 'Retorno', 'Otite: reavaliação', 'agendada', 30),
   v(2, '11:00', 'bianca', 't14', ['cafe'], 'Consulta', 'Oftalmológica', 'agendada', 45),
-  v(3, '15:00', 'rafael', 't8', ['fred'], 'Retorno', 'Dermatite — 14 dias', 'agendada', 30),
+  v(3, '15:00', 'rafael', 't8', ['fred'], 'Retorno', 'Dermatite: 14 dias', 'agendada', 30),
   v(-1, '10:00', 'larissa', 't17', ['luna'], 'Consulta', 'Triagem', 'concluida', 40),
 ]
 
@@ -435,7 +435,7 @@ export const REMINDERS: Reminder[] = [
   r('kiara', 'vacina', '2ª dose Giárdia', -12, 'agendado', 'rafael', 'Protocolo inicial (2 doses)'),
   r('simba', 'vermífugo', 'Vermífugo trimestral', 4, 'programado', 'larissa', 'A cada 90 dias'),
   r('amora', 'antipulgas', 'NexGard mensal', 1, 'enviado', 'rafael', 'A cada 30 dias'),
-  r('luna', 'retorno', 'Retorno — vômitos', 14, 'programado', 'larissa', 'Orientação: retorno se persistir'),
+  r('luna', 'retorno', 'Retorno: vômitos', 14, 'programado', 'larissa', 'Orientação: retorno se persistir'),
   r('pacoca', 'vacina', '3ª dose V10', 25, 'programado', 'rafael', 'Protocolo de filhote (21–28 dias)'),
 ]
 
@@ -451,7 +451,7 @@ export const TEMPLATES = {
   antipulgas:
     'Oi, {tutor}! O antipulgas do(a) *{pet}* ({item}) deve ser dado em *{data}*. Qualquer dúvida, é só chamar.',
   exame:
-    'Olá, {tutor}! A {vet} pediu para repetirmos o *{item}* do(a) *{pet}* por volta de *{data}*. Coletamos em casa — quer agendar?',
+    'Olá, {tutor}! A {vet} pediu para repetirmos o *{item}* do(a) *{pet}* por volta de *{data}*. Coletamos em casa: quer agendar?',
 } as const
 
 /* ───────────────────────── Indicadores ───────────────────────── */
@@ -467,7 +467,7 @@ export const KPIS = {
   noShowRate: 0.031,
 }
 
-/** Visitas por zona × dia da semana (últimas 8 semanas) — para o mapa de calor */
+/** Visitas por zona × dia da semana (últimas 8 semanas): para o mapa de calor */
 export const HEATMAP: Record<ZoneId, number[]> = {
   oeste: [14, 16, 3, 15, 9, 11],
   'centro-oeste': [2, 3, 12, 1, 7, 2],

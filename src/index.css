@@ -1,88 +1,111 @@
 @import 'tailwindcss';
-@import '@fontsource-variable/fraunces/full.css';
-@import '@fontsource-variable/instrument-sans/wdth.css';
-@import '@fontsource/ibm-plex-mono/400.css';
-@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource-variable/manrope/wght.css';
 
 /*
-  Vet Domicílio — design tokens
-  Mundo: "caderno de campo do veterinário em Manaus".
-  Papel osso, tinta verde-sálvia profunda, terracota como único acento de ação.
-  O Rio Negro (chá escuro) só aparece no mapa — é o elemento de lugar.
+  Vet Domicílio · design tokens v2
+  Referências: painéis SaaS do Dribbble com fundo cinza claro, cartões brancos muito arredondados,
+  navegação em pílulas, preto como cor de ação e um verde-limão de destaque.
 */
 
 @theme {
-  --font-display: 'Fraunces Variable', ui-serif, Georgia, serif;
-  --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --font-sans: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Manrope Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* superfícies */
-  --color-paper: #f4efe4;
-  --color-paper-2: #ece5d6;
-  --color-card: #fffcf6;
-  --color-card-2: #faf6ee;
-  --color-line: #e2d9c7;
-  --color-line-2: #d3c8b2;
+  --color-canvas: #e8e9ec;
+  --color-surface: #f4f5f7;
+  --color-card: #ffffff;
+  --color-muted: #eff0f3;
+  --color-muted-2: #e6e8ec;
+  --color-line: #e7e8ec;
+  --color-line-2: #d9dbe0;
 
-  /* tinta */
-  --color-ink: #1b2620;
-  --color-ink-2: #46524b;
-  --color-ink-3: #7b847d;
-  --color-ink-4: #a7ada5;
+  /* texto */
+  --color-ink: #111214;
+  --color-ink-2: #4a4e57;
+  --color-ink-3: #8a8f99;
+  --color-ink-4: #b9bdc5;
 
-  /* sálvia (marca) */
-  --color-sage-950: #142a21;
-  --color-sage-900: #1e3a2e;
-  --color-sage-800: #2a4c3c;
-  --color-sage-700: #2f5443;
-  --color-sage-600: #3f6a55;
-  --color-sage-500: #5e8a72;
-  --color-sage-300: #a9c3b1;
-  --color-sage-200: #cbdccf;
-  --color-sage-100: #e1ebe2;
-  --color-sage-50: #eef3ec;
+  /* ação */
+  --color-black: #111214;
+  --color-black-2: #1d1f23;
+  --color-lime: #d8f35a;
+  --color-lime-2: #c6e63a;
+  --color-lime-soft: #f2fbd2;
+  --color-lime-ink: #2a3600;
 
-  /* terracota (ação/atenção) */
-  --color-terra-700: #9a4424;
-  --color-terra-600: #b9542e;
-  --color-terra-500: #d06a3f;
-  --color-terra-200: #f0c9b4;
-  --color-terra-100: #f7e3d6;
-  --color-terra-50: #fbf0e8;
-
-  /* status */
-  --color-ok: #3f7f55;
-  --color-ok-bg: #e2eee3;
-  --color-warn: #b7801c;
-  --color-warn-bg: #f6ead0;
-  --color-late: #a8392b;
-  --color-late-bg: #f6dcd6;
-  --color-info: #3e6487;
-  --color-info-bg: #dfe8f0;
-
-  /* rio negro (mapa) */
-  --color-river: #2a2420;
-  --color-river-2: #3a302a;
-  --color-solimoes: #b99a6b;
+  /* categorias e status */
+  --color-blue: #3d7afa;
+  --color-blue-soft: #e8efff;
+  --color-violet: #7b6cf0;
+  --color-violet-soft: #efedff;
+  --color-green: #2eb46c;
+  --color-green-soft: #e2f6ea;
+  --color-yellow: #f5cf45;
+  --color-yellow-soft: #fdf4d0;
+  --color-yellow-ink: #7a5a00;
+  --color-coral: #f2694c;
+  --color-coral-soft: #fde9e4;
+  --color-red: #e5484d;
+  --color-red-soft: #fde8e8;
+  --color-teal: #1fa7a0;
+  --color-teal-soft: #ddf4f2;
 
   /* zonas de Manaus */
-  --color-z-oeste: #5e8a72;
-  --color-z-centrosul: #d06a3f;
-  --color-z-sul: #c9962f;
-  --color-z-norte: #4f7596;
-  --color-z-leste: #8a6a4e;
-  --color-z-centrooeste: #4c8784;
+  --color-z-oeste: #2eb46c;
+  --color-z-centrooeste: #1fa7a0;
+  --color-z-sul: #f5b83d;
+  --color-z-centrosul: #7b6cf0;
+  --color-z-norte: #3d7afa;
+  --color-z-leste: #f2694c;
 
-  --radius-xs: 6px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
+  /* mapa */
+  --color-river: #c9d6e6;
+  --color-river-2: #b7c7dc;
+  --color-solimoes: #e3d3b8;
+
+  /* aliases legados (serão removidos após a refatoração) */
+  --color-paper: #f4f5f7;
+  --color-paper-2: #eff0f3;
+  --color-card-2: #fafafb;
+  --color-sage-950: #111214;
+  --color-sage-900: #111214;
+  --color-sage-800: #1d1f23;
+  --color-sage-700: #2a2d33;
+  --color-sage-600: #3d7afa;
+  --color-sage-500: #3d7afa;
+  --color-sage-300: #b9bdc5;
+  --color-sage-200: #d9dbe0;
+  --color-sage-100: #eff0f3;
+  --color-sage-50: #f4f5f7;
+  --color-terra-700: #111214;
+  --color-terra-600: #111214;
+  --color-terra-500: #3d7afa;
+  --color-terra-200: #d9dbe0;
+  --color-terra-100: #eff0f3;
+  --color-terra-50: #f4f5f7;
+  --color-ok: #2eb46c;
+  --color-ok-bg: #e2f6ea;
+  --color-warn: #b8860b;
+  --color-warn-bg: #fdf4d0;
+  --color-late: #e5484d;
+  --color-late-bg: #fde8e8;
+  --color-info: #3d7afa;
+  --color-info-bg: #e8efff;
+
+  --radius-xs: 8px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
   --radius-2xl: 28px;
+  --radius-3xl: 34px;
 
-  --shadow-card: 0 1px 0 rgba(27, 38, 32, 0.04), 0 1px 2px rgba(27, 38, 32, 0.06);
-  --shadow-lift: 0 1px 0 rgba(27, 38, 32, 0.04), 0 8px 24px -8px rgba(27, 38, 32, 0.18);
-  --shadow-float: 0 24px 60px -20px rgba(20, 42, 33, 0.35), 0 2px 6px rgba(20, 42, 33, 0.08);
+  --shadow-card: 0 1px 2px rgba(17, 18, 20, 0.04), 0 6px 20px -12px rgba(17, 18, 20, 0.1);
+  --shadow-lift: 0 2px 4px rgba(17, 18, 20, 0.04), 0 14px 32px -14px rgba(17, 18, 20, 0.18);
+  --shadow-float: 0 24px 60px -18px rgba(17, 18, 20, 0.32), 0 4px 12px rgba(17, 18, 20, 0.08);
+  --shadow-pill: 0 1px 2px rgba(17, 18, 20, 0.06), 0 2px 8px -2px rgba(17, 18, 20, 0.08), inset 0 1px 0 #fff;
 
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -92,24 +115,22 @@
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
   }
   body {
-    background: var(--color-paper);
+    background: var(--color-canvas);
     color: var(--color-ink);
     font-family: var(--font-sans);
     font-size: 14px;
     line-height: 1.45;
-    font-feature-settings: 'ss01', 'cv11';
+    font-weight: 500;
   }
   ::selection {
-    background: var(--color-sage-200);
-    color: var(--color-sage-950);
+    background: var(--color-lime);
+    color: var(--color-ink);
   }
   :focus-visible {
-    outline: 2px solid var(--color-terra-500);
+    outline: 2px solid var(--color-blue);
     outline-offset: 2px;
-    border-radius: 6px;
   }
   button {
     cursor: pointer;
@@ -117,33 +138,38 @@
 }
 
 @layer components {
-  /* Fraunces com eixo SOFT alto: serifa acolhedora, nunca "jornal" */
-  .font-display {
-    font-family: var(--font-display);
-    font-variation-settings: 'SOFT' 100, 'WONK' 0;
-    letter-spacing: -0.015em;
-  }
+  .font-display,
   .font-display-tight {
-    font-family: var(--font-display);
-    font-variation-settings: 'SOFT' 100, 'WONK' 1;
-    letter-spacing: -0.03em;
+    font-family: var(--font-sans);
+    letter-spacing: -0.025em;
   }
   .num {
     font-variant-numeric: tabular-nums;
   }
+  /* rótulo pequeno, sem caixa alta e sem mono */
   .eyebrow {
-    font-family: var(--font-mono);
-    font-size: 10.5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 500;
     color: var(--color-ink-3);
   }
-  .hairline {
-    border-color: var(--color-line);
+  /* hachura diagonal: dias sem atendimento, horários bloqueados */
+  .hatch {
+    background-color: var(--color-muted);
+    background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgba(17, 18, 20, 0.07) 6px 7px);
   }
-  /* textura de papel sutil, usada só na carteira de vacinação */
+  /* esfera do assistente (ref. dashboard de RH) */
+  .orb {
+    background:
+      radial-gradient(circle at 32% 28%, #ffffff 0 8%, transparent 30%),
+      radial-gradient(circle at 70% 75%, rgba(61, 122, 250, 0.55), transparent 55%),
+      radial-gradient(circle at 50% 50%, #cfe0ff 0%, #8fb4ff 45%, #4f86f7 78%, #3d6fe0 100%);
+    box-shadow:
+      inset -8px -10px 24px rgba(30, 70, 180, 0.35),
+      inset 6px 8px 18px rgba(255, 255, 255, 0.7),
+      0 18px 40px -12px rgba(61, 122, 250, 0.55);
+  }
   .paper-grain {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .3 0 0 0 0 .2 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .3 0 0 0 0 .3 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
   .scroll-thin {
     scrollbar-width: thin;

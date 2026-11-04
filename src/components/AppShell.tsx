@@ -2,37 +2,39 @@ import * as React from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Command } from 'cmdk'
 import { AnimatePresence, motion } from 'motion/react'
-import { Bell, CalendarDays, ChevronRight, House, Map, MessageCircleHeart, PawPrint, Search, Smartphone, RotateCcw } from 'lucide-react'
+import { Bell, CalendarDays, House, Map, MessageCircle, PawPrint, Plus, Search, Settings, Smartphone } from 'lucide-react'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { CLINIC, CURRENT_USER, PETS, TUTOR, VETS } from '@/data/mock'
+import { CURRENT_USER, PETS, TUTOR, VETS } from '@/data/mock'
 import { BAIRRO } from '@/data/geo'
-import { fmt, TODAY } from '@/data/time'
-import { Kbd, PetAvatar, VetAvatar } from './ui'
+import { AvatarStack, IconButton, Kbd, PetAvatar, Tip, VetAvatar } from './ui'
 import { useDemo } from '@/store'
 import { DemoGuide } from './DemoGuide'
 
-export function LogoMark({ size = 30, className }: { size?: number; className?: string }) {
+export function LogoMark({ size = 36, className, tone = 'black' }: { size?: number; className?: string; tone?: 'black' | 'lime' | 'white' }) {
+  const bg = tone === 'black' ? 'var(--color-black)' : tone === 'lime' ? 'var(--color-lime)' : '#fff'
+  const fg = tone === 'black' ? 'var(--color-lime)' : 'var(--color-black)'
   return (
-    <svg width={size} height={size} viewBox="0 0 64 64" className={className} aria-hidden>
-      <rect width="64" height="64" rx="18" fill="var(--color-sage-800)" />
-      <path d="M17 41c0-8.3 6.7-15 15-15s15 6.7 15 15" fill="none" stroke="var(--color-paper)" strokeWidth="5" strokeLinecap="round" />
-      <path d="M24 41h16" stroke="var(--color-paper)" strokeWidth="5" strokeLinecap="round" opacity=".35" />
-      <circle cx="32" cy="17.5" r="5" fill="var(--color-terra-500)" />
+    <svg width={size} height={size} viewBox="0 0 40 40" className={className} aria-hidden>
+      <rect width="40" height="40" rx="12" fill={bg} />
+      <path d="M11 26.5V19l9-6.5 9 6.5v7.5" fill="none" stroke={fg} strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="20" cy="24.5" r="2.6" fill={fg} />
     </svg>
   )
 }
 
 const NAV = [
   { to: '/', label: 'Hoje', icon: House, end: true },
-  { to: '/agenda', label: 'Agenda por região', icon: CalendarDays },
-  { to: '/regioes', label: 'Mapa e regiões', icon: Map },
+  { to: '/agenda', label: 'Agenda', icon: CalendarDays },
+  { to: '/regioes', label: 'Regiões', icon: Map },
   { to: '/pacientes', label: 'Pacientes', icon: PawPrint },
-  { to: '/lembretes', label: 'Lembretes', icon: MessageCircleHeart, badge: 'remindersDue' as const },
+  { to: '/lembretes', label: 'Lembretes', icon: MessageCircle, badge: true },
 ]
 
 export function AppShell() {
   const [cmdOpen, setCmdOpen] = React.useState(false)
   const loc = useLocation()
+  const nav = useNavigate()
   const reminders = useDemo((s) => s.reminders)
   const reset = useDemo((s) => s.reset)
   const due = reminders.filter((r) => r.status === 'programado' || r.status === 'sem-resposta').length
@@ -53,151 +55,139 @@ export function AppShell() {
   }, [loc.pathname])
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden bg-paper">
-      {/* Sidebar */}
-      <aside className="hidden w-[248px] shrink-0 flex-col border-r border-line bg-paper-2/60 lg:flex">
-        <div className="flex items-center gap-2.5 px-5 pt-5 pb-6">
-          <LogoMark size={32} />
-          <div className="leading-tight">
-            <div className="font-display text-[17px] font-semibold text-ink">{CLINIC.name}</div>
-            <div className="text-[11.5px] text-ink-3">{CLINIC.city}</div>
-          </div>
-        </div>
-
-        <button
-          onClick={() => setCmdOpen(true)}
-          className="mx-3 mb-4 flex h-9 items-center gap-2 rounded-md border border-line bg-card px-2.5 text-[13px] text-ink-3 shadow-card transition-colors hover:border-line-2"
-        >
-          <Search className="size-4" />
-          <span className="flex-1 text-left">Buscar pet, tutor…</span>
-          <Kbd>⌘K</Kbd>
-        </button>
-
-        <nav className="flex flex-col gap-0.5 px-3">
+    <div className="flex h-dvh w-full overflow-hidden bg-canvas lg:p-3">
+      {/* Trilho de ícones */}
+      <aside className="mr-3 hidden w-[68px] shrink-0 flex-col items-center rounded-[26px] bg-surface py-4 ring-1 ring-white/80 lg:flex">
+        <NavLink to="/" aria-label="Vet Domicílio">
+          <LogoMark size={40} />
+        </NavLink>
+        <nav className="mt-auto mb-auto flex flex-col items-center gap-2.5">
           {NAV.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              end={n.end}
-              className={({ isActive }) =>
-                cn(
-                  'group relative flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[13.5px] font-medium transition-colors',
-                  isActive ? 'bg-card text-ink shadow-card' : 'text-ink-2 hover:bg-paper-2 hover:text-ink',
-                )
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <n.icon className={cn('size-[17px]', isActive ? 'text-sage-700' : 'text-ink-3 group-hover:text-ink-2')} strokeWidth={1.8} />
-                  <span className="flex-1">{n.label}</span>
-                  {n.badge && due > 0 && <span className="num rounded-full bg-terra-600 px-1.5 text-[11px] leading-[18px] font-semibold text-white">{due}</span>}
-                </>
-              )}
-            </NavLink>
+            <Tip key={n.to} content={n.label} side="right">
+              <NavLink
+                to={n.to}
+                end={n.end}
+                className={({ isActive }) =>
+                  cn(
+                    'relative flex size-11 items-center justify-center rounded-full transition-[background,color,box-shadow] duration-150',
+                    isActive ? 'bg-card text-ink shadow-pill' : 'text-ink-3 hover:bg-card/70 hover:text-ink',
+                  )
+                }
+              >
+                <n.icon className="size-[19px]" strokeWidth={1.9} />
+                {n.badge && due > 0 && <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-coral ring-2 ring-surface" />}
+              </NavLink>
+            </Tip>
           ))}
+          <div className="my-1 h-px w-6 bg-line-2" />
+          <Tip content="App do veterinário" side="right">
+            <NavLink to="/campo" className="flex size-11 items-center justify-center rounded-full bg-black text-lime transition-transform hover:scale-105">
+              <Smartphone className="size-[19px]" strokeWidth={1.9} />
+            </NavLink>
+          </Tip>
         </nav>
-
-        <div className="mx-3 mt-6 mb-2 eyebrow px-2.5">Em campo agora</div>
-        <div className="flex flex-col gap-0.5 px-3">
-          {VETS.map((v) => (
-            <NavLink key={v.id} to={`/campo?vet=${v.id}`} className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[13px] text-ink-2 hover:bg-paper-2">
-              <span className="relative">
-                <VetAvatar vetId={v.id} size={22} />
-                <span className="absolute -right-0.5 -bottom-0.5 size-2 rounded-full border-2 border-paper bg-ok" />
-              </span>
-              <span className="flex-1 truncate">{v.short}</span>
-            </NavLink>
-          ))}
-        </div>
-
-        <div className="mt-auto p-3">
-          <NavLink
-            to="/campo"
-            className="group relative flex items-center gap-3 overflow-hidden rounded-lg bg-sage-900 p-3 text-paper shadow-lift transition-transform hover:-translate-y-px"
-          >
-            <span className="flex size-9 items-center justify-center rounded-md bg-white/10">
-              <Smartphone className="size-[18px]" strokeWidth={1.8} />
-            </span>
-            <span className="flex-1 leading-tight">
-              <span className="block text-[13px] font-semibold">App do veterinário</span>
-              <span className="block text-[11.5px] text-sage-200">Abrir a versão de celular</span>
-            </span>
-            <ChevronRight className="size-4 opacity-60 transition-transform group-hover:translate-x-0.5" />
-          </NavLink>
-          <div className="mt-3 flex items-center gap-2.5 px-1">
-            <span className="flex size-8 items-center justify-center rounded-full bg-terra-100 text-[12px] font-semibold text-terra-700">{CURRENT_USER.initials}</span>
-            <div className="min-w-0 flex-1 leading-tight">
-              <div className="truncate text-[13px] font-medium text-ink">{CURRENT_USER.name}</div>
-              <div className="truncate text-[11.5px] text-ink-3">{CURRENT_USER.role}</div>
-            </div>
-            <button title="Reiniciar dados da demonstração" onClick={reset} className="rounded-md p-1.5 text-ink-4 hover:bg-paper-2 hover:text-ink-2">
-              <RotateCcw className="size-3.5" />
-            </button>
-          </div>
-        </div>
+        <Tip content="Reiniciar demonstração" side="right">
+          <button onClick={() => { reset(); toast('Demonstração reiniciada') }} className="flex size-11 items-center justify-center rounded-full text-ink-3 hover:bg-card hover:text-ink">
+            <Settings className="size-[19px]" strokeWidth={1.9} />
+          </button>
+        </Tip>
       </aside>
 
-      {/* Conteúdo */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 shrink-0 items-center gap-3 border-b border-line bg-paper/80 px-4 backdrop-blur md:px-8">
-          <div className="flex items-center gap-2 lg:hidden">
-            <LogoMark size={26} />
-            <span className="font-display text-[15px] font-semibold">{CLINIC.name}</span>
+      {/* Área principal */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-surface lg:rounded-[26px] lg:ring-1 lg:ring-white/80">
+        <header className="flex h-[72px] shrink-0 items-center gap-3 px-4 md:px-6">
+          <div className="flex items-center gap-2.5 lg:hidden">
+            <LogoMark size={34} />
+            <div className="leading-tight">
+              <div className="text-[15px] font-bold tracking-[-0.02em]">Vet Domicílio</div>
+              <div className="text-[11.5px] font-medium text-ink-3">Manaus</div>
+            </div>
           </div>
-          <div className="hidden items-center gap-2 text-[13px] text-ink-3 lg:flex">
-            <span className="first-letter:uppercase">{fmt.long(TODAY)}</span>
-            <span className="text-ink-4">·</span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-ok opacity-50" />
-                <span className="relative inline-flex size-2 rounded-full bg-ok" />
-              </span>
-              3 veterinários em rota
+
+          {/* Navegação em pílulas */}
+          <nav className="hidden items-center gap-1.5 lg:flex">
+            {NAV.map((n) => (
+              <NavLink
+                key={n.to}
+                to={n.to}
+                end={n.end}
+                className={({ isActive }) =>
+                  cn(
+                    'relative flex h-10 items-center gap-2 rounded-full px-4 text-[13.5px] font-semibold transition-colors',
+                    isActive ? 'bg-card text-ink shadow-pill' : 'text-ink-2 hover:text-ink',
+                  )
+                }
+              >
+                <n.icon className="size-4" strokeWidth={2} />
+                {n.label}
+                {n.badge && due > 0 && <span className="num -mr-1 rounded-full bg-black px-1.5 text-[10.5px] leading-[18px] font-bold text-white">{due}</span>}
+              </NavLink>
+            ))}
+            <IconButton aria-label="Buscar" onClick={() => setCmdOpen(true)} size={40} className="ml-1">
+              <Search className="size-4" strokeWidth={2} />
+            </IconButton>
+          </nav>
+
+          <div className="ml-auto flex items-center gap-2.5">
+            <div className="hidden items-center gap-2.5 xl:flex">
+              <AvatarStack extra={2} size={36}>
+                {VETS.map((v) => (
+                  <NavLink key={v.id} to={`/campo?vet=${v.id}`}>
+                    <VetAvatar vetId={v.id} size={36} />
+                  </NavLink>
+                ))}
+              </AvatarStack>
+            </div>
+            <button
+              onClick={() => nav('/agenda?novo=1')}
+              className="hidden h-10 items-center gap-2 rounded-full bg-card px-4 text-[13.5px] font-semibold text-ink shadow-pill hover:bg-surface md:inline-flex"
+            >
+              <Plus className="size-4" strokeWidth={2.2} /> Nova visita
+            </button>
+            <IconButton aria-label="Buscar" onClick={() => setCmdOpen(true)} className="lg:hidden">
+              <Search className="size-[18px]" strokeWidth={2} />
+            </IconButton>
+            <IconButton aria-label="Notificações" className="relative" onClick={() => toast('3 tutores responderam aos lembretes de hoje')}>
+              <Bell className="size-[18px]" strokeWidth={2} />
+              <span className="absolute top-2.5 right-2.5 size-2 rounded-full bg-coral ring-2 ring-card" />
+            </IconButton>
+            <span className="hidden size-10 items-center justify-center rounded-full bg-lime text-[13px] font-bold text-ink md:inline-flex" title={`${CURRENT_USER.name} · ${CURRENT_USER.role}`}>
+              {CURRENT_USER.initials}
             </span>
-          </div>
-          <div className="ml-auto flex items-center gap-1">
-            <button onClick={() => setCmdOpen(true)} className="rounded-md p-2 text-ink-2 hover:bg-paper-2 lg:hidden">
-              <Search className="size-[18px]" />
-            </button>
-            <button className="relative rounded-md p-2 text-ink-2 hover:bg-paper-2">
-              <Bell className="size-[18px]" strokeWidth={1.8} />
-              <span className="absolute top-1.5 right-1.5 size-2 rounded-full border-2 border-paper bg-terra-500" />
-            </button>
-            <NavLink to="/campo" className="ml-1 hidden h-8 items-center gap-1.5 rounded-md border border-line-2 bg-card px-3 text-[13px] font-medium text-ink shadow-card hover:bg-card-2 md:inline-flex lg:hidden">
-              <Smartphone className="size-4" /> App do vet
-            </NavLink>
           </div>
         </header>
 
-        <main className="scroll-thin flex-1 overflow-y-auto pb-24 lg:pb-0">
+        <main className="scroll-thin flex-1 overflow-y-auto pb-28 lg:pb-0">
           <AnimatePresence mode="wait">
-            <motion.div
-              key={loc.pathname}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.22, ease: [0.25, 1, 0.5, 1] }}
-            >
+            <motion.div key={loc.pathname} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.22, ease: [0.25, 1, 0.5, 1] }}>
               <Outlet />
             </motion.div>
           </AnimatePresence>
         </main>
+      </div>
 
-        {/* Tab bar mobile */}
-        <nav className="fixed inset-x-0 bottom-0 z-30 flex border-t border-line bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
+      {/* Dock flutuante no celular (ref. apps de finanças e condomínio) */}
+      <nav className="fixed inset-x-0 bottom-[max(14px,env(safe-area-inset-bottom))] z-30 flex justify-center px-4 lg:hidden">
+        <div className="flex items-center gap-1 rounded-full bg-black p-1.5 shadow-float">
           {[...NAV.slice(0, 2), { to: '/campo', label: 'App vet', icon: Smartphone }, ...NAV.slice(3)].map((n) => (
             <NavLink
               key={n.to}
               to={n.to}
               end={'end' in n ? n.end : undefined}
-              className={({ isActive }) => cn('flex flex-1 flex-col items-center gap-0.5 py-2 text-[10.5px] font-medium', isActive ? 'text-sage-800' : 'text-ink-3')}
+              className={({ isActive }) =>
+                cn('flex h-11 items-center gap-1.5 rounded-full transition-[background,padding] duration-200', isActive ? 'bg-white/14 px-3.5 text-white' : 'w-11 justify-center text-white/55')
+              }
             >
-              <n.icon className="size-5" strokeWidth={1.8} />
-              {n.label.split(' ')[0]}
+              {({ isActive }) => (
+                <>
+                  <n.icon className="size-[19px]" strokeWidth={2} />
+                  {isActive && <span className="text-[12.5px] font-semibold">{n.label}</span>}
+                </>
+              )}
             </NavLink>
           ))}
-        </nav>
-      </div>
+        </div>
+      </nav>
 
       <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
       <DemoGuide />
@@ -214,23 +204,23 @@ function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (
   return (
     <AnimatePresence>
       {open && (
-        <motion.div className="fixed inset-0 z-50 flex items-start justify-center bg-sage-950/25 p-4 pt-[12vh] backdrop-blur-[2px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => onOpenChange(false)}>
+        <motion.div className="fixed inset-0 z-50 flex items-start justify-center bg-black/20 p-4 pt-[12vh] backdrop-blur-[3px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => onOpenChange(false)}>
           <motion.div
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -6, scale: 0.98 }}
             transition={{ duration: 0.18 }}
-            className="w-full max-w-[560px] overflow-hidden rounded-xl border border-line bg-card shadow-float"
+            className="w-full max-w-[560px] overflow-hidden rounded-[24px] bg-card shadow-float"
             onClick={(e) => e.stopPropagation()}
           >
-            <Command label="Busca" className="[&_[cmdk-group-heading]]:eyebrow [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5">
-              <div className="flex items-center gap-2 border-b border-line px-4">
-                <Search className="size-4 text-ink-3" />
-                <Command.Input autoFocus placeholder="Buscar paciente, tutor, bairro ou tela…" className="h-12 flex-1 bg-transparent text-[14.5px] outline-none placeholder:text-ink-4" />
+            <Command label="Busca" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1.5 [&_[cmdk-group-heading]]:text-[12px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:text-ink-3">
+              <div className="flex items-center gap-3 border-b border-line px-5">
+                <Search className="size-[18px] text-ink-3" />
+                <Command.Input autoFocus placeholder="Buscar paciente, tutor ou bairro" className="h-14 flex-1 bg-transparent text-[15px] font-medium outline-none placeholder:text-ink-4" />
                 <Kbd>esc</Kbd>
               </div>
-              <Command.List className="scroll-thin max-h-[380px] overflow-y-auto p-1.5">
-                <Command.Empty className="px-3 py-8 text-center text-[13px] text-ink-3">Nada encontrado.</Command.Empty>
+              <Command.List className="scroll-thin max-h-[380px] overflow-y-auto p-2">
+                <Command.Empty className="px-3 py-8 text-center text-[13px] text-ink-3">Nenhum resultado.</Command.Empty>
                 <Command.Group heading="Pacientes">
                   {PETS.map((p) => {
                     const t = TUTOR[p.tutorId]
@@ -239,15 +229,15 @@ function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (
                         key={p.id}
                         value={`${p.name} ${p.breed} ${t.name} ${BAIRRO[t.bairro].name}`}
                         onSelect={() => go(`/pacientes/${p.id}`)}
-                        className="flex cursor-pointer items-center gap-3 rounded-md px-2.5 py-2 data-[selected=true]:bg-paper-2"
+                        className="flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-2.5 data-[selected=true]:bg-muted"
                       >
-                        <PetAvatar pet={p} size={30} />
+                        <PetAvatar pet={p} size={34} />
                         <div className="min-w-0 flex-1">
-                          <div className="text-[13.5px] font-medium text-ink">
-                            {p.name} <span className="font-normal text-ink-3">· {p.breed}</span>
+                          <div className="text-[14px] font-semibold text-ink">
+                            {p.name} <span className="font-medium text-ink-3">{p.breed}</span>
                           </div>
-                          <div className="truncate text-[12px] text-ink-3">
-                            {t.name} · {BAIRRO[t.bairro].name}
+                          <div className="truncate text-[12.5px] font-medium text-ink-3">
+                            {t.name}, {BAIRRO[t.bairro].name}
                           </div>
                         </div>
                       </Command.Item>
@@ -255,9 +245,9 @@ function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (
                   })}
                 </Command.Group>
                 <Command.Group heading="Telas">
-                  {[...NAV, { to: '/campo', label: 'App do veterinário (celular)' }].map((n) => (
-                    <Command.Item key={n.to} value={n.label} onSelect={() => go(n.to)} className="flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-2 text-[13.5px] data-[selected=true]:bg-paper-2">
-                      <ChevronRight className="size-4 text-ink-4" /> {n.label}
+                  {[...NAV, { to: '/campo', label: 'App do veterinário' }].map((n) => (
+                    <Command.Item key={n.to} value={n.label} onSelect={() => go(n.to)} className="flex cursor-pointer items-center gap-2 rounded-2xl px-3 py-2.5 text-[14px] font-semibold data-[selected=true]:bg-muted">
+                      {n.label}
                     </Command.Item>
                   ))}
                 </Command.Group>
@@ -269,3 +259,4 @@ function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (
     </AnimatePresence>
   )
 }
+

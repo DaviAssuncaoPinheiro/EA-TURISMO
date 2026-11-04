@@ -4,7 +4,7 @@ import { daysFromToday } from '@/data/time'
 
 export const VISIT_STATUS: Record<VisitStatus, { label: string; tone: Tone }> = {
   concluida: { label: 'Concluída', tone: 'ok' },
-  'em-atendimento': { label: 'Em atendimento', tone: 'terra' },
+  'em-atendimento': { label: 'Em atendimento', tone: 'lime' },
   'a-caminho': { label: 'A caminho', tone: 'info' },
   agendada: { label: 'Agendada', tone: 'neutral' },
   cancelada: { label: 'Cancelada', tone: 'late' },
@@ -23,7 +23,7 @@ export const VISIT_TYPE_ICON: Record<VisitType, string> = {
 export const REMINDER_STATUS: Record<ReminderStatus, { label: string; tone: Tone }> = {
   programado: { label: 'Programado', tone: 'neutral' },
   enviado: { label: 'Enviado', tone: 'info' },
-  lido: { label: 'Lido', tone: 'sage' },
+  lido: { label: 'Lido', tone: 'violet' },
   confirmado: { label: 'Confirmado', tone: 'ok' },
   agendado: { label: 'Visita agendada', tone: 'dark' },
   'sem-resposta': { label: 'Sem resposta', tone: 'late' },

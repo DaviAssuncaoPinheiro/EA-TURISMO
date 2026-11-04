@@ -4,26 +4,27 @@ import { motion, useMotionValue, useSpring, useTransform, animate } from 'motion
 import { cn } from '@/lib/utils'
 import { VET, type Pet } from '@/data/mock'
 
-/* ───────────── Button ───────────── */
+/* ───────────── Button (pílula) ───────────── */
 
-type ButtonVariant = 'primary' | 'accent' | 'outline' | 'ghost' | 'subtle' | 'danger'
+type ButtonVariant = 'primary' | 'accent' | 'lime' | 'outline' | 'ghost' | 'subtle' | 'danger'
 type ButtonSize = 'xs' | 'sm' | 'md' | 'lg'
 
 const btnBase =
-  'inline-flex items-center justify-center gap-1.5 whitespace-nowrap font-medium select-none transition-[background,color,box-shadow,transform] duration-150 ease-out active:translate-y-px disabled:opacity-45 disabled:pointer-events-none'
+  'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-semibold select-none transition-[background,color,box-shadow,transform] duration-150 ease-out active:scale-[.97] disabled:opacity-40 disabled:pointer-events-none'
 const btnVariants: Record<ButtonVariant, string> = {
-  primary: 'bg-sage-800 text-paper hover:bg-sage-900 shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_1px_2px_rgba(20,42,33,.25)]',
-  accent: 'bg-terra-600 text-white hover:bg-terra-700 shadow-[inset_0_1px_0_rgba(255,255,255,.14),0_1px_2px_rgba(154,68,36,.3)]',
-  outline: 'bg-card text-ink border border-line-2 hover:bg-card-2 hover:border-ink-4 shadow-card',
-  ghost: 'text-ink-2 hover:bg-paper-2 hover:text-ink',
-  subtle: 'bg-paper-2 text-ink hover:bg-line',
-  danger: 'bg-late-bg text-late hover:bg-[#f0cdc5]',
+  primary: 'bg-black text-white hover:bg-black-2',
+  accent: 'bg-black text-white hover:bg-black-2',
+  lime: 'bg-lime text-ink hover:bg-lime-2',
+  outline: 'bg-card text-ink shadow-pill hover:bg-surface',
+  ghost: 'text-ink-2 hover:bg-muted hover:text-ink',
+  subtle: 'bg-muted text-ink hover:bg-muted-2',
+  danger: 'bg-red-soft text-red hover:bg-[#fbd7d8]',
 }
 const btnSizes: Record<ButtonSize, string> = {
-  xs: 'h-7 px-2.5 text-[12px] rounded-sm',
-  sm: 'h-8 px-3 text-[13px] rounded-sm',
-  md: 'h-9 px-3.5 text-[13.5px] rounded-md',
-  lg: 'h-12 px-5 text-[15px] rounded-lg',
+  xs: 'h-7 px-3 text-[12px]',
+  sm: 'h-8 px-3.5 text-[12.5px]',
+  md: 'h-10 px-4 text-[13.5px]',
+  lg: 'h-12 px-6 text-[15px]',
 }
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -35,33 +36,83 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({ varian
 ))
 Button.displayName = 'Button'
 
-/* ───────────── Badge ───────────── */
+/** Botão redondo só com ícone (ref. sino, busca, chamada) */
+export const IconButton = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & { size?: number; tone?: 'card' | 'muted' | 'black' | 'lime' | 'ghost' }>(
+  ({ size = 40, tone = 'card', className, style, ...p }, ref) => (
+    <button
+      ref={ref}
+      className={cn(
+        'inline-flex shrink-0 items-center justify-center rounded-full transition-[background,transform] duration-150 active:scale-95',
+        tone === 'card' && 'bg-card text-ink shadow-pill hover:bg-surface',
+        tone === 'muted' && 'bg-muted text-ink hover:bg-muted-2',
+        tone === 'black' && 'bg-black text-white hover:bg-black-2',
+        tone === 'lime' && 'bg-lime text-ink hover:bg-lime-2',
+        tone === 'ghost' && 'text-ink-2 hover:bg-muted',
+        className,
+      )}
+      style={{ width: size, height: size, ...style }}
+      {...p}
+    />
+  ),
+)
+IconButton.displayName = 'IconButton'
 
-export type Tone = 'neutral' | 'sage' | 'terra' | 'ok' | 'warn' | 'late' | 'info' | 'dark'
+/* ───────────── Badge / Chip ───────────── */
+
+export type Tone = 'neutral' | 'sage' | 'terra' | 'ok' | 'warn' | 'late' | 'info' | 'dark' | 'violet' | 'lime' | 'white'
 const toneCls: Record<Tone, string> = {
-  neutral: 'bg-paper-2 text-ink-2',
-  sage: 'bg-sage-100 text-sage-800',
-  terra: 'bg-terra-100 text-terra-700',
-  ok: 'bg-ok-bg text-ok',
-  warn: 'bg-warn-bg text-warn',
-  late: 'bg-late-bg text-late',
-  info: 'bg-info-bg text-info',
-  dark: 'bg-sage-900 text-paper',
+  neutral: 'bg-muted text-ink-2',
+  sage: 'bg-muted text-ink',
+  terra: 'bg-blue-soft text-blue',
+  ok: 'bg-green-soft text-[#1e8a50]',
+  warn: 'bg-yellow-soft text-yellow-ink',
+  late: 'bg-red-soft text-red',
+  info: 'bg-blue-soft text-blue',
+  dark: 'bg-black text-white',
+  violet: 'bg-violet-soft text-violet',
+  lime: 'bg-lime text-lime-ink',
+  white: 'bg-card text-ink shadow-pill',
 }
 export function Badge({ tone = 'neutral', dot, className, children }: { tone?: Tone; dot?: boolean; className?: string; children: React.ReactNode }) {
   return (
-    <span className={cn('inline-flex h-[22px] items-center gap-1.5 rounded-full px-2 text-[11.5px] font-medium leading-none whitespace-nowrap', toneCls[tone], className)}>
-      {dot && <span className="size-1.5 rounded-full bg-current opacity-80" />}
+    <span className={cn('inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-[11.5px] font-semibold leading-none whitespace-nowrap', toneCls[tone], className)}>
+      {dot && <span className="size-1.5 rounded-full bg-current" />}
       {children}
     </span>
   )
 }
 
-/* ───────────── Card ───────────── */
+/** Chip clicável de filtro (pílula) */
+export function Chip({ active, onClick, children, className, color }: { active?: boolean; onClick?: () => void; children: React.ReactNode; className?: string; color?: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-[13px] font-semibold transition-colors',
+        active ? 'bg-black text-white' : 'bg-card text-ink-2 shadow-pill hover:text-ink',
+        className,
+      )}
+    >
+      {color && <span className="size-2 rounded-full" style={{ background: color }} />}
+      {children}
+    </button>
+  )
+}
+
+/* ───────────── Cards ───────────── */
 
 export function Card({ className, children, ...p }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('rounded-xl border border-line bg-card shadow-card', className)} {...p}>
+    <div className={cn('rounded-[24px] bg-card shadow-card', className)} {...p}>
+      {children}
+    </div>
+  )
+}
+
+/** Painel cinza que agrupa cartões brancos (ref. "Planned Absences") */
+export function Panel({ className, children, ...p }: React.HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div className={cn('rounded-[28px] bg-surface p-2 ring-1 ring-white/80', className)} {...p}>
       {children}
     </div>
   )
@@ -69,19 +120,31 @@ export function Card({ className, children, ...p }: React.HTMLAttributes<HTMLDiv
 
 export function CardHeader({ title, eyebrow, action, className }: { title: React.ReactNode; eyebrow?: React.ReactNode; action?: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('flex items-start justify-between gap-3 px-5 pt-4 pb-3', className)}>
+    <div className={cn('flex items-center justify-between gap-3 px-5 pt-5 pb-3', className)}>
       <div className="min-w-0">
-        {eyebrow && <div className="eyebrow mb-1">{eyebrow}</div>}
-        <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ink">{title}</h3>
+        <h3 className="text-[17px] font-bold tracking-[-0.02em] text-ink">{title}</h3>
+        {eyebrow && <div className="mt-0.5 text-[12.5px] font-medium text-ink-3">{eyebrow}</div>}
       </div>
       {action}
     </div>
   )
 }
 
+/** Botão "↗ Ver tudo" das referências */
+export function ViewAll({ onClick, children = 'Ver tudo' }: { onClick?: () => void; children?: React.ReactNode }) {
+  return (
+    <button onClick={onClick} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-card px-3 text-[12.5px] font-semibold text-ink shadow-pill hover:bg-surface">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+        <path d="M3.5 8.5l5-5M4.5 3.5h4v4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {children}
+    </button>
+  )
+}
+
 /* ───────────── Avatares ───────────── */
 
-const speciesTint: Record<string, string> = { cão: 'bg-terra-100 text-terra-700', gato: 'bg-sage-100 text-sage-800' }
+const speciesTint: Record<string, string> = { cão: 'bg-[#ffe9d6] text-[#a8541b]', gato: 'bg-violet-soft text-violet' }
 
 export function PetAvatar({ pet, size = 40, ring, className }: { pet: Pet; size?: number; ring?: boolean; className?: string }) {
   const [failed, setFailed] = React.useState(false)
@@ -93,7 +156,7 @@ export function PetAvatar({ pet, size = 40, ring, className }: { pet: Pet; size?
       {pet.photo && !failed ? (
         <img src={pet.photo} alt={pet.name} loading="lazy" onError={() => setFailed(true)} className="size-full object-cover" />
       ) : (
-        <span className="font-display font-semibold" style={{ fontSize: size * 0.42 }}>
+        <span className="font-bold" style={{ fontSize: size * 0.4 }}>
           {pet.name[0]}
         </span>
       )}
@@ -106,11 +169,25 @@ export function VetAvatar({ vetId, size = 28, className }: { vetId: string; size
   return (
     <span
       title={v.name}
-      className={cn('inline-flex shrink-0 items-center justify-center rounded-full font-semibold text-white', className)}
-      style={{ width: size, height: size, background: v.color, fontSize: size * 0.38 }}
+      className={cn('inline-flex shrink-0 items-center justify-center rounded-full font-bold text-white', className)}
+      style={{ width: size, height: size, background: v.color, fontSize: size * 0.36 }}
     >
       {v.initials}
     </span>
+  )
+}
+
+/** Pilha de avatares com "+N" (ref. topo do dashboard) */
+export function AvatarStack({ children, extra, size = 36 }: { children: React.ReactNode; extra?: number; size?: number }) {
+  return (
+    <div className="flex items-center">
+      <div className="flex -space-x-2.5 [&>*]:ring-[3px] [&>*]:ring-card [&>*]:rounded-full">{children}</div>
+      {extra ? (
+        <span className="-ml-2.5 inline-flex items-center justify-center rounded-full bg-card text-[11.5px] font-bold text-ink shadow-pill ring-[3px] ring-card" style={{ width: size, height: size }}>
+          {extra}+
+        </span>
+      ) : null}
+    </div>
   )
 }
 
@@ -121,11 +198,7 @@ export function Tip({ content, children, side = 'top' }: { content: React.ReactN
     <TooltipPrimitive.Root delayDuration={200}>
       <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
       <TooltipPrimitive.Portal>
-        <TooltipPrimitive.Content
-          side={side}
-          sideOffset={6}
-          className="z-50 max-w-64 rounded-md bg-sage-950 px-2.5 py-1.5 text-[12px] leading-snug text-paper shadow-float data-[state=delayed-open]:animate-in"
-        >
+        <TooltipPrimitive.Content side={side} sideOffset={6} className="z-50 max-w-64 rounded-xl bg-black px-3 py-2 text-[12px] font-medium leading-snug text-white shadow-float">
           {content}
         </TooltipPrimitive.Content>
       </TooltipPrimitive.Portal>
@@ -134,7 +207,7 @@ export function Tip({ content, children, side = 'top' }: { content: React.ReactN
 }
 export const TooltipProvider = TooltipPrimitive.Provider
 
-/* ───────────── Segmented control ───────────── */
+/* ───────────── Abas em pílula ───────────── */
 
 export function Segmented<T extends string>({
   value,
@@ -142,28 +215,34 @@ export function Segmented<T extends string>({
   options,
   className,
   size = 'sm',
+  tone = 'light',
 }: {
   value: T
   onChange: (v: T) => void
   options: { value: T; label: React.ReactNode }[]
   className?: string
   size?: 'sm' | 'md'
+  tone?: 'light' | 'dark'
 }) {
   const id = React.useId()
   return (
-    <div className={cn('inline-flex rounded-md bg-paper-2 p-0.5', className)}>
+    <div className={cn('inline-flex rounded-full p-1', tone === 'light' ? 'bg-muted' : 'bg-white/10', className)}>
       {options.map((o) => (
         <button
           key={o.value}
           onClick={() => onChange(o.value)}
           className={cn(
-            'relative rounded-[7px] font-medium transition-colors',
-            size === 'sm' ? 'h-7 px-2.5 text-[12.5px]' : 'h-8 px-3 text-[13px]',
-            value === o.value ? 'text-ink' : 'text-ink-3 hover:text-ink-2',
+            'relative rounded-full font-semibold transition-colors',
+            size === 'sm' ? 'h-8 px-3.5 text-[12.5px]' : 'h-9 px-4 text-[13px]',
+            value === o.value ? (tone === 'light' ? 'text-ink' : 'text-ink') : tone === 'light' ? 'text-ink-3 hover:text-ink-2' : 'text-white/60 hover:text-white',
           )}
         >
           {value === o.value && (
-            <motion.span layoutId={`seg-${id}`} className="absolute inset-0 rounded-[7px] bg-card shadow-card" transition={{ type: 'spring', bounce: 0.15, duration: 0.4 }} />
+            <motion.span
+              layoutId={`seg-${id}`}
+              className={cn('absolute inset-0 rounded-full', tone === 'light' ? 'bg-card shadow-pill' : 'bg-white')}
+              transition={{ type: 'spring', bounce: 0.15, duration: 0.4 }}
+            />
           )}
           <span className="relative inline-flex items-center gap-1.5">{o.label}</span>
         </button>
@@ -172,7 +251,7 @@ export function Segmented<T extends string>({
   )
 }
 
-/* ───────────── Número animado ───────────── */
+/* ───────────── Números ───────────── */
 
 export function NumberTicker({ value, decimals = 0, className, prefix = '', suffix = '' }: { value: number; decimals?: number; className?: string; prefix?: string; suffix?: string }) {
   const mv = useMotionValue(0)
@@ -184,7 +263,6 @@ export function NumberTicker({ value, decimals = 0, className, prefix = '', suff
   return <motion.span className={cn('num', className)}>{text}</motion.span>
 }
 
-/** anima de 0 → valor uma única vez (para KPIs) */
 export function CountUp({ to, decimals = 0, duration = 1.1, className }: { to: number; decimals?: number; duration?: number; className?: string }) {
   const [n, setN] = React.useState(0)
   React.useEffect(() => {
@@ -194,9 +272,7 @@ export function CountUp({ to, decimals = 0, duration = 1.1, className }: { to: n
   return <span className={cn('num', className)}>{n.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</span>
 }
 
-/* ───────────── Anel de progresso ───────────── */
-
-export function Ring({ value, size = 44, stroke = 4, color = 'var(--color-sage-600)', track = 'var(--color-paper-2)', children }: { value: number; size?: number; stroke?: number; color?: string; track?: string; children?: React.ReactNode }) {
+export function Ring({ value, size = 44, stroke = 4, color = 'var(--color-black)', track = 'var(--color-muted)', children }: { value: number; size?: number; stroke?: number; color?: string; track?: string; children?: React.ReactNode }) {
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
   return (
@@ -222,10 +298,29 @@ export function Ring({ value, size = 44, stroke = 4, color = 'var(--color-sage-6
   )
 }
 
+/** Barra segmentada (ref. alocação do app de finanças) */
+export function SegmentBar({ parts, className }: { parts: { value: number; color: string }[]; className?: string }) {
+  const total = parts.reduce((a, p) => a + p.value, 0) || 1
+  return (
+    <div className={cn('flex h-2 w-full gap-1', className)}>
+      {parts.map((p, i) => (
+        <motion.span
+          key={i}
+          className="h-full rounded-full"
+          style={{ background: p.color }}
+          initial={{ width: 0 }}
+          animate={{ width: `${(p.value / total) * 100}%` }}
+          transition={{ duration: 0.8, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
+        />
+      ))}
+    </div>
+  )
+}
+
 /* ───────────── Diversos ───────────── */
 
 export function Kbd({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <kbd className={cn('inline-flex h-5 min-w-5 items-center justify-center rounded-[5px] border border-line-2 bg-card px-1 font-mono text-[10.5px] text-ink-3', className)}>{children}</kbd>
+  return <kbd className={cn('inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-muted px-1.5 text-[10.5px] font-semibold text-ink-3', className)}>{children}</kbd>
 }
 
 export function Divider({ className }: { className?: string }) {
@@ -234,11 +329,10 @@ export function Divider({ className }: { className?: string }) {
 
 export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?: React.ReactNode; title: React.ReactNode; description?: React.ReactNode; actions?: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-4 pb-6 md:flex-row md:items-end md:justify-between">
+    <div className="flex flex-col gap-4 pb-5 md:flex-row md:items-end md:justify-between">
       <div className="min-w-0">
-        {eyebrow && <div className="eyebrow mb-2">{eyebrow}</div>}
-        <h1 className="font-display text-[30px] leading-[1.05] font-medium text-ink md:text-[36px]">{title}</h1>
-        {description && <p className="mt-2 max-w-2xl text-[14px] text-ink-2">{description}</p>}
+        <h1 className="text-[28px] leading-[1.1] font-bold tracking-[-0.03em] text-ink md:text-[32px]">{title}</h1>
+        {(description || eyebrow) && <p className="mt-1.5 max-w-2xl text-[14px] font-medium text-ink-3">{description ?? eyebrow}</p>}
       </div>
       {actions && <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -248,9 +342,29 @@ export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?:
 export function Empty({ icon, title, children }: { icon?: React.ReactNode; title: string; children?: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center">
-      {icon && <div className="mb-1 text-ink-4">{icon}</div>}
-      <div className="text-[14px] font-medium text-ink">{title}</div>
+      {icon && <div className="mb-1 flex size-12 items-center justify-center rounded-full bg-muted text-ink-3">{icon}</div>}
+      <div className="text-[14px] font-bold text-ink">{title}</div>
       {children && <div className="max-w-xs text-[13px] text-ink-3">{children}</div>}
     </div>
+  )
+}
+
+/** Ícone dentro de círculo cinza (ref. logip) */
+export function IconCircle({ children, size = 40, tone = 'muted', className }: { children: React.ReactNode; size?: number; tone?: 'muted' | 'black' | 'lime' | 'white' | 'blue' | 'violet' | 'green' | 'yellow' | 'coral'; className?: string }) {
+  const t = {
+    muted: 'bg-muted text-ink',
+    black: 'bg-black text-white',
+    lime: 'bg-lime text-ink',
+    white: 'bg-card text-ink shadow-pill',
+    blue: 'bg-blue-soft text-blue',
+    violet: 'bg-violet-soft text-violet',
+    green: 'bg-green-soft text-green',
+    yellow: 'bg-yellow-soft text-yellow-ink',
+    coral: 'bg-coral-soft text-coral',
+  }[tone]
+  return (
+    <span className={cn('inline-flex shrink-0 items-center justify-center rounded-full', t, className)} style={{ width: size, height: size }}>
+      {children}
+    </span>
   )
 }
