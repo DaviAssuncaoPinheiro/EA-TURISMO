@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { toast } from 'sonner'
 import { ArrowRight, CalendarDays, Check, Clock, Lightbulb, PawPrint, Undo2 } from 'lucide-react'
-import { Badge, Button, Card, CardHeader, PageHeader, PetAvatar, Segmented, Tip, VetAvatar } from '@/components/ui'
+import { Button, Card, IconCircle, Panel, PetAvatar, Segmented, SegmentBar, Tip, VetAvatar, ViewAll } from '@/components/ui'
 import { CityMap, heatColor, heatIsDark, type MapCtx } from '@/components/map/CityMap'
 import { travelMinutesFromBase } from '@/components/map/geometry'
 import { BAIRROS, ZONE, ZONES, type ZoneId } from '@/data/geo'
@@ -27,6 +27,7 @@ type Plan = Record<string, Record<number, ZoneId[]>>
 const clonePlan = (p: Plan): Plan => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, Object.fromEntries(Object.entries(v).map(([d, z]) => [d, [...z]]))]))
 const coverage = (plan: Plan, z: ZoneId, d: number) => VETS.filter((v) => plan[v.id]?.[d]?.includes(z)).map((v) => v.id)
 const offSchedule = (plan: Plan, z: ZoneId) => DAYS.reduce((a, { d }) => a + (coverage(plan, z, d).length ? 0 : HEATMAP[z][d - 1]), 0)
+const joinE = (xs: string[]) => (xs.length > 1 ? xs.slice(0, -1).join(', ') + ' e ' + xs[xs.length - 1] : xs[0] ?? '')
 
 const HEAT_MAX = Math.max(...Object.values(HEATMAP).flat())
 const TOTAL_VISITS = Object.values(HEATMAP).flat().reduce((a, b) => a + b, 0)
@@ -64,7 +65,7 @@ export default function Regioes() {
     setApplied(true)
     setZone(SUGGEST.target)
     toast.success('Escala atualizada', {
-      description: `${VET[SUGGEST.vet].short} cobre Centro-Sul e Sul às ${SUGGEST.days.map((d) => DAYS[d - 1].plural).join(' e ')}. Novos pedidos do Sul já entram nesses dias.`,
+      description: `${VET[SUGGEST.vet].short} cobre Centro-Sul e Sul às ${joinE(SUGGEST.days.map((d) => DAYS[d - 1].plural))}.`,
     })
   }
   const undo = () => {
@@ -78,25 +79,26 @@ export default function Regioes() {
       {ZONES.map((z) => {
         const vets = coverage(plan, z.id, day)
         const [x, y0] = z.label
-        const y = y0 + 44 * u
+        const y = y0 + 48 * u
         if (!vets.length) {
           if (!heat[z.id]) return null
-          const w = 64 * u
+          const w = 74 * u
           return (
             <g key={z.id} transform={`translate(${x} ${y})`}>
-              <rect x={-w / 2} y={-8 * u} width={w} height={16 * u} rx={8 * u} fill="var(--color-terra-50)" stroke="var(--color-terra-500)" strokeWidth={1 * u} strokeDasharray={`${2.5 * u} ${2 * u}`} />
-              <text y={3.3 * u} textAnchor="middle" fontSize={9 * u} fontWeight={600} fill="var(--color-terra-700)">
-                sem escala
+              <rect x={-w / 2} y={-10 * u} width={w} height={20 * u} rx={10 * u} fill="#fff" />
+              <circle cx={-w / 2 + 11 * u} r={3 * u} fill="var(--color-coral)" />
+              <text x={5 * u} y={3.6 * u} textAnchor="middle" fontSize={10 * u} fontWeight={700} fill="var(--color-coral)">
+                Sem escala
               </text>
             </g>
           )
         }
         return (
-          <g key={z.id} transform={`translate(${x - ((vets.length - 1) * 15 * u) / 2} ${y})`}>
+          <g key={z.id} transform={`translate(${x - ((vets.length - 1) * 16 * u) / 2} ${y})`}>
             {vets.map((id, i) => (
-              <g key={id} transform={`translate(${i * 15 * u} 0)`}>
-                <circle r={9.5 * u} fill={VET[id].color} stroke="#fffcf6" strokeWidth={1.8 * u} />
-                <text y={3 * u} textAnchor="middle" fontSize={7.5 * u} fontWeight={700} fill="#fff">
+              <g key={id} transform={`translate(${i * 16 * u} 0)`}>
+                <circle r={10.5 * u} fill={VET[id].color} stroke="#fff" strokeWidth={2.2 * u} />
+                <text y={3.2 * u} textAnchor="middle" fontSize={8 * u} fontWeight={800} fill="#fff">
                   {VET[id].initials}
                 </text>
               </g>
@@ -108,34 +110,30 @@ export default function Regioes() {
   )
 
   return (
-    <div className="mx-auto w-full max-w-[1320px] px-4 py-6 md:px-8 md:py-8">
-      <PageHeader
-        eyebrow={`Últimas 8 semanas · ${TOTAL_VISITS} visitas`}
-        title="Mapa e regiões"
-        description="Onde está a demanda e quem cobre cada zona de Manaus em cada dia da semana."
-        actions={
-          <Button variant="outline" onClick={() => nav('/agenda')}>
-            <CalendarDays className="size-4" strokeWidth={1.8} /> Agenda por região
-          </Button>
-        }
-      />
+    <div className="mx-auto w-full max-w-[1400px] px-4 pt-2 pb-28 md:px-6 md:pb-8">
+      <div className="flex flex-col gap-3 pb-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-[28px] leading-[1.1] font-bold tracking-[-0.03em] text-ink md:text-[32px]">Regiões</h1>
+          <p className="mt-1.5 text-[14px] font-medium text-ink-3">{TOTAL_VISITS} visitas nas últimas 8 semanas</p>
+        </div>
+        <Button variant="outline" onClick={() => nav('/agenda')} className="self-start sm:self-auto">
+          <CalendarDays className="size-4" strokeWidth={2} /> Agenda por região
+        </Button>
+      </div>
 
-      <Insight applied={applied} onApply={apply} onUndo={undo} onShow={() => tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
-
-      <div className="mt-4 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_372px]">
-        <Card className="overflow-hidden">
-          <div className="flex flex-col gap-3 px-5 pt-4 pb-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <div className="eyebrow mb-1">Mapa de calor</div>
-              <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ink">
-                Visitas por zona às <span className="font-display text-[17px] font-medium italic">{dayInfo.plural}</span>
-              </h3>
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <div className="flex min-w-0 flex-col gap-4">
+        <Card className="p-2">
+          <div className="flex flex-col gap-3 px-2 pt-2 pb-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <h2 className="text-[17px] font-bold tracking-[-0.02em] text-ink">Mapa de calor</h2>
+              <p className="mt-0.5 text-[12.5px] font-medium text-ink-3">Visitas por zona às {dayInfo.plural}</p>
             </div>
             <div className="no-scrollbar -mx-1 overflow-x-auto px-1">
               <Segmented value={String(day)} onChange={(v) => setDay(Number(v))} options={DAYS.map((x) => ({ value: String(x.d), label: x.short }))} />
             </div>
           </div>
-          <div className="border-y border-line">
+          <div className="overflow-hidden rounded-[20px] bg-surface">
             <CityMap
               aspect={1000 / 680}
               heat={heat}
@@ -143,118 +141,113 @@ export default function Regioes() {
               selectedZone={zone}
               onSelectZone={setZone}
               bairroHighlight={zone ? BAIRROS.filter((b) => b.zone === zone).map((b) => b.id) : undefined}
-              showBairros="auto"
+              showBairros={false}
               overlay={overlay}
               ariaLabel={`Mapa de calor das visitas às ${dayInfo.plural}`}
             />
           </div>
-          <div className="flex flex-col gap-3 px-5 py-3 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-3">
-              <span className="eyebrow shrink-0">Visitas / 8 sem.</span>
-              <span className="num font-mono text-[11px] text-ink-3">0</span>
-              <span className="h-2 w-36 rounded-full" style={{ background: `linear-gradient(90deg, ${[0, 0.25, 0.5, 0.75, 1].map((t) => heatColor(t)).join(',')})` }} />
-              <span className="num font-mono text-[11px] text-ink-3">{HEAT_MAX}</span>
+          <div className="flex flex-col gap-3 px-2 pt-3 pb-1.5 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="num text-[12px] font-semibold text-ink-3">0</span>
+              <span className="h-2 w-32 rounded-full" style={{ background: `linear-gradient(90deg, ${[0, 0.25, 0.5, 0.75, 1].map((t) => heatColor(t)).join(',')})` }} />
+              <span className="num text-[12px] font-semibold text-ink-3">{HEAT_MAX} visitas</span>
             </div>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[12px] text-ink-2">
-              <span className="eyebrow">Escala · {dayInfo.long}</span>
+            <div className="flex flex-wrap items-center gap-1.5">
               {VETS.map((v) => {
                 const zs = plan[v.id][day] ?? []
                 return (
-                  <span key={v.id} className="inline-flex items-center gap-1.5">
-                    <VetAvatar vetId={v.id} size={18} />
-                    <span className={cn(!zs.length && 'text-ink-4')}>{zs.length ? zs.map((z) => ZONE[z].short).join(' + ') : 'sem rota'}</span>
+                  <span key={v.id} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-muted pr-3 pl-1 text-[12px] font-semibold text-ink-2">
+                    <VetAvatar vetId={v.id} size={24} />
+                    <span className={cn(!zs.length && 'text-ink-4')}>{zs.length ? zs.map((z) => ZONE[z].short).join(' e ') : 'Folga'}</span>
                   </span>
                 )
               })}
             </div>
           </div>
         </Card>
+        <CoverageTable tableRef={tableRef} plan={plan} day={day} onDay={setDay} zone={zone} onZone={setZone} />
+        </div>
 
-        <ZonePanel zone={zone} onZone={setZone} plan={plan} day={day} />
+        <div className="flex flex-col gap-4">
+          <Insight applied={applied} onApply={apply} onUndo={undo} onShow={() => tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
+          <ZonePanel zone={zone} onZone={setZone} plan={plan} day={day} />
+        </div>
       </div>
-
-      <CoverageTable tableRef={tableRef} plan={plan} day={day} onDay={setDay} zone={zone} onZone={setZone} applied={applied} />
     </div>
   )
 }
 
-/* ───────────────────────── insight ───────────────────────── */
+/* ───────────────────────── sugestão ───────────────────────── */
 
 function Insight({ applied, onApply, onUndo, onShow }: { applied: boolean; onApply: () => void; onUndo: () => void; onShow: () => void }) {
   const vet = VET[SUGGEST.vet]
-  const daysTxt = SUGGEST.days.map((d) => DAYS[d - 1].long).join(' e ')
-  const offDays = DAYS.filter(({ d }) => !coverage(WEEK_PLAN, SUGGEST.target, d).length && HEATMAP[SUGGEST.target][d - 1] > 0).map((x) => x.long)
+  const plurals = joinE(SUGGEST.days.map((d) => DAYS[d - 1].plural))
   const h = Math.floor(SUGGEST.savedMin / 60)
   const m = Math.round((SUGGEST.savedMin % 60) / 10) * 10
   return (
-    <Card className={cn('relative overflow-hidden transition-colors duration-300', applied ? 'border-ok/30 bg-ok-bg/40' : 'border-terra-200')}>
-      {!applied && <span className="absolute inset-y-0 left-0 w-1 bg-terra-500" />}
-      <AnimatePresence mode="wait" initial={false}>
-        {!applied ? (
-          <motion.div key="s" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="grid gap-4 p-4 pl-5 md:p-5 md:pl-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-            <div className="flex gap-3.5">
-              <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-terra-100 text-terra-700">
-                <Lightbulb className="size-[18px]" strokeWidth={1.8} />
-              </span>
-              <div className="min-w-0">
-                <div className="eyebrow mb-1">Sugestão para a escala</div>
-                <h2 className="font-display text-[20px] leading-tight font-medium text-ink md:text-[22px]">
-                  Zona Sul teve {SUGGEST.total} visitas em dias sem veterinário escalado
-                </h2>
-                <p className="mt-1.5 max-w-[760px] text-[13.5px] leading-relaxed text-ink-2">
-                  Nas últimas 8 semanas, os encaixes de {offDays.join(', ').replace(/, ([^,]*)$/, ' e $1')} viraram saídas avulsas. A {vet.short} já está na Centro-Sul, vizinha, às {SUGGEST.days.map((d) => DAYS[d - 1].plural).join(' e ')}: incluir a Zona Sul nesses dias absorve{' '}
-                  <b className="font-semibold text-ink">
-                    {SUGGEST.absorbed} dos {SUGGEST.total}
-                  </b>{' '}
-                  encaixes.
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-4 pl-[50px] lg:pl-0">
-              <div className="leading-tight">
-                <div className="num font-display text-[26px] font-medium text-ink">
-                  −{h}h{m ? String(m).padStart(2, '0') : ''}
-                </div>
-                <div className="text-[11.5px] text-ink-3">de trânsito a cada 8 semanas</div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="ghost" onClick={onShow}>
-                  Ver na escala
-                </Button>
-                <Button variant="accent" onClick={onApply}>
-                  Aplicar à escala <ArrowRight className="size-4" />
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div key="a" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:p-5">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-ok text-white">
-              <Check className="size-[18px]" strokeWidth={2.2} />
+    <AnimatePresence mode="wait" initial={false}>
+      {!applied ? (
+        <motion.div key="s" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25, ease: EASE }} className="rounded-[24px] bg-lime p-5">
+          <div className="flex items-center gap-2.5">
+            <IconCircle size={34} tone="black">
+              <Lightbulb className="size-4 text-lime" strokeWidth={2} />
+            </IconCircle>
+            <span className="text-[13px] font-bold text-lime-ink">Sugestão para a escala</span>
+          </div>
+          <h2 className="mt-3.5 text-[19px] leading-snug font-bold tracking-[-0.02em] text-ink">Zona Sul teve {SUGGEST.total} visitas fora da escala</h2>
+          <p className="mt-1.5 text-[13.5px] leading-relaxed font-medium text-lime-ink">
+            {vet.short} já atende a Centro-Sul às {plurals}. Incluir a Zona Sul nesses dias cobre {SUGGEST.absorbed} dessas visitas.
+          </p>
+          <div className="mt-4 flex items-baseline gap-2">
+            <span className="num text-[26px] leading-none font-bold tracking-[-0.02em] text-ink">
+              {h}h{m ? String(m).padStart(2, '0') : ''}
             </span>
-            <div className="min-w-0 flex-1">
-              <div className="text-[14px] font-semibold text-ink">Escala atualizada</div>
-              <div className="text-[13px] text-ink-2">
-                {vet.short} agora cobre Centro-Sul + Sul na {daysTxt}. Encaixes fora da escala no Sul: {SUGGEST.total} → {SUGGEST.total - SUGGEST.absorbed}.
-              </div>
-            </div>
-            <Button variant="ghost" size="sm" onClick={onUndo}>
-              <Undo2 className="size-3.5" /> Desfazer
+            <span className="text-[12.5px] font-semibold text-lime-ink">a menos de trânsito a cada 8 semanas</span>
+          </div>
+          <div className="mt-4 flex gap-2">
+            <Button variant="primary" onClick={onApply} className="flex-1">
+              Aplicar à escala <ArrowRight className="size-4" />
             </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </Card>
+            <Button variant="ghost" onClick={onShow} className="bg-white/45 text-ink hover:bg-white/70">
+              Ver escala
+            </Button>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div key="a" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25, ease: EASE }} className="rounded-[24px] bg-black p-5 text-white">
+          <div className="flex items-center gap-2.5">
+            <IconCircle size={34} tone="lime">
+              <Check className="size-4" strokeWidth={2.4} />
+            </IconCircle>
+            <span className="text-[15px] font-bold">Escala atualizada</span>
+            <button onClick={onUndo} className="ml-auto inline-flex h-8 items-center gap-1 rounded-full bg-white/10 px-3 text-[12.5px] font-semibold text-white/80 hover:bg-white/15 hover:text-white">
+              <Undo2 className="size-3.5" /> Desfazer
+            </button>
+          </div>
+          <p className="mt-3 text-[13.5px] leading-relaxed font-medium text-white/65">
+            {vet.short} cobre Centro-Sul e Sul às {plurals}.
+          </p>
+          <div className="mt-3 flex items-baseline gap-2">
+            <span className="num text-[14px] font-semibold text-white/40 line-through">{SUGGEST.total}</span>
+            <span className="num text-[26px] leading-none font-bold text-lime">{SUGGEST.total - SUGGEST.absorbed}</span>
+            <span className="text-[12.5px] font-semibold text-white/60">visitas fora da escala no Sul</span>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 
-/* ───────────────────────── painel de zonas ───────────────────────── */
+/* ───────────────────────── zonas ───────────────────────── */
 
 function ZonePanel({ zone, onZone, plan, day }: { zone: ZoneId | null; onZone: (z: ZoneId | null) => void; plan: Plan; day: number }) {
   return (
-    <Card className="overflow-hidden">
-      <CardHeader eyebrow="Zonas" title="Pacientes, demanda e cobertura" />
-      <ul className="border-t border-line">
+    <Panel className="bg-muted">
+      <div className="px-3 pt-3 pb-3">
+        <h2 className="text-[17px] font-bold tracking-[-0.02em] text-ink">Zonas</h2>
+        <p className="mt-0.5 text-[12.5px] font-medium text-ink-3">Visitas por dia da semana</p>
+      </div>
+      <ul className="flex flex-col gap-2">
         {ZONES.map((z) => {
           const sel = zone === z.id
           const pets = petsByZone(z.id)
@@ -262,29 +255,25 @@ function ZonePanel({ zone, onZone, plan, day }: { zone: ZoneId | null; onZone: (
           const days = DAYS.filter(({ d }) => coverage(plan, z.id, d).length)
           const off = offSchedule(plan, z.id)
           return (
-            <li key={z.id} className="border-b border-line last:border-b-0">
-              <button onClick={() => onZone(sel ? null : z.id)} className={cn('relative flex w-full items-center gap-3 px-5 py-3 text-left transition-colors', sel ? 'bg-card-2' : 'hover:bg-card-2')}>
-                <span className={cn('absolute inset-y-2 left-0 w-[3px] rounded-r-full transition-opacity', sel ? 'opacity-100' : 'opacity-0')} style={{ background: z.hex }} />
-                <span className="size-2.5 shrink-0 rounded-full" style={{ background: z.hex }} />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-semibold text-ink">{z.name}</span>
-                  <span className="mt-0.5 block text-[12px] text-ink-3">
-                    {days.length ? days.map((x) => x.short).join(' · ') : 'sem dia fixo'}
-                    {off > 0 && <span className="text-terra-700"> · {off} encaixes</span>}
-                  </span>
+            <li key={z.id} className={cn('rounded-[20px] bg-card shadow-card transition-shadow', sel ? 'ring-2 ring-black' : 'hover:shadow-lift')}>
+              <button onClick={() => onZone(sel ? null : z.id)} className="block w-full p-4 text-left">
+                <span className="flex items-center gap-2.5">
+                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: z.hex }} />
+                  <span className="min-w-0 flex-1 truncate text-[14px] font-bold text-ink">{z.name}</span>
+                  <span className="num text-[14px] font-bold text-ink">{visits}</span>
+                  <span className="text-[12px] font-medium text-ink-3">visitas</span>
                 </span>
-                <span className="text-right leading-tight">
-                  <span className="num block text-[13px] font-medium text-ink">{visits}</span>
-                  <span className="block text-[11px] text-ink-3">visitas</span>
-                </span>
-                <span className="w-9 text-right leading-tight">
-                  <span className="num block text-[13px] font-medium text-ink">{pets.length}</span>
-                  <span className="block text-[11px] text-ink-3">pets</span>
+                <SegmentBar className="mt-3" parts={DAYS.map(({ d }) => ({ value: HEATMAP[z.id][d - 1], color: coverage(plan, z.id, d).length ? z.hex : 'var(--color-coral-soft)' }))} />
+                <span className="mt-2.5 flex items-center gap-2 text-[12px] font-medium text-ink-3">
+                  <span className="truncate">{days.length ? days.map((x) => x.short).join(', ') : 'Sem dia fixo'}</span>
+                  <span className="text-ink-4">·</span>
+                  <span className="num shrink-0">{pets.length} pets</span>
+                  {off > 0 && <span className="num ml-auto shrink-0 font-semibold text-coral">{off} fora da escala</span>}
                 </span>
               </button>
               <AnimatePresence initial={false}>
                 {sel && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3, ease: EASE }} className="overflow-hidden bg-card-2">
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.3, ease: EASE }} className="overflow-hidden">
                     <ZoneDetail z={z.id} plan={plan} day={day} />
                   </motion.div>
                 )}
@@ -293,7 +282,7 @@ function ZonePanel({ zone, onZone, plan, day }: { zone: ZoneId | null; onZone: (
           )
         })}
       </ul>
-    </Card>
+    </Panel>
   )
 }
 
@@ -302,88 +291,87 @@ function ZoneDetail({ z, plan, day }: { z: ZoneId; plan: Plan; day: number }) {
   const bairros = BAIRROS.filter((b) => b.zone === z).map((b) => ({ ...b, n: pets.filter((p) => TUTOR[p.tutorId].bairro === b.id).length }))
   const visits = HEATMAP[z].reduce((a, b) => a + b, 0)
   return (
-    <div className="px-5 pt-1 pb-4">
-      <div className="grid grid-cols-3 gap-px overflow-hidden rounded-lg border border-line bg-line">
+    <div className="border-t border-line px-4 pt-3.5 pb-4">
+      <div className="grid grid-cols-3 gap-1.5">
         {[
-          { k: 'Pacientes ativos', v: String(pets.length), icon: PawPrint },
-          { k: 'Visitas / semana', v: (visits / 8).toLocaleString('pt-BR', { maximumFractionDigits: 1 }), icon: CalendarDays },
-          { k: 'Deslocamento', v: `${travelMinutesFromBase(z)} min`, icon: Clock },
+          { k: 'Pacientes', v: String(pets.length), icon: PawPrint },
+          { k: 'Por semana', v: (visits / 8).toLocaleString('pt-BR', { maximumFractionDigits: 1 }), icon: CalendarDays },
+          { k: 'Da base', v: `${travelMinutesFromBase(z)} min`, icon: Clock },
         ].map((s) => (
-          <div key={s.k} className="bg-card px-3 py-2.5">
-            <div className="num font-display text-[20px] leading-none font-medium text-ink">{s.v}</div>
-            <div className="mt-1 text-[11px] leading-tight text-ink-3">{s.k}</div>
+          <div key={s.k} className="rounded-[14px] bg-surface px-3 py-2.5">
+            <s.icon className="size-3.5 text-ink-3" strokeWidth={2} />
+            <div className="num mt-1.5 text-[17px] leading-none font-bold text-ink">{s.v}</div>
+            <div className="mt-1 text-[11.5px] font-medium text-ink-3">{s.k}</div>
           </div>
         ))}
       </div>
 
-      <div className="mt-3.5">
-        <div className="eyebrow mb-1.5">Quem atende, por dia</div>
-        <div className="grid grid-cols-6 gap-1">
-          {DAYS.map(({ d, short }) => {
-            const vets = coverage(plan, z, d)
-            const demand = HEATMAP[z][d - 1]
-            const gap = !vets.length && demand > 0
-            return (
-              <Tip key={d} content={vets.length ? `${short}: ${vets.map((v) => VET[v].short).join(', ')} · ${demand} visitas em 8 sem.` : gap ? `${short}: ninguém escalado, ${demand} encaixes em 8 sem.` : `${short}: sem demanda`}>
-                <div className={cn('flex h-[52px] flex-col items-center justify-between rounded-md border py-1.5', gap ? 'border-dashed border-terra-200 bg-terra-50' : 'border-line bg-card', d === day && 'ring-1 ring-sage-700')}>
-                  <span className={cn('font-mono text-[10px] uppercase', d === day ? 'text-ink' : 'text-ink-3')}>{short}</span>
-                  {vets.length ? (
-                    <span className="flex -space-x-1">
-                      {vets.map((v) => (
-                        <VetAvatar key={v} vetId={v} size={18} className="ring-2 ring-card" />
-                      ))}
-                    </span>
-                  ) : (
-                    <span className={cn('num text-[11px] font-medium', gap ? 'text-terra-700' : 'text-ink-4')}>{gap ? `+${demand}` : '—'}</span>
-                  )}
-                </div>
-              </Tip>
-            )
-          })}
-        </div>
-      </div>
-
-      <div className="mt-3.5">
-        <div className="eyebrow mb-1.5">Bairros</div>
-        <div className="flex flex-wrap gap-1.5">
-          {bairros.map((b) => (
-            <span key={b.id} className={cn('inline-flex h-6 items-center gap-1 rounded-full border px-2 text-[12px]', b.n ? 'border-line-2 bg-card text-ink' : 'border-line text-ink-3')}>
-              {b.name}
-              {b.n > 0 && <span className="num font-mono text-[10.5px] text-ink-3">{b.n}</span>}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-3.5">
-        <div className="eyebrow mb-1.5">Pacientes</div>
-        {pets.length ? (
-          <ul className="flex flex-col">
-            {pets.map((p) => (
-              <li key={p.id}>
-                <Link to={`/pacientes/${p.id}`} className="group -mx-2 flex items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-paper-2">
-                  <PetAvatar pet={p} size={26} />
-                  <span className="min-w-0 flex-1 truncate text-[13px]">
-                    <span className="font-medium text-ink">{p.name}</span>
-                    <span className="text-ink-3">
-                      {' '}
-                      · {p.breed} · {TUTOR[p.tutorId].name}
-                    </span>
+      <div className="mt-4 text-[12.5px] font-bold text-ink">Quem atende</div>
+      <div className="mt-2 grid grid-cols-6 gap-1">
+        {DAYS.map(({ d, short }) => {
+          const vets = coverage(plan, z, d)
+          const demand = HEATMAP[z][d - 1]
+          const gap = !vets.length && demand > 0
+          return (
+            <Tip key={d} content={vets.length ? `${short}: ${vets.map((v) => VET[v].short).join(', ')}, ${demand} visitas em 8 semanas` : gap ? `${short}: ninguém escalado, ${demand} visitas em 8 semanas` : `${short}: sem demanda`}>
+              <div className={cn('flex h-[54px] flex-col items-center justify-between rounded-[12px] py-1.5', gap ? 'bg-coral-soft' : 'bg-surface', d === day && 'ring-2 ring-black')}>
+                <span className={cn('text-[11px] font-semibold', d === day ? 'text-ink' : 'text-ink-3')}>{short}</span>
+                {vets.length ? (
+                  <span className="flex -space-x-1.5">
+                    {vets.map((v) => (
+                      <VetAvatar key={v} vetId={v} size={20} className="ring-2 ring-surface" />
+                    ))}
                   </span>
-                  <ArrowRight className="size-3.5 text-ink-4 opacity-0 transition-opacity group-hover:opacity-100" />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="text-[12.5px] text-ink-3">Nenhum paciente cadastrado nesta zona ainda.</div>
+                ) : (
+                  <span className={cn('num text-[12px] font-bold', gap ? 'text-coral' : 'text-ink-4')}>{gap ? `+${demand}` : '0'}</span>
+                )}
+              </div>
+            </Tip>
+          )
+        })}
+      </div>
+
+      <div className="mt-4 text-[12.5px] font-bold text-ink">Bairros</div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {bairros.map((b) => (
+          <span key={b.id} className={cn('inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold', b.n ? 'bg-muted text-ink' : 'bg-surface text-ink-3')}>
+            {b.name}
+            {b.n > 0 && <span className="num text-ink-3">{b.n}</span>}
+          </span>
+        ))}
+      </div>
+
+      <div className="mt-4 flex items-center justify-between">
+        <span className="text-[12.5px] font-bold text-ink">Pacientes</span>
+        {pets.length > 5 && (
+          <Link to="/pacientes" className="text-[12px] font-semibold text-ink-3 hover:text-ink">
+            Ver todos
+          </Link>
         )}
       </div>
+      {pets.length ? (
+        <ul className="mt-1 flex flex-col">
+          {pets.slice(0, 5).map((p) => (
+            <li key={p.id}>
+              <Link to={`/pacientes/${p.id}`} className="group -mx-2 flex items-center gap-2.5 rounded-[12px] px-2 py-1.5 hover:bg-surface">
+                <PetAvatar pet={p} size={28} />
+                <span className="min-w-0 flex-1 truncate text-[13px]">
+                  <span className="font-semibold text-ink">{p.name}</span>
+                  <span className="font-medium text-ink-3"> {p.breed}</span>
+                </span>
+                <ArrowRight className="size-3.5 text-ink-4 opacity-0 transition-opacity group-hover:opacity-100" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <div className="mt-1 text-[12.5px] font-medium text-ink-3">Nenhum paciente nesta zona ainda.</div>
+      )}
     </div>
   )
 }
 
-/* ───────────────────────── tabela cobertura × demanda ───────────────────────── */
+/* ───────────────────────── escala da semana ───────────────────────── */
 
 function CoverageTable({
   tableRef,
@@ -392,7 +380,6 @@ function CoverageTable({
   onDay,
   zone,
   onZone,
-  applied,
 }: {
   tableRef: React.RefObject<HTMLDivElement>
   plan: Plan
@@ -400,90 +387,92 @@ function CoverageTable({
   onDay: (d: number) => void
   zone: ZoneId | null
   onZone: (z: ZoneId | null) => void
-  applied: boolean
 }) {
+  const nav = useNavigate()
   const totalOff = ZONES.reduce((a, z) => a + offSchedule(plan, z.id), 0)
   return (
-    <div ref={tableRef} className="mt-4">
-    <Card className="overflow-hidden">
-      <CardHeader
-        eyebrow="Escala × demanda"
-        title="Quem cobre cada zona, e onde sobram encaixes"
-        action={
-          <Badge tone={applied ? 'ok' : 'terra'}>
-            <span className="num">{totalOff}</span> encaixes fora da escala
-          </Badge>
-        }
-      />
-      <div className="no-scrollbar overflow-x-auto border-t border-line">
-        <table className="w-full min-w-[640px] border-collapse text-[12.5px]">
-          <thead>
-            <tr className="bg-card-2">
-              <th className="eyebrow w-[180px] px-5 py-2 text-left font-normal">Zona</th>
-              {DAYS.map(({ d, short }) => (
-                <th key={d} className="px-1 py-1.5 font-normal">
-                  <button onClick={() => onDay(d)} className={cn('h-7 w-full rounded-md font-mono text-[10.5px] tracking-[0.08em] uppercase transition-colors', d === day ? 'bg-sage-900 text-paper' : 'text-ink-3 hover:bg-paper-2 hover:text-ink')}>
-                    {short}
-                  </button>
-                </th>
-              ))}
-              <th className="eyebrow w-[110px] px-5 py-2 text-right font-normal">Encaixes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ZONES.map((z) => {
-              const off = offSchedule(plan, z.id)
-              const sel = zone === z.id
-              return (
-                <tr key={z.id} onClick={() => onZone(sel ? null : z.id)} className={cn('cursor-pointer border-t border-line transition-colors', sel ? 'bg-card-2' : 'hover:bg-card-2/70')}>
-                  <td className="px-5 py-2">
-                    <span className="flex items-center gap-2">
-                      <span className="size-2.5 rounded-full" style={{ background: z.hex }} />
-                      <span className="font-medium text-ink">{z.name}</span>
-                    </span>
-                  </td>
-                  {DAYS.map(({ d }) => {
-                    const n = HEATMAP[z.id][d - 1]
-                    const vets = coverage(plan, z.id, d)
-                    const gap = !vets.length && n > 0
-                    const t = n / HEAT_MAX
-                    return (
-                      <td key={d} className={cn('px-1 py-1.5', d === day && 'bg-sage-50/70')}>
-                        <motion.div
-                          layout
-                          className={cn('flex h-10 items-center justify-between gap-1 rounded-md px-2', gap && 'ring-1 ring-terra-500/60 ring-inset')}
-                          style={{ background: gap ? 'var(--color-terra-50)' : heatColor(t * 0.85) }}
-                        >
-                          <span className={cn('num font-display text-[15px] font-medium', gap ? 'text-terra-700' : heatIsDark(t * 0.85) ? 'text-paper' : 'text-ink')}>{n}</span>
-                          <span className="flex -space-x-1">
-                            <AnimatePresence initial={false}>
-                              {vets.map((v) => (
-                                <motion.span key={v} initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.3, ease: EASE }}>
-                                  <VetAvatar vetId={v} size={18} className="ring-2 ring-card" />
-                                </motion.span>
-                              ))}
-                            </AnimatePresence>
-                          </span>
-                        </motion.div>
-                      </td>
-                    )
-                  })}
-                  <td className="px-5 py-2 text-right">
-                    <span className={cn('num font-medium', off ? 'text-terra-700' : 'text-ink-4')}>{off || '—'}</span>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-line px-5 py-2.5 text-[12px] text-ink-3">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="size-3 rounded-[3px] ring-1 ring-terra-500/60 ring-inset" style={{ background: 'var(--color-terra-50)' }} /> demanda sem veterinário escalado
-        </span>
-        <span>Números: visitas nas últimas 8 semanas, por dia da semana.</span>
-      </div>
-    </Card>
+    <div ref={tableRef} className="scroll-mt-4">
+      <Card className="p-2">
+        <div className="flex items-center justify-between gap-3 px-2 pt-2 pb-3">
+          <div className="min-w-0">
+            <h2 className="text-[17px] font-bold tracking-[-0.02em] text-ink">Escala da semana</h2>
+            <p className="mt-0.5 text-[12.5px] font-medium text-ink-3">
+              <span className="num font-semibold text-coral">{totalOff}</span> visitas fora da escala em 8 semanas
+            </p>
+          </div>
+          <ViewAll onClick={() => nav('/agenda')}>Agenda</ViewAll>
+        </div>
+        <div className="no-scrollbar overflow-x-auto">
+          <table className="w-full min-w-[640px] border-separate border-spacing-1 text-[12.5px]">
+            <thead>
+              <tr>
+                <th className="w-[170px] px-3 text-left text-[12px] font-semibold text-ink-3">Zona</th>
+                {DAYS.map(({ d, short }) => (
+                  <th key={d} className="font-normal">
+                    <button onClick={() => onDay(d)} className={cn('h-8 w-full rounded-full text-[12px] font-semibold transition-colors', d === day ? 'bg-black text-white' : 'text-ink-3 hover:bg-muted hover:text-ink')}>
+                      {short}
+                    </button>
+                  </th>
+                ))}
+                <th className="w-[96px] px-3 text-right text-[12px] font-semibold text-ink-3">Fora</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ZONES.map((z) => {
+                const off = offSchedule(plan, z.id)
+                const sel = zone === z.id
+                return (
+                  <tr key={z.id} onClick={() => onZone(sel ? null : z.id)} className="group cursor-pointer">
+                    <td className={cn('rounded-[12px] px-3 transition-colors', sel ? 'bg-muted' : 'group-hover:bg-surface')}>
+                      <span className="flex items-center gap-2">
+                        <span className="size-2.5 rounded-full" style={{ background: z.hex }} />
+                        <span className="font-semibold text-ink">{z.name}</span>
+                      </span>
+                    </td>
+                    {DAYS.map(({ d }) => {
+                      const n = HEATMAP[z.id][d - 1]
+                      const vets = coverage(plan, z.id, d)
+                      const gap = !vets.length && n > 0
+                      const t = n / HEAT_MAX
+                      return (
+                        <td key={d}>
+                          <motion.div
+                            layout
+                            className={cn('flex h-11 items-center justify-between gap-1 rounded-[12px] px-2.5', gap && 'border-[1.5px] border-dashed border-coral/60', d === day && !gap && 'ring-2 ring-black/80 ring-inset')}
+                            style={{ background: gap ? 'var(--color-coral-soft)' : heatColor(t) }}
+                          >
+                            <span className={cn('num text-[14px] font-bold', gap ? 'text-coral' : heatIsDark(t) ? 'text-white' : 'text-ink')}>{n}</span>
+                            <span className="flex -space-x-1.5">
+                              <AnimatePresence initial={false}>
+                                {vets.map((v) => (
+                                  <motion.span key={v} initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.3, ease: EASE }}>
+                                    <VetAvatar vetId={v} size={20} className="ring-2 ring-white" />
+                                  </motion.span>
+                                ))}
+                              </AnimatePresence>
+                            </span>
+                          </motion.div>
+                        </td>
+                      )
+                    })}
+                    <td className="px-3 text-right">
+                      <span className={cn('num text-[14px] font-bold', off ? 'text-coral' : 'text-ink-4')}>{off}</span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-3 pt-2 pb-2 text-[12px] font-medium text-ink-3">
+          <span className="inline-flex items-center gap-2">
+            <span className="size-3.5 rounded-[5px] border-[1.5px] border-dashed border-coral/60 bg-coral-soft" /> Sem veterinário escalado
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <span className="h-2 w-16 rounded-full" style={{ background: `linear-gradient(90deg, ${[0, 0.5, 1].map((t) => heatColor(t)).join(',')})` }} /> Visitas em 8 semanas
+          </span>
+        </div>
+      </Card>
     </div>
   )
 }

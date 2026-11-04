@@ -1,11 +1,11 @@
-// Painel editorial ao lado do celular (só desktop): explica o passo atual da demonstração.
+// Painel ao lado do celular (só desktop): etapa atual, seletor de veterinário e modo sem sinal.
 import * as React from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { ArrowLeft, ArrowRight, Check, RotateCcw, WifiOff } from 'lucide-react'
-import { cn, firstName } from '@/lib/utils'
+import { ArrowLeft, ArrowRight, Lightbulb, RotateCcw, WifiOff } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { LogoMark } from '@/components/AppShell'
-import { VetAvatar } from '@/components/ui'
+import { Segmented, VetAvatar } from '@/components/ui'
 import { PET, VET, VETS } from '@/data/mock'
 import { ZONE } from '@/data/geo'
 import { useDemo } from '@/store'
@@ -13,137 +13,133 @@ import { useCampo } from './campoStore'
 import { petOf, routeKm, vetVisitsToday, visitById, zonesOfDay } from './data'
 import { EASE_OUT, Toggle } from './kit'
 import { depthOf, useVetId } from './nav'
-import { STEPS } from './RecordScreen'
 
 interface Copy {
-  eyebrow: string
   title: string
-  body: React.ReactNode
-  tip?: React.ReactNode
+  line: string
+  tip?: string
   links?: { to: string; label: string }[]
 }
 
-const STEP_COPY: { title: string; body: string; tip?: string }[] = [
-  { title: 'Registrar sem largar o paciente', body: 'O veterinário fala e o celular transcreve. A queixa já vem do pedido de agendamento feito pelo WhatsApp.', tip: 'Toque em “Ditar por voz”: os sintomas citados na fala entram marcados sozinhos.' },
-  { title: 'Exame físico com o polegar', body: 'Botões grandes, referência por espécie e comparação automática com o último peso. Valores fora da faixa ficam em vermelho.', tip: 'Toque no tórax da silhueta para marcar um achado com pino numerado.' },
-  { title: 'Vacina com lote lido pela câmera', body: 'Só aparece o que pede atenção. O lote e a validade vão direto para a carteira digital, sem digitar nada.', tip: 'Ligue “Aplicar agora” numa vacina vencida e veja a leitura da etiqueta.' },
-  { title: 'Receita pronta em segundos', body: 'Medicamentos da lista da clínica, dose e duração em toques. A receita é montada na hora e segue em PDF para o tutor.' },
-  { title: 'O sistema sugere, o veterinário confirma', body: 'Com base no que foi feito na visita, o app propõe os lembretes e já mostra a mensagem que o tutor vai receber, sugerindo o dia em que a equipe estará no bairro.', tip: 'Toque em “Finalizar atendimento” para gravar tudo na ficha.' },
+const STEP_COPY: Copy[] = [
+  { title: 'Anamnese', line: 'Relato por voz, sintomas marcados sozinhos.', tip: 'Toque em Ditar por voz.' },
+  { title: 'Exame físico', line: 'Sinais vitais com referência por espécie.', tip: 'Toque no tórax da silhueta.' },
+  { title: 'Vacinas', line: 'Lote e validade lidos pela câmera.', tip: 'Ligue a vacina atrasada.' },
+  { title: 'Receita', line: 'Dose, frequência e duração em toques.', tip: 'Toque em Adicionar medicamento.' },
+  { title: 'Lembretes', line: 'Sugeridos a partir desta visita.', tip: 'Toque em Finalizar atendimento.' },
 ]
 
-function useCopy(): { copy: Copy; stage: number } {
+type Stage = '0' | '1' | '2' | '3'
+
+function useStage() {
   const loc = useLocation()
   const vetId = useVetId()
-  const vet = VET[vetId]
   const status = useDemo((s) => s.visitStatus)
   const depth = depthOf(loc.pathname)
   const id = loc.pathname.split('/')[3]
   const visit = id ? visitById(id) : undefined
-  const step = useCampo((s) => (id ? s.drafts[id]?.step ?? 0 : 0))
-  const art = vet.short.startsWith('Dra') ? 'da' : 'do'
+  const step = useCampo((s) => (id ? (s.drafts[id]?.step ?? 0) : 0))
+  const vs = vetVisitsToday(vetId)
+  const focus = visit ?? vs.find((v) => status[v.id] === 'em-atendimento') ?? vs.find((v) => status[v.id] === 'a-caminho') ?? vs.find((v) => status[v.id] === 'agendada')
 
+  let copy: Copy
   if (depth === 0) {
-    const vs = vetVisitsToday(vetId)
-    const done = vs.filter((v) => status[v.id] === 'concluida')
-    const current = vs.find((v) => status[v.id] === 'em-atendimento') ?? vs.find((v) => status[v.id] === 'a-caminho')
-    const zones = zonesOfDay(vs).map((z) => ZONE[z].short)
-    return {
-      stage: 0,
-      copy: {
-        eyebrow: 'A rota do dia',
-        title: `Você está vendo o celular ${art} ${vet.short}`,
-        body: (
-          <>
-            São 10h40 em Manaus. {firstName(vet.name)} atende hoje na {zones.join(' e na ')}: {vs.length} visitas em {Math.round(routeKm(vetId))} km, organizadas por bairro para não cruzar a cidade.
-            {done.length > 0 && <> Já concluiu {done.map((v) => petOf(v).name).join(', ')}.</>}
-          </>
-        ),
-        tip: current ? <>Toque no cartão {status[current.id] === 'em-atendimento' ? 'escuro' : 'em destaque'} para abrir {status[current.id] === 'em-atendimento' ? 'o atendimento em andamento' : 'a visita'} de {petOf(current).name}.</> : 'Toque numa parada para ver os detalhes da visita.',
-      },
+    copy = { title: 'Rota de hoje', line: `${vs.length} visitas em ${Math.round(routeKm(vetId))} km, agrupadas por zona.`, tip: focus ? `Toque em ${status[focus.id] === 'em-atendimento' ? 'Continuar' : 'Ver visita'} no cartão de ${petOf(focus).name}.` : undefined }
+  } else if (depth === 1 && visit) {
+    const st = status[visit.id]
+    copy = {
+      title: `Visita de ${petOf(visit).name}`,
+      line: 'Alertas, tutor e endereço em uma tela.',
+      tip: st === 'agendada' ? 'Toque em Estou a caminho.' : st === 'em-atendimento' ? 'Toque em Continuar atendimento.' : st === 'a-caminho' ? 'Toque em Cheguei e depois em Iniciar.' : undefined,
     }
-  }
-  if (depth === 1 && visit) {
-    const pet = petOf(visit)
-    return {
-      stage: 1,
-      copy: {
-        eyebrow: 'Antes de tocar a campainha',
-        title: `Tudo sobre ${pet.name} em uma tela`,
-        body: 'Alertas clínicos em destaque, temperamento, endereço com complemento e o histórico recente. Ligar, chamar no WhatsApp ou abrir a rota no Maps fica a um toque.',
-        tip: status[visit.id] === 'agendada' ? '“Estou a caminho” avisa o tutor no WhatsApp com a previsão de chegada.' : status[visit.id] === 'em-atendimento' ? 'Toque em “Continuar atendimento” para registrar a consulta.' : undefined,
-      },
-    }
-  }
-  if (depth === 2 && visit) {
-    const c = STEP_COPY[step]
-    return { stage: 2, copy: { eyebrow: `Atendimento · ${STEPS[step]} · ${step + 1} de 5`, title: c.title, body: c.body, tip: c.tip } }
-  }
-  const pet = visit ? petOf(visit) : PET.bob
-  return {
-    stage: 3,
-    copy: {
-      eyebrow: 'Atendimento concluído',
-      title: 'Agora veja o outro lado',
-      body: `O que foi registrado no celular já está no sistema da clínica: evento na linha do tempo de ${pet.name}, peso novo, vacina na carteira e lembretes programados para o tutor.`,
+  } else if (depth === 2 && visit) {
+    copy = STEP_COPY[step]
+  } else {
+    const pet = visit ? petOf(visit) : PET.bob
+    copy = {
+      title: 'Tudo salvo na ficha',
+      line: 'Peso, vacinas e lembretes já aparecem no painel.',
       links: [
-        { to: `/pacientes/${pet.id}`, label: `Abrir a ficha de ${pet.name}` },
-        { to: '/lembretes', label: 'Ver os lembretes criados' },
+        { to: `/pacientes/${pet.id}`, label: `Ficha de ${pet.name}` },
+        { to: '/lembretes', label: 'Lembretes criados' },
       ],
-    },
+    }
   }
+  return { copy, stage: String(Math.min(depth, 3)) as Stage, focus, step, depth }
 }
 
 export function SidePanel({ height }: { height: number }) {
-  const { copy, stage } = useCopy()
+  const { copy, stage, focus, step, depth } = useStage()
   const vetId = useVetId()
   const nav = useNavigate()
   const offline = useDemo((s) => s.offline)
   const setOffline = useDemo((s) => s.setOffline)
   const reset = useDemo((s) => s.reset)
+  const finished = useCampo((s) => s.finished)
+  const q = `?vet=${vetId}`
 
-  const stages = ['Rota do dia', 'Visita', 'Atendimento', 'Concluído']
+  const goStage = (s: Stage) => {
+    const n = Number(s)
+    if (n === 0) return nav(`/campo${q}`, { state: { dir: -1 } })
+    if (!focus) return
+    if (n === 1) return nav(`/campo/visita/${focus.id}${q}`, { state: { dir: n > Number(stage) ? 1 : -1 } })
+    if (n === 2) {
+      useCampo.getState().ensureDraft(focus)
+      return nav(`/campo/visita/${focus.id}/atendimento${q}`, { state: { dir: n > Number(stage) ? 1 : -1 } })
+    }
+    if (finished[focus.id]) nav(`/campo/visita/${focus.id}/concluido${q}`, { state: { dir: 1 } })
+  }
 
   return (
-    <aside className="flex w-[400px] shrink-0 flex-col gap-7 py-2" style={{ height }}>
+    <aside className="flex w-[420px] shrink-0 flex-col gap-3" style={{ height }}>
       <div className="flex items-center justify-between">
-        <Link to="/" className="group inline-flex h-9 items-center gap-1.5 rounded-md pr-3 pl-2 text-[13.5px] font-medium text-ink-2 transition-colors hover:bg-paper-2 hover:text-ink">
-          <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" /> Voltar ao painel
+        <Link to="/" className="group inline-flex h-10 items-center gap-2 rounded-full bg-card pr-4 pl-3 text-[13.5px] font-semibold text-ink shadow-pill transition-colors hover:bg-surface">
+          <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" strokeWidth={2.2} /> Painel
         </Link>
-        <div className="flex items-center gap-2">
-          <LogoMark size={26} />
-          <span className="text-[13px] font-medium text-ink-3">App do veterinário</span>
+        <div className="flex items-center gap-2.5">
+          <span className="text-[13.5px] font-semibold text-ink-2">App do veterinário</span>
+          <LogoMark size={34} />
         </div>
       </div>
 
-      <div className="min-h-0 flex-1">
-        <ol className="mb-5 flex items-center gap-1.5">
-          {stages.map((s, i) => (
-            <li key={s} className="flex items-center gap-2">
-              <span className={cn('flex h-6 items-center gap-1 rounded-full px-2 text-[11.5px] font-semibold whitespace-nowrap transition-colors', i < stage ? 'bg-sage-100 text-sage-800' : i === stage ? 'bg-sage-900 text-paper' : 'bg-paper-2 text-ink-4')}>
-                {i < stage && <Check className="size-3" strokeWidth={3} />}
-                {s}
-              </span>
-              {i < stages.length - 1 && <span className="h-px w-2.5 bg-line-2" />}
-            </li>
-          ))}
-        </ol>
+      {/* etapa atual */}
+      <div className="flex min-h-0 flex-1 flex-col rounded-[28px] bg-card p-6 shadow-card">
+        <Segmented<Stage>
+          value={stage}
+          onChange={goStage}
+          className="w-full [&>button]:flex-1"
+          options={[
+            { value: '0', label: 'Rota' },
+            { value: '1', label: 'Visita' },
+            { value: '2', label: 'Registro' },
+            { value: '3', label: 'Fim' },
+          ]}
+        />
         <AnimatePresence mode="wait">
-          <motion.div key={copy.title} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.3, ease: EASE_OUT }}>
-            <div className="eyebrow mb-2">{copy.eyebrow}</div>
-            <h1 className="font-display text-[38px] leading-[1.04] font-medium text-ink">{copy.title}</h1>
-            <p className="mt-4 text-[15.5px] leading-[1.6] text-ink-2">{copy.body}</p>
+          <motion.div key={copy.title} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25, ease: EASE_OUT }} className="mt-8">
+            {depth === 2 && <div className="mb-1 text-[13px] font-semibold text-ink-3">Etapa {step + 1} de 5</div>}
+            <h1 className="text-[32px] leading-[1.08] font-bold tracking-[-0.035em] text-ink">{copy.title}</h1>
+            <p className="mt-2 text-[15px] leading-snug font-medium text-ink-3">{copy.line}</p>
             {copy.tip && (
-              <div className="mt-5 flex items-start gap-3 rounded-lg border border-terra-200 bg-terra-50 px-4 py-3 text-[14px] leading-snug text-terra-700">
-                <ArrowRight className="mt-0.5 size-4 shrink-0" />
-                <span>{copy.tip}</span>
+              <div className="mt-6 flex items-center gap-3 rounded-[20px] bg-blue-soft px-4 py-3.5">
+                <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-black text-lime">
+                  <Lightbulb className="size-4" strokeWidth={2.2} />
+                </span>
+                <span className="text-[14px] font-semibold text-ink">{copy.tip}</span>
               </div>
             )}
             {copy.links && (
-              <div className="mt-5 flex flex-col gap-2">
+              <div className="mt-6 flex flex-col gap-2">
                 {copy.links.map((l, i) => (
-                  <Link key={l.to} to={l.to} className={cn('group flex h-11 items-center justify-between rounded-lg px-4 text-[14px] font-semibold transition-colors', i === 0 ? 'bg-sage-800 text-paper hover:bg-sage-900' : 'border border-line-2 bg-card text-ink hover:bg-card-2')}>
+                  <Link
+                    key={l.to}
+                    to={l.to}
+                    className={cn('group flex h-12 items-center justify-between rounded-full pr-2 pl-5 text-[14.5px] font-semibold transition-colors', i === 0 ? 'bg-black text-white hover:bg-black-2' : 'bg-muted text-ink hover:bg-muted-2')}
+                  >
                     {l.label}
-                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                    <span className={cn('flex size-8 items-center justify-center rounded-full', i === 0 ? 'bg-lime text-ink' : 'bg-card text-ink')}>
+                      <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" strokeWidth={2.2} />
+                    </span>
                   </Link>
                 ))}
               </div>
@@ -152,59 +148,61 @@ export function SidePanel({ height }: { height: number }) {
         </AnimatePresence>
       </div>
 
-      <div>
-        <div className="eyebrow mb-2">Ver o celular de</div>
-        <div className="flex flex-col gap-1.5">
+      {/* seletor de veterinário */}
+      <div className="rounded-[28px] bg-card p-4 shadow-card">
+        <div className="px-1 pb-3 text-[15px] font-bold tracking-[-0.01em] text-ink">Celular de</div>
+        <div className="grid grid-cols-3 gap-2">
           {VETS.map((v) => {
             const vs = vetVisitsToday(v.id)
-            const zones = zonesOfDay(vs)
             const on = v.id === vetId
             return (
               <button
                 key={v.id}
                 onClick={() => nav(`/campo?vet=${v.id}`, { state: { dir: -1 } })}
-                className={cn('flex items-center gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors', on ? 'border-sage-700 bg-card shadow-card' : 'border-line bg-card/50 hover:border-line-2 hover:bg-card')}
+                className={cn('flex flex-col items-center gap-1.5 rounded-[20px] px-2 pt-3.5 pb-3 text-center transition-colors', on ? 'bg-black text-white' : 'bg-surface text-ink hover:bg-muted')}
               >
-                <VetAvatar vetId={v.id} size={32} />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[14px] font-semibold text-ink">{v.name}</span>
-                  <span className="flex items-center gap-1.5 text-[12.5px] text-ink-3">
-                    {vs.length} visitas ·
-                    {zones.map((z) => (
-                      <span key={z} className="inline-flex items-center gap-1">
-                        <span className="size-1.5 rounded-full" style={{ background: ZONE[z].hex }} />
-                        {ZONE[z].short}
-                      </span>
-                    ))}
-                  </span>
+                <VetAvatar vetId={v.id} size={44} className={cn(on && 'ring-2 ring-lime')} />
+                <span className="w-full truncate text-[13.5px] font-bold">{VET[v.id].short}</span>
+                <span className={cn('num inline-flex h-6 items-center gap-1 rounded-full px-2.5 text-[11.5px] font-semibold', on ? 'bg-white/12 text-white/80' : 'bg-card text-ink-3')}>
+                  {vs.length} visitas
                 </span>
-                {on && <Check className="size-4 text-sage-700" strokeWidth={2.4} />}
               </button>
             )
           })}
         </div>
+        <div className="mt-3 flex flex-wrap gap-1.5 px-1">
+          {zonesOfDay(vetVisitsToday(vetId)).map((z) => (
+            <span key={z} className="inline-flex h-7 items-center gap-1.5 rounded-full bg-muted px-2.5 text-[12px] font-semibold text-ink-2">
+              <span className="size-1.5 rounded-full" style={{ background: ZONE[z].hex }} />
+              {ZONE[z].name}
+            </span>
+          ))}
+        </div>
       </div>
 
-      <div className="flex items-center gap-3 rounded-lg border border-line bg-card px-4 py-3">
-        <WifiOff className="size-[18px] shrink-0 text-ink-3" strokeWidth={1.8} />
+      {/* sem sinal */}
+      <div className="flex items-center gap-3 rounded-[28px] bg-card px-4 py-3.5 shadow-card">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-ink">
+          <WifiOff className="size-[18px]" strokeWidth={2} />
+        </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[14px] font-semibold text-ink">Simular área sem sinal</div>
-          <div className="text-[12.5px] leading-snug text-ink-3">Condomínios e casas sem 4G: o app continua funcionando e sincroniza depois.</div>
+          <div className="text-[14.5px] font-bold text-ink">Sem sinal</div>
+          <div className="text-[12.5px] font-medium text-ink-3">Simula área sem 4G</div>
         </div>
         <Toggle checked={offline} onChange={setOffline} label="Simular área sem sinal" />
       </div>
 
-      <div className="flex items-center justify-between text-[12.5px] text-ink-4">
-        <span>Tudo aqui é simulado. Nenhuma mensagem sai de verdade.</span>
+      <div className="flex items-center justify-between px-2 text-[12.5px] font-medium text-ink-3">
+        <span>Dados simulados</span>
         <button
           onClick={() => {
             reset()
             useCampo.setState({ drafts: {}, arrived: {}, startedAt: {}, finished: {}, pending: 0, syncing: false })
             nav(`/campo?vet=${vetId}`, { state: { dir: -1 } })
           }}
-          className="inline-flex items-center gap-1 rounded px-1.5 py-1 hover:bg-paper-2 hover:text-ink-2"
+          className="inline-flex h-8 items-center gap-1.5 rounded-full bg-card px-3 font-semibold text-ink-2 shadow-pill hover:text-ink"
         >
-          <RotateCcw className="size-3" /> Reiniciar
+          <RotateCcw className="size-3.5" strokeWidth={2.2} /> Reiniciar
         </button>
       </div>
     </aside>

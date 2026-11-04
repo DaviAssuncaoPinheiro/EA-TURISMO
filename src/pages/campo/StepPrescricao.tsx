@@ -1,6 +1,6 @@
 import * as React from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { ChevronRight, Pill, Plus, Search } from 'lucide-react'
+import { ChevronRight, FileText, Pill, Plus, Search } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { LogoMark } from '@/components/AppShell'
 import { CLINIC, TUTOR, VET } from '@/data/mock'
@@ -31,11 +31,11 @@ export function StepPrescricao({ visit, pet, draft, patch }: StepProps) {
   return (
     <div className="pb-2">
       <StepIntro eyebrow="Etapa 4 de 5" title="Prescrição">
-        Escolha o medicamento e toque na dose, frequência e duração. A receita é montada sozinha.
+        Dose, frequência e duração em toques
       </StepIntro>
 
-      <Block title="Medicamentos" hint={draft.meds.length ? `${draft.meds.length} na receita` : 'Nenhum medicamento ainda'} bodyClassName="pb-0">
-        <div className="-mx-4 divide-y divide-line">
+      <Block title="Medicamentos" hint={draft.meds.length ? `${draft.meds.length} na receita` : 'Nenhum ainda'} bodyClassName="px-2 pb-2">
+        <div className="flex flex-col gap-1">
           <AnimatePresence initial={false}>
             {draft.meds.map((m) => {
               const def = MED[m.medId]
@@ -47,35 +47,35 @@ export function StepPrescricao({ visit, pet, draft, patch }: StepProps) {
                       setIsNew(false)
                       setEditing(m)
                     }}
-                    className="flex w-full items-start gap-3 px-4 py-3.5 text-left"
+                    className="flex w-full items-start gap-3 rounded-[22px] px-3 py-3 text-left active:bg-surface"
                   >
-                    <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-sage-100 text-sage-800">
+                    <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-muted text-ink">
                       <Pill className="size-[18px]" strokeWidth={1.9} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex flex-wrap items-center gap-1.5">
-                        <span className="text-[16px] font-semibold text-ink">
-                          {def.name} <span className="font-normal text-ink-2">{def.conc}</span>
+                        <span className="text-[16px] font-bold text-ink">
+                          {def.name} <span className="font-semibold text-ink-3">{def.conc}</span>
                         </span>
-                        {m.keep && <span className="rounded-full bg-info-bg px-2 py-0.5 text-[11.5px] font-semibold text-info">Em uso · manter</span>}
+                        {m.keep && <span className="rounded-full bg-blue-soft px-2 py-0.5 text-[11.5px] font-bold text-blue">Em uso</span>}
                       </span>
-                      <span className="mt-1 flex flex-wrap gap-1">
+                      <span className="mt-1.5 flex flex-wrap gap-1">
                         {[m.dose, m.freq, m.dur].map((t) => (
-                          <span key={t} className="rounded-md bg-paper-2 px-1.5 py-0.5 text-[13px] text-ink-2">
+                          <span key={t} className="rounded-full bg-muted px-2.5 py-1 text-[12.5px] font-semibold text-ink-2">
                             {t}
                           </span>
                         ))}
                       </span>
                     </span>
-                    <ChevronRight className="mt-2.5 size-[18px] shrink-0 text-ink-4" />
+                    <ChevronRight className="mt-3 size-[18px] shrink-0 text-ink-4" />
                   </Pressable>
                 </motion.div>
               )
             })}
           </AnimatePresence>
         </div>
-        <div className="py-3">
-          <Btn tone="outline" className="w-full" onClick={() => setPicking(true)}>
+        <div className="px-1 pt-2 pb-1">
+          <Btn tone="subtle" className="h-[52px] w-full" onClick={() => setPicking(true)}>
             <Plus className="size-5" /> Adicionar medicamento
           </Btn>
         </div>
@@ -83,68 +83,60 @@ export function StepPrescricao({ visit, pet, draft, patch }: StepProps) {
 
       {draft.meds.length > 0 && (
         <>
-          <div className="px-5 pt-6 pb-2 text-[13px] font-semibold tracking-[0.01em] text-ink-3 uppercase">Prévia da receita</div>
-          <div className="paper-grain mx-4 rounded-[6px] border border-line-2 bg-[#fdfaf2] px-5 pt-4 pb-5 shadow-lift">
-            <div className="flex items-center gap-2.5 border-b border-line pb-3">
-              <LogoMark size={30} />
-              <div className="leading-tight">
-                <div className="font-display text-[16px] font-semibold text-ink">{CLINIC.name}</div>
-                <div className="text-[11.5px] text-ink-3">Atendimento domiciliar · {CLINIC.city}</div>
-                <div className="num text-[11.5px] text-ink-3">WhatsApp {CLINIC.whatsapp}</div>
+          <div className="flex items-center justify-between px-6 pt-6 pb-3">
+            <h3 className="text-[18px] font-bold tracking-[-0.02em] text-ink">Receita</h3>
+            <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-card px-3 text-[12.5px] font-bold text-ink shadow-pill">
+              <FileText className="size-3.5" strokeWidth={2.2} /> PDF para o tutor
+            </span>
+          </div>
+          <div className="mx-4 rounded-[28px] bg-card p-5 shadow-card">
+            <div className="flex items-center gap-3">
+              <LogoMark size={40} />
+              <div className="min-w-0 leading-tight">
+                <div className="text-[16px] font-bold text-ink">{CLINIC.name}</div>
+                <div className="num text-[12.5px] font-medium text-ink-3">WhatsApp {CLINIC.whatsapp}</div>
               </div>
             </div>
-            <div className="pt-3 text-center font-mono text-[10.5px] tracking-[0.14em] text-ink-3 uppercase">Receituário · uso veterinário</div>
-            <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-0.5 text-[12.5px] text-ink-2">
-              <div>
-                <b className="text-ink">Paciente:</b> {pet.name}
-              </div>
-              <div>
-                <b className="text-ink">Espécie:</b> {pet.species === 'cão' ? 'Canina' : 'Felina'}
-              </div>
-              <div>
-                <b className="text-ink">Idade:</b> {ageLabel(pet.birth)}
-              </div>
-              <div>
-                <b className="text-ink">Peso:</b> {draft.weight.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} kg
-              </div>
-              <div className="col-span-2 truncate">
-                <b className="text-ink">Tutor:</b> {TUTOR[visit.tutorId].name}
-              </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {[
+                { l: 'Paciente', v: `${pet.name}, ${pet.species === 'cão' ? 'canino' : 'felino'}` },
+                { l: 'Peso', v: `${draft.weight.toLocaleString('pt-BR', { minimumFractionDigits: 1 })} kg` },
+                { l: 'Idade', v: ageLabel(pet.birth) },
+                { l: 'Tutor', v: TUTOR[visit.tutorId].name },
+              ].map((x) => (
+                <div key={x.l} className="min-w-0 rounded-[16px] bg-surface px-3 py-2">
+                  <div className="text-[11.5px] font-medium text-ink-3">{x.l}</div>
+                  <div className="truncate text-[13.5px] font-bold text-ink">{x.v}</div>
+                </div>
+              ))}
             </div>
-            <div className="mt-3 text-[12px] font-semibold text-ink-3">Uso oral</div>
-            <ol className="mt-1 flex flex-col gap-2.5">
+            <ol className="mt-4 flex flex-col gap-3">
               {draft.meds.map((m, i) => {
                 const def = MED[m.medId]
                 return (
-                  <li key={m.uid} className="text-[14px] leading-snug text-ink">
-                    <div className="flex items-baseline gap-1">
-                      <span className="font-semibold">
-                        {i + 1}. {def.name} {def.conc}
-                      </span>
-                      <span className="mx-1 min-w-4 flex-1 translate-y-[-3px] border-b border-dotted border-ink-4" />
-                      <span className="shrink-0 text-[12.5px] text-ink-2">{m.dur.toLowerCase()}</span>
-                    </div>
-                    <div className="text-ink-2">
-                      Dar {m.dose.toLowerCase()} ({def.form}) {m.freq.toLowerCase()}
-                      {def.hint ? `. ${def.hint}.` : '.'}
+                  <li key={m.uid} className="flex gap-3">
+                    <span className="num flex size-7 shrink-0 items-center justify-center rounded-full bg-black text-[12.5px] font-bold text-white">{i + 1}</span>
+                    <div className="min-w-0 flex-1 text-[14px] leading-snug">
+                      <div className="font-bold text-ink">
+                        {def.name} {def.conc} <span className="font-semibold text-ink-3">· {m.dur.toLowerCase()}</span>
+                      </div>
+                      <div className="font-medium text-ink-2">
+                        Dar {m.dose.toLowerCase()} ({def.form}) {m.freq.toLowerCase()}
+                        {def.hint ? `. ${def.hint}.` : '.'}
+                      </div>
                     </div>
                   </li>
                 )
               })}
             </ol>
-            <div className="mt-6 flex items-end justify-between gap-4">
-              <div className="text-[12px] text-ink-3">Manaus, {fmt.long(TODAY).replace(/^[^,]+, /, '')}</div>
-              <div className="text-center">
-                <div className="font-display-tight text-[20px] leading-none text-sage-800 italic">{VET[visit.vetId].name.replace(/^Dra?\. /, '')}</div>
-                <div className="mt-1 w-36 border-t border-ink-3 pt-1 text-[11px] text-ink-2">
-                  {VET[visit.vetId].name}
-                  <br />
-                  <span className="font-mono">{VET[visit.vetId].crmv}</span>
-                </div>
+            <div className="mt-5 flex items-end justify-between gap-4 border-t border-line pt-4">
+              <div className="text-[12.5px] font-medium text-ink-3">Manaus, {fmt.short(TODAY)}</div>
+              <div className="text-right">
+                <div className="text-[13.5px] font-bold text-ink">{VET[visit.vetId].name}</div>
+                <div className="text-[12px] font-medium text-ink-3">{VET[visit.vetId].crmv}</div>
               </div>
             </div>
           </div>
-          <p className="px-6 pt-3 text-center text-[13px] text-ink-3">O tutor recebe a receita em PDF junto com o resumo da visita.</p>
         </>
       )}
 
@@ -159,30 +151,32 @@ function MedPicker({ open, onOpenChange, species, onPick }: { open: boolean; onO
   const list = MEDS.filter((m) => m.species.includes(species) && (m.name + m.group).toLowerCase().includes(q.toLowerCase()))
   const groups = [...new Set(list.map((m) => m.group))]
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} title="Adicionar medicamento" description="Lista da clínica · doses padrão por espécie">
-      <label className="sticky top-0 z-10 -mx-1 mb-2 flex h-11 items-center gap-2 rounded-[12px] bg-paper-2 px-3 text-ink-3">
+    <Sheet open={open} onOpenChange={onOpenChange} title="Adicionar medicamento" description="Lista da clínica">
+      <label className="sticky top-0 z-10 mb-2 flex h-12 items-center gap-2 rounded-full bg-muted px-4 text-ink-3">
         <Search className="size-[18px]" />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar por nome ou grupo" className="h-full flex-1 bg-transparent text-[16px] text-ink outline-none placeholder:text-ink-4" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Buscar" className="h-full flex-1 bg-transparent text-[16px] font-medium text-ink outline-none placeholder:text-ink-4" />
       </label>
       {groups.map((g) => (
-        <div key={g} className="pt-2">
-          <div className="pb-1 text-[12.5px] font-semibold tracking-[0.04em] text-ink-3 uppercase">{g}</div>
+        <div key={g} className="pt-3">
+          <div className="pb-1 text-[13px] font-bold text-ink-3">{g}</div>
           {list
             .filter((m) => m.group === g)
             .map((m) => (
               <Pressable key={m.id} scale={0.985} onClick={() => onPick(m)} className="flex min-h-[52px] w-full items-center gap-3 border-b border-line py-2 text-left last:border-0">
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[16px] font-medium text-ink">
-                    {m.name} <span className="text-ink-2">{m.conc}</span>
+                  <span className="block text-[15.5px] font-bold text-ink">
+                    {m.name} <span className="font-semibold text-ink-3">{m.conc}</span>
                   </span>
-                  <span className="block text-[13px] text-ink-3">{m.form}</span>
+                  <span className="block text-[13px] font-medium text-ink-3">{m.form}</span>
                 </span>
-                <Plus className="size-5 text-sage-700" />
+                <span className="flex size-9 items-center justify-center rounded-full bg-black text-lime">
+                  <Plus className="size-[18px]" strokeWidth={2.4} />
+                </span>
               </Pressable>
             ))}
         </div>
       ))}
-      {list.length === 0 && <p className="py-6 text-center text-[14px] text-ink-3">Nada encontrado para “{q}”.</p>}
+      {list.length === 0 && <p className="py-6 text-center text-[14px] font-medium text-ink-3">Nada encontrado</p>}
     </Sheet>
   )
 }
@@ -196,7 +190,7 @@ function MedEditor({ entry, isNew, onClose, onSave, onRemove }: { entry: MedEntr
   const def = MED[m.medId]
   const group = (label: string, k: 'dose' | 'freq' | 'dur', options: string[]) => (
     <div key={k} className="pt-4 first:pt-0">
-      <div className="mb-2 text-[13.5px] font-medium text-ink-3">{label}</div>
+      <div className="mb-2 text-[13px] font-semibold text-ink-3">{label}</div>
       <div className="flex flex-wrap gap-2">
         {options.map((o) => (
           <Chip key={o} on={m[k] === o} onClick={() => setM({ ...m, [k]: o })}>
@@ -215,7 +209,7 @@ function MedEditor({ entry, isNew, onClose, onSave, onRemove }: { entry: MedEntr
       footer={
         <div className="flex gap-2.5">
           {!isNew && (
-            <Btn tone="subtle" className={cn('shrink-0 text-late')} onClick={() => onRemove(m.uid)}>
+            <Btn tone="danger" className="shrink-0" onClick={() => onRemove(m.uid)}>
               {m.keep ? 'Suspender' : 'Remover'}
             </Btn>
           )}

@@ -1,4 +1,4 @@
-// Silhueta lateral (cão/gato) com regiões tocáveis + escore de condição corporal.
+// Silhueta lateral (cão ou gato) com regiões tocáveis e escore de condição corporal.
 import * as React from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import type { Species } from '@/data/mock'
@@ -12,12 +12,12 @@ function DogShape() {
   return (
     <>
       {/* pernas do lado de lá (mais escuras, atrás) */}
-      <g fill="var(--color-sage-200)">
+      <g fill="var(--color-line-2)">
         <rect x="118" y="128" width="17" height="74" rx="8.5" />
         <rect x="256" y="126" width="17" height="76" rx="8.5" />
       </g>
-      <g fill="var(--color-sage-100)" stroke="var(--color-sage-100)" strokeLinejoin="round">
-        <path d="M88 92 C 70 86, 56 72, 50 50" fill="none" strokeWidth="13" strokeLinecap="round" stroke="var(--color-sage-100)" />
+      <g fill="var(--color-muted-2)" stroke="var(--color-muted-2)" strokeLinejoin="round">
+        <path d="M88 92 C 70 86, 56 72, 50 50" fill="none" strokeWidth="13" strokeLinecap="round" stroke="var(--color-muted-2)" />
         <rect x="80" y="70" width="190" height="78" rx="39" />
         <ellipse cx="112" cy="120" rx="38" ry="37" />
         <rect x="90" y="128" width="20" height="76" rx="10" />
@@ -28,7 +28,7 @@ function DogShape() {
         <rect x="296" y="52" width="48" height="27" rx="13.5" />
       </g>
       {/* orelha caída */}
-      <ellipse cx="279" cy="64" rx="11" ry="22" transform="rotate(16 279 64)" fill="var(--color-sage-200)" />
+      <ellipse cx="279" cy="64" rx="11" ry="22" transform="rotate(16 279 64)" fill="var(--color-line-2)" />
       <circle cx="306" cy="49" r="3.2" fill="var(--color-ink)" />
       <ellipse cx="342" cy="59" rx="5.5" ry="4.8" fill="var(--color-ink)" />
     </>
@@ -38,11 +38,11 @@ function DogShape() {
 function CatShape() {
   return (
     <>
-      <g fill="var(--color-sage-200)">
+      <g fill="var(--color-line-2)">
         <rect x="130" y="132" width="14" height="70" rx="7" />
         <rect x="240" y="130" width="14" height="72" rx="7" />
       </g>
-      <g fill="var(--color-sage-100)" stroke="var(--color-sage-100)" strokeLinejoin="round">
+      <g fill="var(--color-muted-2)" stroke="var(--color-muted-2)" strokeLinejoin="round">
         <path d="M100 108 C 62 116, 36 92, 44 54 C 47 40, 56 32, 64 30" fill="none" strokeWidth="11" strokeLinecap="round" />
         <rect x="92" y="88" width="170" height="62" rx="31" />
         <ellipse cx="120" cy="124" rx="31" ry="30" />
@@ -55,10 +55,10 @@ function CatShape() {
         <path d="M284 42 L 304 22 L 306 56 Z" strokeWidth="6" />
         <ellipse cx="300" cy="82" rx="12" ry="10" />
       </g>
-      <path d="M259 46 L 262 30 L 272 42 Z" fill="var(--color-terra-200)" opacity=".7" />
-      <path d="M290 42 L 300 31 L 301 48 Z" fill="var(--color-terra-200)" opacity=".7" />
+      <path d="M259 46 L 262 30 L 272 42 Z" fill="var(--color-coral-soft)" />
+      <path d="M290 42 L 300 31 L 301 48 Z" fill="var(--color-coral-soft)" />
       <path d="M282 64 q 6 -5 11 0 q -5 5 -11 0 Z" fill="var(--color-ink)" />
-      <path d="M306 80 l 6 -2 l -1 5 Z" fill="var(--color-terra-500)" />
+      <path d="M306 80 l 6 -2 l -1 5 Z" fill="var(--color-coral)" />
       <g stroke="var(--color-ink-3)" strokeWidth="1.1" strokeLinecap="round">
         <path d="M312 86 L 338 82" />
         <path d="M312 90 L 336 92" />
@@ -103,7 +103,7 @@ export function BodyMap({ species, findings, onAdd, onOpen }: { species: Species
     <div className="relative" data-noswipe>
       <svg ref={svgRef} viewBox={`0 0 ${BODY_VB.w} ${BODY_VB.h}`} className="block w-full touch-manipulation" aria-label="Silhueta para marcar achados">
         {/* chão */}
-        <ellipse cx="180" cy="206" rx="150" ry="5" fill="var(--color-paper-2)" />
+        <ellipse cx="180" cy="206" rx="150" ry="5" fill="var(--color-muted)" />
         <g
           className="cursor-crosshair"
           onClick={(e) => {
@@ -131,8 +131,8 @@ export function BodyMap({ species, findings, onAdd, onOpen }: { species: Species
               className="cursor-pointer"
               onClick={() => onOpen(f)}
             >
-              <motion.circle cx={f.x} cy={f.y} fill="var(--color-terra-500)" initial={{ opacity: 0.45, r: 12 }} animate={{ opacity: 0, r: 28 }} transition={{ duration: 1.3, repeat: 2, ease: 'easeOut' }} />
-              <circle cx={f.x} cy={f.y} r={12} fill="var(--color-terra-600)" stroke="var(--color-card)" strokeWidth={2.5} />
+              <motion.circle cx={f.x} cy={f.y} fill="var(--color-lime)" initial={{ opacity: 0.8, r: 12 }} animate={{ opacity: 0, r: 28 }} transition={{ duration: 1.3, repeat: 2, ease: 'easeOut' }} />
+              <circle cx={f.x} cy={f.y} r={12.5} fill="var(--color-black)" stroke="var(--color-lime)" strokeWidth={2.5} />
               <text x={f.x} y={f.y} dy="0.36em" textAnchor="middle" fontSize="12.5" fontWeight={700} fill="#fff" fontFamily="var(--font-sans)">
                 {f.n}
               </text>
@@ -140,7 +140,7 @@ export function BodyMap({ species, findings, onAdd, onOpen }: { species: Species
           ))}
         </AnimatePresence>
       </svg>
-      <div className={cn('pointer-events-none absolute top-1 left-1 rounded-full bg-card/90 px-2.5 py-1 text-[12.5px] font-medium text-ink-2 shadow-card transition-opacity', hover ? 'opacity-100' : 'opacity-0')}>{hover}</div>
+      <div className={cn('pointer-events-none absolute top-1 left-1 rounded-full bg-black px-3 py-1 text-[12.5px] font-semibold text-white transition-opacity', hover ? 'opacity-100' : 'opacity-0')}>{hover}</div>
     </div>
   )
 }
@@ -153,7 +153,7 @@ function BcsFigure({ s, active }: { s: number; active: boolean }) {
   const wh = 6.2 + s * 0.62
   const c = 20
   const d = `M ${c - ws} 21 C ${c - ws} 28, ${c - ww} 31, ${c - ww} 37 C ${c - ww} 43, ${c - wh} 45, ${c - wh} 50 Q ${c} 60, ${c + wh} 50 C ${c + wh} 45, ${c + ww} 43, ${c + ww} 37 C ${c + ww} 31, ${c + ws} 28, ${c + ws} 21 Q ${c} 13, ${c - ws} 21 Z`
-  const fill = active ? 'var(--color-sage-800)' : 'var(--color-ink-4)'
+  const fill = active ? 'var(--color-black)' : 'var(--color-ink-4)'
   return (
     <svg viewBox="0 0 40 66" className="h-[50px] w-full" aria-hidden>
       <ellipse cx={c} cy={11} rx={5.6 + s * 0.12} ry={6.6} fill={fill} />
@@ -173,13 +173,13 @@ function BcsFigure({ s, active }: { s: number; active: boolean }) {
 export function BcsPicker({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   return (
     <div data-noswipe>
-      <div className="grid grid-cols-9 gap-0.5">
+      <div className="grid grid-cols-9 gap-1">
         {Array.from({ length: 9 }, (_, i) => i + 1).map((s) => (
-          <button key={s} onClick={() => onChange(s)} aria-label={`Escore ${s}`} className={cn('flex flex-col items-center rounded-lg py-1 transition-colors', s === value ? 'bg-sage-50' : 'active:bg-paper-2')}>
+          <button key={s} onClick={() => onChange(s)} aria-label={`Escore ${s}`} className={cn('flex flex-col items-center rounded-[14px] py-1.5 transition-colors', s === value ? 'bg-lime' : 'active:bg-muted')}>
             <motion.div animate={{ scale: s === value ? 1.08 : 0.92, opacity: s === value ? 1 : 0.55 }} transition={{ duration: 0.2 }} className="w-full px-0.5">
               <BcsFigure s={s} active={s === value} />
             </motion.div>
-            <span className={cn('num mt-0.5 text-[12.5px] font-semibold', s === value ? 'text-sage-800' : 'text-ink-4')}>{s}</span>
+            <span className={cn('num mt-0.5 text-[12.5px] font-bold', s === value ? 'text-ink' : 'text-ink-4')}>{s}</span>
           </button>
         ))}
       </div>
@@ -191,11 +191,11 @@ export function BcsPicker({ value, onChange }: { value: number; onChange: (n: nu
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         aria-label="Escore de condição corporal"
-        className="mt-2 h-11 w-full cursor-pointer appearance-none bg-transparent [&::-moz-range-thumb]:size-7 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-card [&::-moz-range-thumb]:shadow-lift [&::-moz-range-track]:h-1.5 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-[linear-gradient(90deg,var(--color-warn)_0%,var(--color-ok)_40%,var(--color-ok)_55%,var(--color-warn)_75%,var(--color-late)_100%)] [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-[linear-gradient(90deg,var(--color-warn)_0%,var(--color-ok)_40%,var(--color-ok)_55%,var(--color-warn)_75%,var(--color-late)_100%)] [&::-webkit-slider-thumb]:-mt-[11px] [&::-webkit-slider-thumb]:size-7 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border [&::-webkit-slider-thumb]:border-line-2 [&::-webkit-slider-thumb]:bg-card [&::-webkit-slider-thumb]:shadow-[0_2px_8px_rgba(20,42,33,.25)]"
+        className="mt-2 h-11 w-full cursor-pointer appearance-none bg-transparent [&::-moz-range-thumb]:size-7 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-card [&::-moz-range-thumb]:shadow-pill [&::-moz-range-track]:h-1.5 [&::-moz-range-track]:rounded-full [&::-moz-range-track]:bg-[linear-gradient(90deg,var(--color-yellow)_0%,var(--color-green)_40%,var(--color-green)_55%,var(--color-yellow)_75%,var(--color-red)_100%)] [&::-webkit-slider-runnable-track]:h-1.5 [&::-webkit-slider-runnable-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-[linear-gradient(90deg,var(--color-yellow)_0%,var(--color-green)_40%,var(--color-green)_55%,var(--color-yellow)_75%,var(--color-red)_100%)] [&::-webkit-slider-thumb]:-mt-[11px] [&::-webkit-slider-thumb]:size-7 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-[3px] [&::-webkit-slider-thumb]:border-black [&::-webkit-slider-thumb]:bg-card [&::-webkit-slider-thumb]:shadow-[0_2px_8px_rgba(17,18,20,.25)]"
       />
-      <div className="flex justify-between text-[12.5px] text-ink-3">
+      <div className="flex items-center justify-between text-[12.5px] font-medium text-ink-3">
         <span>Magro</span>
-        <span className={cn('font-semibold', value >= 4 && value <= 5 ? 'text-ok' : value >= 8 ? 'text-late' : 'text-warn')}>
+        <span className={cn('rounded-full px-2.5 py-1 font-bold', value >= 4 && value <= 5 ? 'bg-green-soft text-green' : value >= 8 ? 'bg-red-soft text-red' : 'bg-yellow-soft text-yellow-ink')}>
           {value}/9 · {BCS_LABEL(value)}
         </span>
         <span>Obeso</span>
