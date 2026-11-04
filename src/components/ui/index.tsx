@@ -181,7 +181,7 @@ export function VetAvatar({ vetId, size = 28, className }: { vetId: string; size
 export function AvatarStack({ children, extra, size = 36 }: { children: React.ReactNode; extra?: number; size?: number }) {
   return (
     <div className="flex items-center">
-      <div className="flex -space-x-2.5 [&>*]:ring-[3px] [&>*]:ring-card [&>*]:rounded-full">{children}</div>
+      <div className="flex -space-x-1.5 [&>*]:ring-[3px] [&>*]:ring-card [&>*]:rounded-full">{children}</div>
       {extra ? (
         <span className="-ml-2.5 inline-flex items-center justify-center rounded-full bg-card text-[11.5px] font-bold text-ink shadow-pill ring-[3px] ring-card" style={{ width: size, height: size }}>
           {extra}+
