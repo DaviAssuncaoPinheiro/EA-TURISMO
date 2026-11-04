@@ -193,7 +193,7 @@ export function ScheduleDialog({ open, onOpenChange, all, onConfirm }: { open: b
                         value={urgency}
                         onChange={setUrgency}
                         size="md"
-                        className="w-full [&>button]:flex-1"
+                        className="w-full [&>button]:flex-1 [&>button]:whitespace-nowrap [&>button]:px-2"
                         options={[
                           { value: 'rotina', label: 'Rotina' },
                           { value: 'semana', label: 'Esta semana' },

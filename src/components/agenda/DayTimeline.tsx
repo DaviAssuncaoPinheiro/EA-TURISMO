@@ -138,7 +138,7 @@ function TimeBlock({ v, fresh, past }: { v: AVisit; fresh: boolean; past: boolea
           </span>
         )}
       </div>
-      {h >= 40 && (
+      {h >= 46 && (
         <div className="mt-0.5 truncate text-[11px] font-medium opacity-85 num">
           {hhmm(v.startMin)} às {hhmm(v.startMin + v.dur)} · {BAIRRO[v.bairro].name}
         </div>
