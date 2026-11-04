@@ -79,6 +79,10 @@ export interface CityMapProps {
   bairroHighlight?: string[]
   showAvenueNames?: boolean
   vetNow?: VetMarker | null
+  /** mostra o ponto da base (padrão: sim) */
+  showBase?: boolean
+  /** mostra a régua de escala (padrão: sim) */
+  showScale?: boolean
   /** camada extra em coordenadas do mapa */
   overlay?: (ctx: MapCtx) => React.ReactNode
   ariaLabel?: string
@@ -277,6 +281,8 @@ function CityMapInner({
   bairroHighlight,
   showAvenueNames,
   vetNow,
+  showBase = true,
+  showScale = true,
   overlay,
   ariaLabel = 'Mapa de Manaus',
   className,
@@ -298,13 +304,13 @@ function CityMapInner({
 
   const target = React.useMemo(() => {
     if (focus === 'visits' && visits.length) {
-      const pts = [BASE_PT, ...Object.values(points)]
+      const pts = showBase ? [BASE_PT, ...Object.values(points)] : Object.values(points)
       if (vetNow) pts.push(vetNow.at)
       return fitBox(pts, ratio, { pad: compact ? 52 : 64, minW: compact ? 340 : 400 })
     }
     return coverBox(ratio)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focus, points, ratio, compact])
+  }, [focus, points, ratio, compact, showBase])
 
   const box = useAnimatedBox(target, ready)
   const u = ready ? box.w / size.w : 1.4 // unidades por px
@@ -319,7 +325,7 @@ function CityMapInner({
   /* rótulos: zonas → pins → bairros */
   const zoneFont = px(compact ? 10.5 : 11.5)
   const pinRects = visits.map((v) => circleRect(points[v.id], pinR + px(5)))
-  const baseRect = circleRect(BASE_PT, px(11))
+  const baseRect = showBase ? circleRect(BASE_PT, px(11)) : circleRect({ x: -9999, y: -9999 }, 0)
   const vetRect = vetNow ? circleRect(vetNow.at, px(13)) : null
   const hitsAny = (r: Rect, list: Rect[]) => list.some((t) => r.x0 < t.x1 && r.x1 > t.x0 && r.y0 < t.y1 && r.y1 > t.y0)
   // rótulo da zona desvia de pins (tenta o lugar original, depois acima/abaixo)
@@ -621,7 +627,7 @@ function CityMapInner({
         {focus === 'visits' && zoneLabelsEl}
 
         {/* base */}
-        {(visits.length > 0 || focus === 'visits') && (
+        {showBase && (visits.length > 0 || focus === 'visits') && (
           <g transform={`translate(${BASE.x} ${BASE.y})`} pointerEvents="none">
             <circle r={px(11)} fill="var(--color-black)" stroke="#fff" strokeWidth={px(2.5)} filter={`url(#shadow-${uid})`} />
             <path
@@ -801,7 +807,7 @@ function CityMapInner({
         })()}
 
         {/* escala */}
-        {!compact && (
+        {showScale && !compact && (
           <g transform={`translate(${box.x + box.w - px(18) - scaleUnits - px(30)} ${box.y + box.h - px(18)})`} pointerEvents="none">
             <line x1={0} x2={scaleUnits} y1={0} y2={0} stroke="var(--color-ink-3)" strokeWidth={px(1.4)} strokeLinecap="round" />
             <line x1={0} x2={0} y1={-px(4)} y2={0} stroke="var(--color-ink-3)" strokeWidth={px(1.4)} strokeLinecap="round" />

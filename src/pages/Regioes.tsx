@@ -2,10 +2,9 @@ import * as React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { toast } from 'sonner'
-import { ArrowRight, CalendarDays, Check, Clock, Lightbulb, PawPrint, Undo2 } from 'lucide-react'
+import { ArrowRight, CalendarDays, Check, Lightbulb, Plus, Undo2 } from 'lucide-react'
 import { Button, Card, IconCircle, Panel, PetAvatar, Segmented, SegmentBar, Tip, VetAvatar, ViewAll } from '@/components/ui'
 import { CityMap, heatColor, heatIsDark, type MapCtx } from '@/components/map/CityMap'
-import { travelMinutesFromBase } from '@/components/map/geometry'
 import { BAIRROS, ZONE, ZONES, type ZoneId } from '@/data/geo'
 import { HEATMAP, PETS, TUTOR, VET, VETS, WEEK_PLAN, zoneOfPet } from '@/data/mock'
 import { TODAY } from '@/data/time'
@@ -30,7 +29,6 @@ const offSchedule = (plan: Plan, z: ZoneId) => DAYS.reduce((a, { d }) => a + (co
 const joinE = (xs: string[]) => (xs.length > 1 ? xs.slice(0, -1).join(', ') + ' e ' + xs[xs.length - 1] : xs[0] ?? '')
 
 const HEAT_MAX = Math.max(...Object.values(HEATMAP).flat())
-const TOTAL_VISITS = Object.values(HEATMAP).flat().reduce((a, b) => a + b, 0)
 
 /* sugestão: absorver os encaixes da Zona Sul nos dias em que a Dra. Larissa já está na Centro-Sul */
 const SUGGEST = (() => {
@@ -38,10 +36,8 @@ const SUGGEST = (() => {
   const target: ZoneId = 'sul'
   const anchor: ZoneId = 'centro-sul'
   const days = DAYS.filter(({ d }) => !coverage(WEEK_PLAN, target, d).length && WEEK_PLAN[vet][d]?.includes(anchor) && HEATMAP[target][d - 1] > 0).map((x) => x.d)
-  const absorbed = days.reduce((a, d) => a + HEATMAP[target][d - 1], 0)
-  const total = offSchedule(WEEK_PLAN, target)
-  const savedMin = absorbed * travelMinutesFromBase(target) * 2
-  return { vet, target, anchor, days, absorbed, total, savedMin }
+  const covered = DAYS.filter(({ d }) => coverage(WEEK_PLAN, target, d).length).map((x) => x.d)
+  return { vet, target, anchor, days, covered }
 })()
 
 const petsByZone = (z: ZoneId) => PETS.filter((p) => zoneOfPet(p) === z)
@@ -114,7 +110,7 @@ export default function Regioes() {
       <div className="flex flex-col gap-3 pb-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-[28px] leading-[1.1] font-bold tracking-[-0.03em] text-ink md:text-[32px]">Regiões</h1>
-          <p className="mt-1.5 text-[14px] font-medium text-ink-3">{TOTAL_VISITS} visitas nas últimas 8 semanas</p>
+          <p className="mt-1.5 text-[14px] font-medium text-ink-3">Escala por zona e dia da semana</p>
         </div>
         <Button variant="outline" onClick={() => nav('/agenda')} className="self-start sm:self-auto">
           <CalendarDays className="size-4" strokeWidth={2} /> Agenda por região
@@ -179,11 +175,45 @@ export default function Regioes() {
 
 /* ───────────────────────── sugestão ───────────────────────── */
 
+function WeekDots({ covered, added, dark }: { covered: number[]; added: number[]; dark?: boolean }) {
+  return (
+    <div className="grid grid-cols-6 gap-1.5">
+      {DAYS.map(({ d, short }) => {
+        const isAdded = added.includes(d)
+        const on = covered.includes(d)
+        return (
+          <span
+            key={d}
+            className={cn(
+              'flex h-10 flex-col items-center justify-center rounded-[14px] text-[11.5px] font-semibold leading-none',
+              dark
+                ? isAdded
+                  ? 'bg-lime text-ink'
+                  : on
+                    ? 'bg-white/12 text-white'
+                    : 'bg-white/5 text-white/35'
+                : isAdded
+                  ? 'bg-card text-ink shadow-pill'
+                  : on
+                    ? 'bg-black text-white'
+                    : 'bg-white/35 text-lime-ink/60',
+            )}
+          >
+            {short}
+            <span className="mt-1 flex h-3 items-center">
+              {isAdded ? <Plus className="size-3" strokeWidth={2.6} /> : on ? <Check className="size-3" strokeWidth={2.6} /> : <span className="size-1 rounded-full bg-current opacity-60" />}
+            </span>
+          </span>
+        )
+      })}
+    </div>
+  )
+}
+
 function Insight({ applied, onApply, onUndo, onShow }: { applied: boolean; onApply: () => void; onUndo: () => void; onShow: () => void }) {
   const vet = VET[SUGGEST.vet]
   const plurals = joinE(SUGGEST.days.map((d) => DAYS[d - 1].plural))
-  const h = Math.floor(SUGGEST.savedMin / 60)
-  const m = Math.round((SUGGEST.savedMin % 60) / 10) * 10
+  const zoneName = ZONE[SUGGEST.target].name
   return (
     <AnimatePresence mode="wait" initial={false}>
       {!applied ? (
@@ -194,15 +224,15 @@ function Insight({ applied, onApply, onUndo, onShow }: { applied: boolean; onApp
             </IconCircle>
             <span className="text-[13px] font-bold text-lime-ink">Sugestão para a escala</span>
           </div>
-          <h2 className="mt-3.5 text-[19px] leading-snug font-bold tracking-[-0.02em] text-ink">Zona Sul teve {SUGGEST.total} visitas fora da escala</h2>
+          <h2 className="mt-3.5 text-[19px] leading-snug font-bold tracking-[-0.02em] text-ink">
+            {zoneName} sem veterinário às {plurals}
+          </h2>
           <p className="mt-1.5 text-[13.5px] leading-relaxed font-medium text-lime-ink">
-            {vet.short} já atende a Centro-Sul às {plurals}. Incluir a Zona Sul nesses dias cobre {SUGGEST.absorbed} dessas visitas.
+            {vet.short} já atende a Centro-Sul nesses dias. Dá para incluir a {ZONE[SUGGEST.target].short} na mesma saída.
           </p>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="num text-[26px] leading-none font-bold tracking-[-0.02em] text-ink">
-              {h}h{m ? String(m).padStart(2, '0') : ''}
-            </span>
-            <span className="text-[12.5px] font-semibold text-lime-ink">a menos de trânsito a cada 8 semanas</span>
+          <div className="mt-4">
+            <div className="mb-2 text-[12.5px] font-bold text-lime-ink">{zoneName} na semana</div>
+            <WeekDots covered={SUGGEST.covered} added={SUGGEST.days} />
           </div>
           <div className="mt-4 flex gap-2">
             <Button variant="primary" onClick={onApply} className="flex-1">
@@ -227,10 +257,9 @@ function Insight({ applied, onApply, onUndo, onShow }: { applied: boolean; onApp
           <p className="mt-3 text-[13.5px] leading-relaxed font-medium text-white/65">
             {vet.short} cobre Centro-Sul e Sul às {plurals}.
           </p>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="num text-[14px] font-semibold text-white/40 line-through">{SUGGEST.total}</span>
-            <span className="num text-[26px] leading-none font-bold text-lime">{SUGGEST.total - SUGGEST.absorbed}</span>
-            <span className="text-[12.5px] font-semibold text-white/60">visitas fora da escala no Sul</span>
+          <div className="mt-4">
+            <div className="mb-2 text-[12.5px] font-bold text-white/60">{zoneName} na semana</div>
+            <WeekDots covered={[...SUGGEST.covered, ...SUGGEST.days]} added={SUGGEST.days} dark />
           </div>
         </motion.div>
       )}
@@ -289,24 +318,9 @@ function ZonePanel({ zone, onZone, plan, day }: { zone: ZoneId | null; onZone: (
 function ZoneDetail({ z, plan, day }: { z: ZoneId; plan: Plan; day: number }) {
   const pets = petsByZone(z)
   const bairros = BAIRROS.filter((b) => b.zone === z).map((b) => ({ ...b, n: pets.filter((p) => TUTOR[p.tutorId].bairro === b.id).length }))
-  const visits = HEATMAP[z].reduce((a, b) => a + b, 0)
   return (
     <div className="border-t border-line px-4 pt-3.5 pb-4">
-      <div className="grid grid-cols-3 gap-1.5">
-        {[
-          { k: 'Pacientes', v: String(pets.length), icon: PawPrint },
-          { k: 'Por semana', v: (visits / 8).toLocaleString('pt-BR', { maximumFractionDigits: 1 }), icon: CalendarDays },
-          { k: 'Da base', v: `${travelMinutesFromBase(z)} min`, icon: Clock },
-        ].map((s) => (
-          <div key={s.k} className="rounded-[14px] bg-surface px-3 py-2.5">
-            <s.icon className="size-3.5 text-ink-3" strokeWidth={2} />
-            <div className="num mt-1.5 text-[17px] leading-none font-bold text-ink">{s.v}</div>
-            <div className="mt-1 text-[11.5px] font-medium text-ink-3">{s.k}</div>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-4 text-[12.5px] font-bold text-ink">Quem atende</div>
+      <div className="text-[12.5px] font-bold text-ink">Quem atende</div>
       <div className="mt-2 grid grid-cols-6 gap-1">
         {DAYS.map(({ d, short }) => {
           const vets = coverage(plan, z, d)

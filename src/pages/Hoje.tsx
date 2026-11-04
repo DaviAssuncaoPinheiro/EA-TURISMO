@@ -1,51 +1,67 @@
 import * as React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AnimatePresence, LayoutGroup, motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import { toast } from 'sonner'
 import {
   ArrowRight,
   ArrowUpRight,
-  BellRing,
   CalendarDays,
   CalendarPlus,
-  Car,
   Check,
   CheckCheck,
-  CircleCheck,
   ClipboardCheck,
+  ClipboardList,
   Clock,
+  Copy,
   HeartPulse,
   Lock,
   MapPin,
   MessageCircle,
+  Navigation,
   Paperclip,
-  Route as RouteIcon,
+  Pill,
+  Plus,
   Send,
+  Stethoscope,
   Syringe,
-  Timer,
-  Undo2,
+  TestTube,
   type LucideIcon,
 } from 'lucide-react'
-import { AvatarStack, Badge, Button, Card, IconButton, IconCircle, NumberTicker, Panel, PetAvatar, Segmented, SegmentBar, Tip, VetAvatar, ViewAll } from '@/components/ui'
+import { AvatarStack, Badge, Button, Card, Empty, IconButton, IconCircle, Panel, PetAvatar, VetAvatar, ViewAll } from '@/components/ui'
 import { CityMap, MapStatusLegend, type MapVisit } from '@/components/map/CityMap'
-import { buildDayRoute, hhmm, nextInfo, NOW_MIN, type DayRoute, type DayStop } from '@/components/map/dayRoute'
 import { BAIRRO, ZONE, type ZoneId } from '@/data/geo'
-import { CURRENT_USER, DOSES, KPIS, NOW, PET, ROUTE_LARISSA, TUTOR, VACCINE, VET, VETS, visitsToday, type Pet, type Visit } from '@/data/mock'
+import { CURRENT_USER, DOSES, NOW, PET, TUTOR, VACCINE, VET, VETS, visitsToday, type Pet, type Visit, type VisitStatus } from '@/data/mock'
 import { daysFromToday, fmt, TODAY } from '@/data/time'
+import { buildKit, navLinks, type KitItem } from '@/lib/fieldkit'
 import { cn, firstName } from '@/lib/utils'
 import { VISIT_STATUS } from '@/lib/status'
 import { useDemo } from '@/store'
 
 const EASE = [0.16, 1, 0.3, 1] as const
 
-const petNames = (v: Visit) => {
-  const names = v.petIds.map((id) => PET[id]?.name ?? id)
-  return names.length > 1 ? names.slice(0, -1).join(', ') + ' e ' + names[names.length - 1] : names[0]
+/* ───────────────────────── tempo e dados do dia ───────────────────────── */
+
+const pad = (n: number) => String(n).padStart(2, '0')
+const minOf = (d: string | Date) => {
+  const x = new Date(d)
+  return x.getHours() * 60 + x.getMinutes()
 }
-const bairroOf = (v: Visit) => BAIRRO[TUTOR[v.tutorId].bairro]
-const zonesOf = (r: DayRoute): ZoneId[] => [...new Set(r.stops.map((s) => bairroOf(s.visit).zone))]
-const kmFmt = (n: number) => n.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+const hhmm = (m: number) => `${pad(Math.floor(m / 60))}:${pad(Math.round(m % 60))}`
+const NOW_MIN = minOf(NOW)
 const durFmt = (min: number) => (min >= 60 ? `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}` : `${min} min`)
+
+interface Stop {
+  visit: Visit
+  status: VisitStatus
+  startMin: number
+}
+
+const TODAY_VISITS = visitsToday()
+
+const petNames = (v: Visit) => joinE(v.petIds.map((id) => PET[id]?.name ?? id))
+const joinE = (xs: string[]) => (xs.length > 1 ? xs.slice(0, -1).join(', ') + ' e ' + xs[xs.length - 1] : xs[0] ?? '')
+const bairroOf = (v: Visit) => BAIRRO[TUTOR[v.tutorId].bairro]
+const zonesOf = (stops: Stop[]): ZoneId[] => [...new Set(stops.map((s) => bairroOf(s.visit).zone))]
 const zonesTxt = (zs: ZoneId[]) => zs.map((z) => ZONE[z].short).join(' e ')
 
 function greeting() {
@@ -54,91 +70,82 @@ function greeting() {
 }
 
 const scrollTop = () => document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' })
+const scrollToId = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+const openVisit = (nav: ReturnType<typeof useNavigate>, v: Visit) => nav(`/campo/visita/${v.id}`)
 
 /* ───────────────────────── página ───────────────────────── */
 
 export default function Hoje() {
   const nav = useNavigate()
   const visitStatus = useDemo((s) => s.visitStatus)
-  const optimized = useDemo((s) => s.routeOptimized)
-  const setOptimized = useDemo((s) => s.setRouteOptimized)
 
   const [vetId, setVetId] = React.useState('larissa')
   const [sel, setSel] = React.useState<string | null>(null)
 
-  const statusOf = React.useCallback((v: Visit) => visitStatus[v.id] ?? v.status, [visitStatus])
-  const routes = React.useMemo(() => Object.fromEntries(VETS.map((v) => [v.id, buildDayRoute(v.id, optimized, statusOf)])) as Record<string, DayRoute>, [optimized, statusOf])
-  const naiveLarissa = React.useMemo(() => buildDayRoute(ROUTE_LARISSA.vetId, false, statusOf), [statusOf])
-
-  const today = visitsToday()
-  const allZones = new Set(VETS.flatMap((v) => zonesOf(routes[v.id])))
+  const byVet = React.useMemo(() => {
+    const out: Record<string, Stop[]> = {}
+    for (const v of VETS) {
+      out[v.id] = TODAY_VISITS.filter((x) => x.vetId === v.id)
+        .map((x) => ({ visit: x, status: visitStatus[x.id] ?? x.status, startMin: minOf(x.start) }))
+        .filter((s) => s.status !== 'cancelada')
+        .sort((a, b) => a.startMin - b.startMin)
+    }
+    return out
+  }, [visitStatus])
 
   const pickVet = (id: string, visitId?: string | null) => {
     setVetId(id)
     setSel(visitId ?? null)
   }
-  const optimize = () => {
-    pickVet(ROUTE_LARISSA.vetId)
-    setOptimized(true)
-    toast.success('Rota otimizada por bairro', {
-      description: `De ${kmFmt(ROUTE_LARISSA.kmNaive)} para ${kmFmt(ROUTE_LARISSA.kmOptimized)} km. Os horários marcados pelos tutores continuam iguais.`,
-    })
-  }
-  const undo = () => {
-    setOptimized(false)
-    toast('Rota voltou para a ordem em que os pedidos chegaram')
-  }
+
+  const dateTxt = fmt.long(TODAY).replace(/^./, (c) => c.toUpperCase())
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-4 pt-2 pb-28 md:px-6 md:pb-8">
+    <div className="mx-auto w-full max-w-[1400px] px-4 pt-2 pb-28 md:px-6 lg:pb-8">
       {/* saudação */}
       <div className="flex flex-col gap-3 pb-5 sm:flex-row sm:items-end sm:justify-between">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-[28px] leading-[1.1] font-bold tracking-[-0.03em] text-ink md:text-[32px]">
             {greeting()}, {firstName(CURRENT_USER.name)}
           </h1>
-          <p className="mt-1.5 text-[14px] font-medium text-ink-3">
-            {today.length} visitas hoje em {allZones.size} zonas
-          </p>
+          <p className="mt-1.5 text-[14px] font-medium text-ink-3">{dateTxt}</p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <span className="text-[13.5px] font-semibold text-ink-2">{fmt.long(TODAY).replace(/^./, (c) => c.toUpperCase())}</span>
+        <div className="flex items-center gap-2">
+          <Button variant="primary" onClick={() => nav('/agenda?novo=1')}>
+            <Plus className="size-4" strokeWidth={2.2} /> Nova visita
+          </Button>
           <IconButton aria-label="Abrir agenda" onClick={() => nav('/agenda')}>
             <CalendarDays className="size-[18px]" strokeWidth={1.9} />
           </IconButton>
         </div>
       </div>
 
-      <Metrics routes={routes} optimized={optimized} />
-
-      {/* mapa + paradas */}
-      <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 lg:h-[640px] lg:grid-cols-[minmax(0,1fr)_380px]">
-        <MapCard
-          routes={routes}
-          vetId={vetId}
-          onVet={(id) => pickVet(id)}
-          optimized={optimized}
-          naive={naiveLarissa}
-          sel={sel}
-          onSel={setSel}
-          onOptimize={optimize}
-          onUndo={undo}
-        />
-        <StopsPanel route={routes[vetId]} naive={naiveLarissa} optimized={optimized} selected={sel} onSelect={setSel} onOptimize={optimize} onUndo={undo} onAll={() => nav('/agenda')} />
+      {/* mapa + visitas de hoje */}
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:h-[680px] lg:grid-cols-[minmax(0,1fr)_400px] xl:grid-cols-[minmax(0,1fr)_420px]">
+        <MapCard stops={byVet[vetId]} vetId={vetId} onVet={(id) => pickVet(id)} sel={sel} onSel={setSel} />
+        <VisitsPanel stops={byVet[vetId]} vetId={vetId} selected={sel} onHover={setSel} onAll={() => nav('/agenda')} />
       </div>
 
-      {/* próximas, equipe, assistente */}
-      <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 xl:grid-cols-[1fr_1.15fr_1fr]">
-        <NextVisits
-          routes={routes}
-          onPick={(v, id) => {
-            pickVet(v, id)
-            scrollTop()
-          }}
-          onAll={() => nav('/agenda')}
-        />
+      {/* kit do dia + próximas + assistente */}
+      <div className="mt-4 grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-[minmax(0,1fr)_400px] xl:grid-cols-[minmax(0,1fr)_420px]">
+        <DayKit vetId={vetId} stops={byVet[vetId]} />
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-2 lg:grid-cols-1">
+          <NextVisits
+            byVet={byVet}
+            onPick={(v, id) => {
+              pickVet(v, id)
+              scrollTop()
+            }}
+            onAll={() => nav('/agenda')}
+          />
+          <Assistant />
+        </div>
+      </div>
+
+      {/* equipe */}
+      <div className="mt-4">
         <Team
-          routes={routes}
+          byVet={byVet}
           activeVet={vetId}
           onPick={(id) => {
             pickVet(id)
@@ -146,223 +153,95 @@ export default function Hoje() {
           }}
           onAll={() => nav('/campo')}
         />
-        <Assistant className="md:col-span-2 xl:col-span-1" />
       </div>
 
-      <Attention routes={routes} />
+      <Attention byVet={byVet} />
     </div>
   )
 }
 
-/* ───────────────────────── métricas (ref. logip) ───────────────────────── */
+/* ───────────────────────── abas de veterinário ───────────────────────── */
 
-function Trend({ dir, tone, children }: { dir?: 'up' | 'down'; tone: 'green' | 'red' | 'coral' | 'blue'; children: React.ReactNode }) {
-  const c = { green: 'text-green', red: 'text-red', coral: 'text-coral', blue: 'text-blue' }[tone]
+function VetTabs({ vetId, onVet, byVet }: { vetId: string; onVet: (id: string) => void; byVet?: Record<string, Stop[]> }) {
   return (
-    <span className={cn('inline-flex items-center gap-1 text-[12px] font-semibold whitespace-nowrap', c)}>
-      {dir && (
-        <svg width="8" height="7" viewBox="0 0 8 7" aria-hidden className={dir === 'down' ? 'rotate-180' : ''}>
-          <path d="M4 0.5L7.5 6.5H0.5Z" fill="currentColor" />
-        </svg>
-      )}
-      {children}
-    </span>
+    <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1" role="tablist" aria-label="Veterinário">
+      {VETS.map((v) => {
+        const active = v.id === vetId
+        const live = byVet?.[v.id]?.some((s) => s.status === 'em-atendimento')
+        return (
+          <button
+            key={v.id}
+            role="tab"
+            aria-selected={active}
+            onClick={() => onVet(v.id)}
+            className={cn(
+              'flex h-11 shrink-0 items-center gap-2 rounded-full pr-4 pl-1.5 text-[13.5px] font-semibold transition-colors active:scale-[.97]',
+              active ? 'bg-black text-white' : 'bg-muted text-ink-2 hover:bg-muted-2 hover:text-ink',
+            )}
+          >
+            <span className="relative">
+              <VetAvatar vetId={v.id} size={32} className={cn(active && 'ring-2 ring-white/20')} />
+              {live && <span className={cn('absolute -right-0.5 -bottom-0.5 size-2.5 rounded-full bg-lime-2 ring-2', active ? 'ring-black' : 'ring-muted')} />}
+            </span>
+            {v.short}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
-function Metrics({ routes, optimized }: { routes: Record<string, DayRoute>; optimized: boolean }) {
-  const reminders = useDemo((s) => s.reminders)
-  const stops = VETS.flatMap((v) => routes[v.id].stops)
-  const done = stops.filter((s) => s.status === 'concluida').length
-  const km = VETS.reduce((a, v) => a + routes[v.id].km, 0)
-  const saving = ROUTE_LARISSA.kmNaive - ROUTE_LARISSA.kmOptimized
-  const due = reminders.filter((r) => r.status === 'programado' && daysFromToday(r.sendDate) <= 7).length
-  const noReply = reminders.filter((r) => r.status === 'sem-resposta').length
-  const monthUp = Math.round((KPIS.visitsMonth / KPIS.visitsMonthPrev - 1) * 100)
+/* ───────────────────────── mapa (só os pontos) ───────────────────────── */
 
-  const items: { icon: LucideIcon; label: string; value: React.ReactNode; trend: React.ReactNode }[] = [
-    {
-      icon: CircleCheck,
-      label: 'Concluídas',
-      value: (
-        <>
-          {done}
-          <span className="text-[15px] font-semibold text-ink-3"> de {stops.length}</span>
-        </>
-      ),
-      trend: <Trend tone="green">{Math.round((done / stops.length) * 100)}% do dia</Trend>,
-    },
-    {
-      icon: CalendarDays,
-      label: 'Visitas no mês',
-      value: KPIS.visitsMonth,
-      trend: (
-        <Trend dir="up" tone="green">
-          +{monthUp}%
-        </Trend>
-      ),
-    },
-    {
-      icon: Car,
-      label: 'Km previstos',
-      value: (
-        <>
-          <NumberTicker value={km} decimals={1} />
-          <span className="text-[15px] font-semibold text-ink-3"> km</span>
-        </>
-      ),
-      trend: optimized ? (
-        <Trend dir="down" tone="green">
-          {kmFmt(saving)} km
-        </Trend>
-      ) : (
-        <Trend tone="coral">{kmFmt(saving)} km a poupar</Trend>
-      ),
-    },
-    {
-      icon: BellRing,
-      label: 'Lembretes a enviar',
-      value: due,
-      trend: noReply ? <Trend tone="red">{noReply} sem resposta</Trend> : <Trend tone="green">Em dia</Trend>,
-    },
-  ]
-
-  return (
-    <Card className="grid grid-cols-2 px-1 py-1 lg:grid-cols-4 lg:py-2">
-      {items.map((it, i) => (
-        <div
-          key={it.label}
-          className={cn('flex min-w-0 items-center gap-3 px-3 py-3.5 sm:px-5', i % 2 === 1 && 'border-l border-line', i >= 2 && 'border-t border-line lg:border-t-0', i === 2 && 'lg:border-l')}
-        >
-          <IconCircle size={44} className="max-sm:hidden">
-            <it.icon className="size-[19px]" strokeWidth={1.9} />
-          </IconCircle>
-          <div className="min-w-0">
-            <div className="truncate text-[13px] font-semibold text-ink-2">{it.label}</div>
-            <div className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-              <span className="num text-[22px] leading-tight font-bold tracking-[-0.02em] text-ink">{it.value}</span>
-              {it.trend}
-            </div>
-          </div>
-        </div>
-      ))}
-    </Card>
-  )
-}
-
-/* ───────────────────────── mapa ───────────────────────── */
-
-function MapCard({
-  routes,
-  vetId,
-  onVet,
-  optimized,
-  naive,
-  sel,
-  onSel,
-  onOptimize,
-  onUndo,
-}: {
-  routes: Record<string, DayRoute>
-  vetId: string
-  onVet: (id: string) => void
-  optimized: boolean
-  naive: DayRoute
-  sel: string | null
-  onSel: (id: string | null) => void
-  onOptimize: () => void
-  onUndo: () => void
-}) {
-  const route = routes[vetId]
-  const info = nextInfo(route)
+function MapCard({ stops, vetId, onVet, sel, onSel }: { stops: Stop[]; vetId: string; onVet: (id: string) => void; sel: string | null; onSel: (id: string | null) => void }) {
   const vet = VET[vetId]
-  const bad = route.optimizable && !optimized
+  const zones = zonesOf(stops)
+  const visits = React.useMemo(
+    () =>
+      stops.map<MapVisit>((s) => ({
+        id: s.visit.id,
+        petId: s.visit.petIds[0],
+        extraPets: s.visit.petIds.length - 1,
+        bairro: TUTOR[s.visit.tutorId].bairro,
+        seed: s.visit.tutorId,
+        status: s.status,
+        caption: `${hhmm(s.startMin)}, ${bairroOf(s.visit).name}`,
+      })),
+    [stops],
+  )
 
   return (
     <Card className="flex min-h-0 min-w-0 flex-col p-2">
-      <div className="flex flex-col gap-2 px-1 pt-1 pb-2 sm:flex-row sm:items-center sm:justify-between">
-        <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1" role="tablist" aria-label="Veterinário">
-          {VETS.map((v) => {
-            const r = routes[v.id]
-            const done = r.stops.filter((s) => s.status === 'concluida').length
-            const active = v.id === vetId
-            return (
-              <button
-                key={v.id}
-                role="tab"
-                aria-selected={active}
-                onClick={() => onVet(v.id)}
-                className={cn(
-                  'flex h-11 shrink-0 items-center gap-2 rounded-full pr-4 pl-1.5 text-[13.5px] font-semibold transition-colors active:scale-[.97]',
-                  active ? 'bg-black text-white' : 'bg-muted text-ink-2 hover:bg-muted-2 hover:text-ink',
-                )}
-              >
-                <VetAvatar vetId={v.id} size={32} className={cn(active && 'ring-2 ring-white/20')} />
-                {v.short}
-                <span className={cn('num text-[12px] font-semibold', active ? 'text-lime' : 'text-ink-3')}>
-                  {done}/{r.stops.length}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-        {route.optimizable ? (
-          <Segmented
-            className="shrink-0 self-start sm:self-auto"
-            value={optimized ? 'opt' : 'naive'}
-            onChange={(v) => (v === 'opt' ? onOptimize() : onUndo())}
-            options={[
-              { value: 'naive', label: 'Como foi marcada' },
-              { value: 'opt', label: 'Otimizada' },
-            ]}
-          />
-        ) : (
-          <span className="inline-flex h-10 shrink-0 items-center gap-1.5 self-start rounded-full bg-green-soft px-3.5 text-[12.5px] font-semibold text-green sm:self-auto">
-            <Check className="size-3.5" strokeWidth={2.4} /> Já agrupada por bairro
-          </span>
-        )}
+      <div className="px-1 pt-1 pb-2">
+        <VetTabs vetId={vetId} onVet={onVet} />
       </div>
 
-      <div className="relative aspect-square overflow-hidden rounded-[20px] bg-surface sm:aspect-[4/3] lg:aspect-auto lg:min-h-0 lg:flex-1">
+      <div className="relative aspect-[5/4] overflow-hidden rounded-[20px] bg-surface sm:aspect-[4/3] lg:aspect-auto lg:min-h-0 lg:flex-1">
         <CityMap
-          visits={route.stops.map<MapVisit>((s, i) => ({
-            id: s.visit.id,
-            petId: s.visit.petIds[0],
-            extraPets: s.visit.petIds.length - 1,
-            bairro: TUTOR[s.visit.tutorId].bairro,
-            seed: s.visit.tutorId,
-            status: s.status,
-            order: i + 1,
-            caption: `${hhmm(s.startMin)}, ${bairroOf(s.visit).name}`,
-          }))}
+          visits={visits}
           focus="visits"
-          routeOrder={route.order}
-          compareOrder={route.optimizable && optimized ? naive.order : undefined}
-          routeVariant={bad ? 'naive' : 'optimized'}
-          routeKey={vetId}
-          highlightZones={zonesOf(route)}
+          showRoute={false}
+          showBase={false}
+          showScale={false}
+          highlightZones={zones}
           selectedVisitId={sel}
           onSelectVisit={onSel}
-          vetNow={info.mode !== 'encerrado' ? { at: info.at, color: vet.color, initials: vet.initials, title: `${vet.short} agora, ${hhmm(NOW_MIN)}` } : null}
-          ariaLabel={`Rota de hoje da ${vet.name}`}
+          ariaLabel={`Visitas de hoje da ${vet.name}`}
         />
 
-        {/* resumo da rota */}
-        <div className="pointer-events-none absolute top-3 left-3 flex items-center gap-2.5 rounded-[18px] bg-card/95 py-2 pr-4 pl-2 shadow-pill backdrop-blur-sm">
-          <IconCircle size={34} tone={bad ? 'coral' : 'black'}>
-            <RouteIcon className={cn('size-4', !bad && 'text-lime')} strokeWidth={2} />
-          </IconCircle>
-          <div className="leading-tight">
-            <div className="text-[15px] font-bold text-ink">
-              <NumberTicker value={route.km} decimals={1} /> km
-            </div>
-            <div className="text-[12px] font-medium text-ink-3">
-              {route.stops.length} paradas, <NumberTicker value={route.travelMin} /> min no trânsito
-            </div>
-          </div>
+        <div className="pointer-events-none absolute top-3 left-3 hidden max-w-[calc(100%-120px)] items-center sm:flex gap-2 rounded-full bg-card/95 py-1.5 pr-3.5 pl-1.5 shadow-pill backdrop-blur-sm">
+          <VetAvatar vetId={vetId} size={26} />
+          <span className="flex min-w-0 items-center gap-1.5 truncate text-[12.5px] font-semibold text-ink">
+            {zones.map((z) => (
+              <span key={z} className="inline-flex items-center gap-1.5">
+                <span className="size-2 rounded-full" style={{ background: ZONE[z].hex }} />
+                {ZONE[z].short}
+              </span>
+            ))}
+          </span>
         </div>
 
-        <span className="pointer-events-none absolute right-3 bottom-3 inline-flex h-8 items-center gap-2 rounded-full bg-black sm:top-3 sm:bottom-auto pr-3.5 pl-3 text-[12.5px] font-semibold text-white shadow-pill">
+        <span className="pointer-events-none absolute right-3 bottom-3 inline-flex h-8 sm:top-3 sm:bottom-auto items-center gap-2 rounded-full bg-black pr-3.5 pl-3 text-[12.5px] font-semibold text-white shadow-pill">
           <span className="relative flex size-2">
             <span className="absolute inline-flex size-full animate-ping rounded-full bg-lime opacity-75" />
             <span className="relative inline-flex size-2 rounded-full bg-lime" />
@@ -378,176 +257,115 @@ function MapCard({
   )
 }
 
-/* ───────────────────────── paradas de hoje ───────────────────────── */
+/* ───────────────────────── visitas de hoje ───────────────────────── */
 
-function StopsPanel({
-  route,
-  naive,
-  optimized,
-  selected,
-  onSelect,
-  onOptimize,
-  onUndo,
-  onAll,
-}: {
-  route: DayRoute
-  naive: DayRoute
-  optimized: boolean
-  selected: string | null
-  onSelect: (id: string | null) => void
-  onOptimize: () => void
-  onUndo: () => void
-  onAll: () => void
-}) {
-  const vet = VET[route.vetId]
-  const listRef = React.useRef<HTMLOListElement>(null)
-  const naiveTime = Object.fromEntries(naive.stops.map((s) => [s.visit.id, s.startMin]))
-  const fixed = route.stops.filter((s) => s.visit.fixedTime)
+function VisitsPanel({ stops, vetId, selected, onHover, onAll }: { stops: Stop[]; vetId: string; selected: string | null; onHover: (id: string) => void; onAll: () => void }) {
+  const nav = useNavigate()
+  const vet = VET[vetId]
+  const listRef = React.useRef<HTMLDivElement>(null)
+
+  const groups = React.useMemo(() => {
+    const m = new Map<ZoneId, Stop[]>()
+    for (const s of stops) {
+      const z = bairroOf(s.visit).zone
+      if (!m.has(z)) m.set(z, [])
+      m.get(z)!.push(s)
+    }
+    return [...m.entries()]
+  }, [stops])
 
   React.useEffect(() => {
     if (!selected) return
     const box = listRef.current
     const el = box?.querySelector<HTMLElement>(`[data-stop="${selected}"]`)
-    if (el && box && box.scrollHeight > box.clientHeight + 4) {
-      const top = el.offsetTop - box.offsetTop
-      if (top < box.scrollTop || top + el.offsetHeight > box.scrollTop + box.clientHeight) box.scrollTo({ top: top - 40, behavior: 'smooth' })
-    }
+    if (!el || !box || box.scrollHeight <= box.clientHeight + 4) return
+    const top = el.offsetTop - box.offsetTop
+    if (top < box.scrollTop || top + el.offsetHeight > box.scrollTop + box.clientHeight) box.scrollTo({ top: top - 48, behavior: 'smooth' })
   }, [selected])
 
-  // onde entra a linha "agora"
-  const liveIdx = route.stops.findIndex((s) => s.status === 'em-atendimento' || s.status === 'a-caminho')
-  const nowIdx = liveIdx >= 0 ? (route.stops[liveIdx].status === 'a-caminho' ? liveIdx : liveIdx + 1) : route.stops.findIndex((s) => s.startMin > NOW_MIN)
-  type Item = { kind: 'stop'; s: DayStop; i: number } | { kind: 'now' }
-  const items: Item[] = []
-  route.stops.forEach((s, i) => {
-    if (i === nowIdx) items.push({ kind: 'now' })
-    items.push({ kind: 'stop', s, i })
-  })
-  if (nowIdx === -1 || nowIdx >= route.stops.length) items.push({ kind: 'now' })
-
   return (
-    <Panel className="flex min-h-0 flex-col bg-muted">
+    <Panel className="flex min-h-0 min-w-0 flex-col bg-muted">
       <div className="flex items-center justify-between gap-3 px-3 pt-3 pb-3">
         <div className="min-w-0">
-          <h2 className="text-[17px] font-bold tracking-[-0.02em] text-ink">Paradas de hoje</h2>
-          <p className="mt-0.5 truncate text-[12.5px] font-medium text-ink-3">
-            {vet.short}, {route.stops.length} paradas
-          </p>
+          <h2 className="text-[17px] font-bold tracking-[-0.02em] text-ink">Visitas de hoje</h2>
+          <p className="mt-0.5 truncate text-[12.5px] font-medium text-ink-3">{vet.short}</p>
         </div>
         <ViewAll onClick={onAll} />
       </div>
 
-      <AnimatePresence initial={false} mode="popLayout">
-        {route.optimizable && !optimized && (
-          <motion.div key="nudge" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.3, ease: EASE }} className="mb-2 rounded-[20px] bg-lime p-4">
-            <div className="flex items-start gap-3">
-              <IconCircle size={36} tone="black">
-                <RouteIcon className="size-4 text-lime" strokeWidth={2} />
-              </IconCircle>
-              <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-bold text-ink">Ordem de chegada no WhatsApp</div>
-                <div className="mt-0.5 text-[13px] font-medium text-lime-ink">
-                  Agrupar por bairro poupa <b className="num font-bold">{kmFmt(ROUTE_LARISSA.kmNaive - ROUTE_LARISSA.kmOptimized)} km</b> hoje.
+      <div ref={listRef} className="scroll-thin relative flex flex-col gap-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.div key={vetId} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3, ease: EASE }} className="flex flex-col gap-4">
+            {groups.map(([z, ss]) => (
+              <section key={z}>
+                <div className="flex items-center gap-2 px-2 pb-2">
+                  <span className="size-2.5 shrink-0 rounded-full" style={{ background: ZONE[z].hex }} />
+                  <span className="shrink-0 text-[13.5px] font-bold whitespace-nowrap text-ink">{ZONE[z].name}</span>
+                  <span className="min-w-0 truncate text-[12.5px] font-medium text-ink-3">{joinE([...new Set(ss.map((s) => bairroOf(s.visit).name))])}</span>
                 </div>
-              </div>
-            </div>
-            <Button variant="primary" size="sm" onClick={onOptimize} className="mt-3 w-full">
-              Otimizar rota <ArrowRight className="size-3.5" />
-            </Button>
+                <ol className="flex flex-col gap-2">
+                  {ss.map((s, i) => (
+                    <VisitCard key={s.visit.id} s={s} i={i} selected={selected === s.visit.id} onHover={() => onHover(s.visit.id)} onOpen={() => openVisit(nav, s.visit)} />
+                  ))}
+                </ol>
+              </section>
+            ))}
+            {!groups.length && <Empty title="Sem visitas hoje" />}
           </motion.div>
-        )}
-        {route.optimizable && optimized && (
-          <motion.div key="opt" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.3, ease: EASE }} className="mb-2 rounded-[20px] bg-black p-4 text-white">
-            <div className="flex items-center justify-between">
-              <span className="text-[13px] font-semibold text-white/60">Rota otimizada</span>
-              <button onClick={onUndo} className="inline-flex h-7 items-center gap-1 rounded-full bg-white/10 px-2.5 text-[12px] font-semibold text-white/80 hover:bg-white/15 hover:text-white">
-                <Undo2 className="size-3" /> Desfazer
-              </button>
-            </div>
-            <div className="mt-1 flex items-baseline gap-2">
-              <span className="num text-[28px] leading-none font-bold tracking-[-0.02em]">{kmFmt(ROUTE_LARISSA.kmOptimized)} km</span>
-              <span className="num text-[14px] font-semibold text-white/40 line-through">{kmFmt(ROUTE_LARISSA.kmNaive)}</span>
-              <span className="ml-auto text-[12.5px] font-semibold text-lime">{ROUTE_LARISSA.minNaive - ROUTE_LARISSA.minOptimized} min a menos</span>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {fixed.map((s) => (
-                <Tip key={s.visit.id} content="Horário marcado pelo tutor. Não mudou.">
-                  <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-white/10 px-2.5 text-[12px] font-semibold">
-                    <Lock className="size-3 text-white/50" strokeWidth={2.2} />
-                    <span className="num">{hhmm(s.startMin)}</span> {PET[s.visit.petIds[0]].name}
-                  </span>
-                </Tip>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <ol ref={listRef} className="scroll-thin relative flex flex-col lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-        <LayoutGroup>
-          {items.map((it) =>
-            it.kind === 'now' ? (
-              <motion.li key="now" layout transition={{ duration: 0.5, ease: EASE }} className="relative flex h-8 items-center px-1" aria-label={`Agora, ${hhmm(NOW_MIN)}`}>
-                <span className="absolute inset-x-3 top-1/2 border-t-[1.5px] border-dashed border-blue/70" />
-                <span className="relative inline-flex h-6 items-center gap-1.5 rounded-full bg-blue px-2.5 text-[11.5px] font-bold text-white">
-                  <span className="size-1.5 rounded-full bg-white" />
-                  Agora <span className="num">{hhmm(NOW_MIN)}</span>
-                </span>
-              </motion.li>
-            ) : (
-              <StopCard
-                key={it.s.visit.id}
-                s={it.s}
-                first={it.i === 0}
-                selected={selected === it.s.visit.id}
-                onSelect={() => onSelect(selected === it.s.visit.id ? null : it.s.visit.id)}
-                before={route.optimizable && optimized && naiveTime[it.s.visit.id] !== it.s.startMin ? naiveTime[it.s.visit.id] : undefined}
-              />
-            ),
-          )}
-        </LayoutGroup>
-      </ol>
+        </AnimatePresence>
+      </div>
     </Panel>
   )
 }
 
-function StopCard({ s, first, selected, onSelect, before }: { s: DayStop; first: boolean; selected: boolean; onSelect: () => void; before?: number }) {
+function NavPill({ href, icon: Icon, label, dark }: { href: string; icon: LucideIcon; label: string; dark?: boolean }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={`Abrir no ${label}`}
+      className={cn(
+        'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-semibold transition-[background,transform] duration-150 active:scale-[.97]',
+        dark ? 'bg-white/10 text-white hover:bg-white/15' : 'bg-muted text-ink hover:bg-muted-2',
+      )}
+    >
+      <Icon className={cn('size-3.5', dark ? 'text-white/70' : 'text-ink-2')} strokeWidth={2} />
+      {label}
+    </a>
+  )
+}
+
+function VisitCard({ s, i, selected, onHover, onOpen }: { s: Stop; i: number; selected: boolean; onHover: () => void; onOpen: () => void }) {
   const v = s.visit
   const pet = PET[v.petIds[0]]
-  const bairro = bairroOf(v)
   const st = VISIT_STATUS[s.status]
   const live = s.status === 'em-atendimento'
   const done = s.status === 'concluida'
+  const links = navLinks(v)
+  const t = TUTOR[v.tutorId]
   const elapsed = Math.max(0, Math.min(v.durationMin, NOW_MIN - s.startMin))
 
   return (
-    <motion.li layout transition={{ layout: { duration: 0.55, ease: EASE } }} data-stop={v.id}>
-      {/* deslocamento até a parada */}
-      <div className="flex h-7 items-center gap-1.5 px-3 text-[11.5px] font-medium text-ink-3">
-        <Car className="size-3.5 text-ink-4" strokeWidth={2} />
-        {first && 'Saída da base, '}
-        <span className="num">
-          {kmFmt(s.leg.km)} km, {s.leg.min} min
-        </span>
-      </div>
-      <button
-        onClick={onSelect}
-        className={cn(
-          'grid w-full grid-cols-[44px_40px_minmax(0,1fr)_auto] items-center gap-x-3 rounded-[20px] p-3 text-left transition-[box-shadow,transform,background] duration-150 active:scale-[.99]',
-          live ? 'bg-black text-white' : 'bg-card shadow-card hover:shadow-lift',
-          selected && (live ? 'ring-2 ring-lime' : 'ring-2 ring-black'),
-        )}
-      >
+    <motion.li
+      data-stop={v.id}
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: Math.min(i, 6) * 0.03, ease: EASE }}
+      onMouseEnter={onHover}
+      className={cn(
+        'rounded-[20px] p-3 transition-[box-shadow] duration-150',
+        live ? 'bg-black text-white' : 'bg-card shadow-card hover:shadow-lift',
+        selected && (live ? 'ring-2 ring-lime' : 'ring-2 ring-black'),
+      )}
+    >
+      <button onClick={onOpen} className="grid w-full grid-cols-[44px_40px_minmax(0,1fr)_auto] items-center gap-x-3 text-left" aria-label={`Abrir visita de ${petNames(v)}`}>
         <div className="leading-tight">
           <div className={cn('num text-[14px] font-bold', done ? 'text-ink-3' : live ? 'text-white' : 'text-ink')}>{hhmm(s.startMin)}</div>
           {v.fixedTime ? (
             <span className={cn('mt-0.5 inline-flex items-center gap-0.5 text-[11px] font-semibold', live ? 'text-white/50' : 'text-ink-3')}>
               <Lock className="size-2.5" strokeWidth={2.4} /> fixo
             </span>
-          ) : before != null ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="num mt-0.5 text-[11px] font-semibold text-ink-4 line-through">
-              {hhmm(before)}
-            </motion.div>
           ) : (
             <div className={cn('num mt-0.5 text-[11px] font-semibold', live ? 'text-white/50' : 'text-ink-4')}>{v.durationMin} min</div>
           )}
@@ -556,31 +374,194 @@ function StopCard({ s, first, selected, onSelect, before }: { s: DayStop; first:
         <div className={cn('min-w-0', done && 'opacity-70')}>
           <div className="truncate text-[14px] font-bold">{petNames(v)}</div>
           <div className={cn('truncate text-[12.5px] font-medium', live ? 'text-white/60' : 'text-ink-3')}>
-            {v.type}, {bairro.name}
+            {v.type}, {t.address}
           </div>
         </div>
         <div className="flex justify-end">
-          {s.status === 'agendada' ? (
-            <ArrowUpRight className="size-4 text-ink-4" strokeWidth={2} />
-          ) : (
+          {s.status === 'agendada' ? null : (
             <Badge tone={st.tone} dot={live}>
               {done ? <Check className="-mx-0.5 size-3" strokeWidth={3} /> : null}
               {done ? 'Feita' : st.label}
             </Badge>
           )}
         </div>
-        {live && (
-          <div className="col-span-4 mt-3 flex items-center gap-2.5">
-            <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/15">
-              <motion.span className="block h-full rounded-full bg-lime" initial={{ width: 0 }} animate={{ width: `${(elapsed / v.durationMin) * 100}%` }} transition={{ duration: 1, ease: EASE }} />
-            </span>
-            <span className="num shrink-0 text-[11.5px] font-semibold text-white/60">
-              {elapsed} de {v.durationMin} min
-            </span>
-          </div>
-        )}
       </button>
+
+      {live && (
+        <div className="mt-3 flex items-center gap-2.5">
+          <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/15">
+            <motion.span className="block h-full rounded-full bg-lime" initial={{ width: 0 }} animate={{ width: `${(elapsed / v.durationMin) * 100}%` }} transition={{ duration: 1, ease: EASE }} />
+          </span>
+          <span className="num shrink-0 text-[11.5px] font-semibold text-white/60">Desde {hhmm(s.startMin)}</span>
+        </div>
+      )}
+
+      <div className="mt-3 flex items-center gap-1.5">
+        <NavPill href={links.waze} icon={Navigation} label="Waze" dark={live} />
+        <NavPill href={links.maps} icon={MapPin} label="Maps" dark={live} />
+        {!live && (
+          <Button variant={done ? 'ghost' : 'subtle'} size="sm" onClick={onOpen} className="ml-auto">
+            {done ? 'Ver visita' : 'Abrir visita'}
+            <ArrowUpRight className="size-3.5" strokeWidth={2.2} />
+          </Button>
+        )}
+      </div>
+      {live && (
+        <Button variant="lime" size="md" onClick={onOpen} className="mt-2 w-full">
+          Continuar atendimento <ArrowRight className="size-4" strokeWidth={2.2} />
+        </Button>
+      )}
     </motion.li>
+  )
+}
+
+/* ───────────────────────── kit do dia ───────────────────────── */
+
+const KIT_GROUPS: { id: KitItem['group']; icon: LucideIcon; tone: 'blue' | 'violet' | 'yellow' | 'green' }[] = [
+  { id: 'Vacinas', icon: Syringe, tone: 'blue' },
+  { id: 'Coleta', icon: TestTube, tone: 'violet' },
+  { id: 'Procedimentos', icon: Stethoscope, tone: 'yellow' },
+  { id: 'Medicamentos', icon: Pill, tone: 'green' },
+]
+
+function qtyLabel(it: KitItem) {
+  const n = it.qty
+  const plural: Record<string, [string, string]> = { dose: ['dose', 'doses'], frasco: ['frasco', 'frascos'], kit: ['kit', 'kits'] }
+  const u = it.unit && plural[it.unit]
+  if (u) return `${n} ${n === 1 ? u[0] : u[1]}`
+  return `${n} un`
+}
+
+function DayKit({ vetId, stops }: { vetId: string; stops: Stop[] }) {
+  const kitChecked = useDemo((s) => s.kitChecked)
+  const toggleKit = useDemo((s) => s.toggleKit)
+  const vet = VET[vetId]
+
+  const items = React.useMemo(() => buildKit(stops.map((s) => s.visit)), [stops])
+  const petByName = React.useMemo(() => {
+    const m: Record<string, Pet> = {}
+    for (const s of stops) for (const id of s.visit.petIds) m[PET[id].name] = PET[id]
+    return m
+  }, [stops])
+  const key = (it: KitItem) => `${vetId}:${it.id}`
+  const done = items.filter((it) => kitChecked[key(it)]).length
+  const groups = KIT_GROUPS.map((g) => ({ ...g, items: items.filter((i) => i.group === g.id) })).filter((g) => g.items.length)
+  const ready = items.length > 0 && done === items.length
+
+  const copy = async () => {
+    const lines = [`Kit do dia, ${vet.short}`]
+    for (const g of groups) {
+      lines.push('', g.id)
+      for (const it of g.items) lines.push(`${kitChecked[key(it)] ? '[x]' : '[ ]'} ${it.label}, ${qtyLabel(it)} (${joinE(it.forPets)})`)
+    }
+    try {
+      if (!navigator.clipboard) throw new Error('sem clipboard')
+      await navigator.clipboard.writeText(lines.join('\n'))
+      toast.success('Lista copiada', { description: 'Cole no WhatsApp ou nas notas.' })
+    } catch {
+      toast.error('Não foi possível copiar a lista')
+    }
+  }
+
+  return (
+    <Panel id="kit" className="scroll-mt-4 bg-muted">
+      <div className="flex items-center justify-between gap-3 px-3 pt-3 pb-3">
+        <div className="min-w-0">
+          <h2 className="text-[17px] font-bold tracking-[-0.02em] text-ink">Kit do dia</h2>
+          <p className="mt-0.5 truncate text-[12.5px] font-medium text-ink-3">O que levar no carro, {vet.short}</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={copy} disabled={!items.length}>
+          <Copy className="size-3.5" strokeWidth={2} /> Copiar lista
+        </Button>
+      </div>
+
+      {items.length ? (
+        <>
+          <div className="rounded-[20px] bg-card p-4 shadow-card">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[13.5px] font-bold text-ink">
+                <span className="num">{done}</span> de <span className="num">{items.length}</span> separados
+              </span>
+              {ready ? (
+                <Badge tone="ok">
+                  <Check className="-mx-0.5 size-3" strokeWidth={3} /> Kit pronto
+                </Badge>
+              ) : (
+                <span className="text-[12.5px] font-medium text-ink-3">Toque para marcar</span>
+              )}
+            </div>
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+              <motion.div className={cn('h-full rounded-full', ready ? 'bg-green' : 'bg-black')} initial={false} animate={{ width: `${(done / items.length) * 100}%` }} transition={{ duration: 0.45, ease: EASE }} />
+            </div>
+          </div>
+
+          <div className="mt-2 grid grid-cols-[minmax(0,1fr)] items-start gap-2 md:grid-cols-2">
+            {groups.map((g) => {
+              const gDone = g.items.filter((it) => kitChecked[key(it)]).length
+              return (
+                <div key={g.id} className="rounded-[20px] bg-card p-2 shadow-card">
+                  <div className="flex items-center gap-2.5 px-2 pt-1.5 pb-2">
+                    <IconCircle size={30} tone={g.tone}>
+                      <g.icon className="size-3.5" strokeWidth={2.1} />
+                    </IconCircle>
+                    <span className="text-[14px] font-bold text-ink">{g.id}</span>
+                    <span className="num ml-auto text-[12px] font-semibold text-ink-3">
+                      {gDone}/{g.items.length}
+                    </span>
+                  </div>
+                  <ul className="flex flex-col">
+                    {g.items.map((it) => {
+                      const on = !!kitChecked[key(it)]
+                      const pets = it.forPets.map((n) => petByName[n]).filter(Boolean)
+                      return (
+                        <li key={it.id} className="border-t border-line first:border-t-0">
+                          <button
+                            role="checkbox"
+                            aria-checked={on}
+                            onClick={() => toggleKit(key(it))}
+                            className="flex w-full items-center gap-3 rounded-[14px] px-2 py-2.5 text-left transition-colors hover:bg-surface"
+                          >
+                            <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-full transition-colors duration-150', on ? 'bg-black text-lime' : 'bg-card ring-[1.5px] ring-line-2 ring-inset')}>
+                              <AnimatePresence initial={false}>
+                                {on && (
+                                  <motion.span initial={{ scale: 0.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.4, opacity: 0 }} transition={{ duration: 0.18 }}>
+                                    <Check className="size-3.5" strokeWidth={3} />
+                                  </motion.span>
+                                )}
+                              </AnimatePresence>
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className={cn('block truncate text-[13.5px] font-semibold transition-colors', on ? 'text-ink-3 line-through decoration-ink-4' : 'text-ink')}>{it.label}</span>
+                              <span className="mt-1 flex min-w-0 items-center gap-1.5">
+                                {pets.length > 0 && (
+                                  <AvatarStack size={20}>
+                                    {pets.slice(0, 3).map((p) => (
+                                      <PetAvatar key={p.id} pet={p} size={20} />
+                                    ))}
+                                  </AvatarStack>
+                                )}
+                                <span className="min-w-0 truncate text-[12px] font-medium text-ink-3">{joinE(it.forPets)}</span>
+                              </span>
+                            </span>
+                            <span className={cn('num inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-[12px] font-semibold', on ? 'bg-muted text-ink-3' : 'bg-muted text-ink')}>{qtyLabel(it)}</span>
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </div>
+              )
+            })}
+          </div>
+        </>
+      ) : (
+        <Card>
+          <Empty icon={<ClipboardList className="size-5" strokeWidth={2} />} title="Nada para separar">
+            As visitas de hoje não pedem material extra.
+          </Empty>
+        </Card>
+      )}
+    </Panel>
   )
 }
 
@@ -607,8 +588,8 @@ function InfoPill({ icon: Icon, children, className }: { icon: LucideIcon; child
   )
 }
 
-function NextVisits({ routes, onPick, onAll }: { routes: Record<string, DayRoute>; onPick: (vetId: string, visitId: string) => void; onAll: () => void }) {
-  const upcoming = VETS.flatMap((v) => routes[v.id].stops)
+function NextVisits({ byVet, onPick, onAll }: { byVet: Record<string, Stop[]>; onPick: (vetId: string, visitId: string) => void; onAll: () => void }) {
+  const upcoming = VETS.flatMap((v) => byVet[v.id])
     .filter((s) => s.status === 'agendada' && s.startMin > NOW_MIN)
     .sort((a, b) => a.startMin - b.startMin)
     .slice(0, 3)
@@ -659,6 +640,11 @@ function NextVisits({ routes, onPick, onAll }: { routes: Record<string, DayRoute
             </motion.button>
           )
         })}
+        {!upcoming.length && (
+          <Card>
+            <Empty title="Sem mais visitas hoje" />
+          </Card>
+        )}
       </div>
     </Panel>
   )
@@ -666,78 +652,52 @@ function NextVisits({ routes, onPick, onAll }: { routes: Record<string, DayRoute
 
 /* ───────────────────────── equipe em campo (ref. Onboarding) ───────────────────────── */
 
-function Team({ routes, activeVet, onPick, onAll }: { routes: Record<string, DayRoute>; activeVet: string; onPick: (vetId: string) => void; onAll: () => void }) {
-  const stops = VETS.flatMap((v) => routes[v.id].stops)
-  const count = (st: string) => stops.filter((s) => s.status === st).length
-  const parts = [
-    { key: 'concluida', label: 'Feitas', color: 'var(--color-green)' },
-    { key: 'em-atendimento', label: 'Atendendo', color: 'var(--color-lime-2)' },
-    { key: 'a-caminho', label: 'A caminho', color: 'var(--color-blue)' },
-    { key: 'agendada', label: 'Agendadas', color: 'var(--color-line-2)' },
-  ]
+function vetState(stops: Stop[]) {
+  const cur = stops.find((s) => s.status === 'em-atendimento')
+  if (cur) return { dot: 'bg-lime-2', txt: `Com ${PET[cur.visit.petIds[0]].name}` }
+  const way = stops.find((s) => s.status === 'a-caminho')
+  if (way) return { dot: 'bg-blue', txt: `Indo até ${PET[way.visit.petIds[0]].name}` }
+  const next = stops.find((s) => s.status === 'agendada')
+  if (next) return { dot: 'bg-ink-4', txt: `Próxima às ${hhmm(next.startMin)}` }
+  return { dot: 'bg-green', txt: 'Dia encerrado' }
+}
 
+function Team({ byVet, activeVet, onPick, onAll }: { byVet: Record<string, Stop[]>; activeVet: string; onPick: (vetId: string) => void; onAll: () => void }) {
   return (
     <Panel className="flex flex-col bg-muted">
       <SectionHead title="Equipe em campo" action={<ViewAll onClick={onAll}>App do vet</ViewAll>} />
-      <div className="grid flex-1 grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {VETS.map((v) => {
-          const r = routes[v.id]
-          const info = nextInfo(r)
-          const done = r.stops.filter((s) => s.status === 'concluida').length
+          const stops = byVet[v.id]
+          const state = vetState(stops)
+          const done = stops.filter((s) => s.status === 'concluida').length
           const active = v.id === activeVet
-          const state = info.mode === 'atendimento' ? 'bg-lime-2' : info.mode === 'deslocamento' ? 'bg-blue' : 'bg-ink-4'
-          const stateTxt =
-            info.mode === 'atendimento' && info.current
-              ? `Com ${PET[info.current.visit.petIds[0]].name}`
-              : info.mode === 'deslocamento' && info.next
-                ? `Indo até ${PET[info.next.visit.petIds[0]].name}`
-                : info.mode === 'encerrado'
-                  ? 'Dia encerrado'
-                  : 'Livre'
           return (
             <button
               key={v.id}
               onClick={() => onPick(v.id)}
               className={cn(
-                'flex min-w-0 flex-col items-center justify-center rounded-[20px] bg-card px-2 pt-4 pb-3 text-center shadow-card transition-[box-shadow,transform] duration-150 hover:shadow-lift active:scale-[.98]',
+                'flex min-w-0 flex-col items-center justify-center rounded-[20px] bg-card px-2 pt-5 pb-4 text-center shadow-card transition-[box-shadow,transform] duration-150 hover:shadow-lift active:scale-[.98]',
                 active && 'ring-2 ring-black',
               )}
             >
               <span className="relative">
-                <VetAvatar vetId={v.id} size={52} />
-                <span className={cn('absolute right-0 bottom-0 size-3.5 rounded-full ring-[3px] ring-card', state)} />
+                <VetAvatar vetId={v.id} size={56} />
+                <span className={cn('absolute right-0 bottom-0 size-3.5 rounded-full ring-[3px] ring-card', state.dot)} />
               </span>
-              <span className="mt-2.5 w-full truncate text-[13.5px] font-bold text-ink">{v.short}</span>
-              <span className="w-full truncate text-[12px] font-medium text-ink-3">{zonesTxt(zonesOf(r))}</span>
-              <span className="mt-2.5 inline-flex h-7 items-center gap-1.5 rounded-full bg-muted px-2.5 text-[11.5px] font-semibold text-ink-2">
-                <ClipboardCheck className="size-3.5 text-ink-3" strokeWidth={2} />
+              <span className="mt-3 w-full truncate text-[13.5px] font-bold text-ink">{v.short}</span>
+              <span className="w-full truncate text-[12px] font-medium text-ink-3">{zonesTxt(zonesOf(stops))}</span>
+              <span className="mt-3 inline-flex h-7 max-w-full items-center gap-1.5 rounded-full bg-muted px-2.5 text-[11.5px] font-semibold text-ink-2">
+                <ClipboardCheck className="size-3.5 shrink-0 text-ink-3" strokeWidth={2} />
                 <span className="num">
-                  {done}/{r.stops.length}
+                  {done}/{stops.length}
                 </span>
-                <span className="max-[420px]:hidden">visitas</span>
+                <span className="max-[460px]:hidden">visitas</span>
               </span>
-              <span className="mt-2 w-full truncate text-[11.5px] font-semibold text-ink-2">{stateTxt}</span>
+              <span className="mt-2 w-full truncate text-[11.5px] font-semibold text-ink-2">{state.txt}</span>
             </button>
           )
         })}
-      </div>
-      <div className="mt-2 rounded-[20px] bg-card p-4 shadow-card">
-        <div className="flex items-baseline justify-between">
-          <span className="text-[13.5px] font-bold text-ink">Andamento do dia</span>
-          <span className="num text-[12.5px] font-semibold text-ink-3">
-            {count('concluida')} de {stops.length}
-          </span>
-        </div>
-        <SegmentBar className="mt-3" parts={parts.map((p) => ({ value: count(p.key), color: p.color }))} />
-        <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 sm:grid-cols-4">
-          {parts.map((p) => (
-            <span key={p.key} className="flex items-center gap-1.5 text-[12px] font-medium text-ink-2">
-              <span className="size-2 rounded-full" style={{ background: p.color }} />
-              {p.label}
-              <span className="num ml-auto font-bold text-ink sm:ml-0">{count(p.key)}</span>
-            </span>
-          ))}
-        </div>
       </div>
     </Panel>
   )
@@ -747,22 +707,8 @@ function Team({ routes, activeVet, onPick, onAll }: { routes: Record<string, Day
 
 function Assistant({ className }: { className?: string }) {
   const nav = useNavigate()
-  const reminders = useDemo((s) => s.reminders)
-  const setReminderStatus = useDemo((s) => s.setReminderStatus)
   const [msg, setMsg] = React.useState('')
 
-  const sendReminders = () => {
-    const due = reminders.filter((r) => r.status === 'programado' && daysFromToday(r.sendDate) <= 0)
-    if (!due.length) {
-      toast('Nenhum lembrete para enviar hoje')
-      return
-    }
-    due.forEach((r) => setReminderStatus(r.id, 'enviado'))
-    toast.success(`${due.length} ${due.length === 1 ? 'lembrete enviado' : 'lembretes enviados'} por WhatsApp`, { description: 'As respostas aparecem em Lembretes.' })
-  }
-  const lateVaccines = () => {
-    document.getElementById('atencao')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
   const send = (e: React.FormEvent) => {
     e.preventDefault()
     if (!msg.trim()) return
@@ -772,8 +718,8 @@ function Assistant({ className }: { className?: string }) {
 
   const chips: { label: string; icon: LucideIcon; run: () => void }[] = [
     { label: 'Encaixar visita', icon: CalendarPlus, run: () => nav('/agenda?novo=1') },
-    { label: 'Vacinas atrasadas', icon: Syringe, run: lateVaccines },
-    { label: 'Enviar lembretes', icon: Send, run: sendReminders },
+    { label: 'Vacinas atrasadas', icon: Syringe, run: () => scrollToId('atencao') },
+    { label: 'Kit do dia', icon: ClipboardList, run: () => scrollToId('kit') },
   ]
 
   return (
@@ -847,51 +793,18 @@ const ATTN_TONE: Record<AttnTone, { bg: string; fg: string }> = {
   blue: { bg: 'bg-blue-soft', fg: 'text-blue' },
 }
 
-function Attention({ routes }: { routes: Record<string, DayRoute> }) {
+function Attention({ byVet }: { byVet: Record<string, Stop[]> }) {
   const nav = useNavigate()
   const extraDoses = useDemo((s) => s.extraDoses)
   const reminders = useDemo((s) => s.reminders)
   const setReminderStatus = useDemo((s) => s.setReminderStatus)
+  const toggleKit = useDemo((s) => s.toggleKit)
   const [resolved, setResolved] = React.useState<Record<string, boolean>>({})
   const resolve = (id: string) => setResolved((r) => ({ ...r, [id]: true }))
 
-  const stops = VETS.flatMap((v) => routes[v.id].stops)
+  const stops = VETS.flatMap((v) => byVet[v.id])
   const pendingStops = stops.filter((s) => s.status !== 'concluida' && s.status !== 'cancelada')
   const items: AttnItem[] = []
-
-  // atrasos
-  for (const v of VETS) {
-    const info = nextInfo(routes[v.id])
-    if (info.next && info.delayMin != null && info.delayMin > 10) {
-      const t = TUTOR[info.next.visit.tutorId]
-      const id = `late-${v.id}`
-      items.push({
-        id,
-        tone: 'red',
-        kind: 'Atraso',
-        icon: Timer,
-        pet: PET[info.next.visit.petIds[0]],
-        title: (
-          <>
-            {v.short} chega {info.delayMin} min depois na visita de {petNames(info.next.visit)}
-          </>
-        ),
-        sub: (
-          <>
-            Marcada para {hhmm(info.next.startMin)}, chegada prevista {hhmm(info.etaMin!)}
-          </>
-        ),
-        action: {
-          label: 'Avisar tutor',
-          done: 'Tutor avisado',
-          run: () => {
-            resolve(id)
-            toast.success(`Mensagem enviada para ${t.name}`, { description: `"${v.short} está a caminho e chega por volta de ${hhmm(info.etaMin!)}. Obrigado pela paciência!"` })
-          },
-        },
-      })
-    }
-  }
 
   // vacinas atrasadas de quem tem visita hoje
   const allDoses = [...DOSES, ...extraDoses]
@@ -911,6 +824,13 @@ function Attention({ routes }: { routes: Record<string, DayRoute> }) {
       const covered = /atrasad|dose|raiva|vacina/.test(reason) || late.some((d) => reason.includes(VACCINE[d.vaccineId].short.toLowerCase()))
       const vet = VET[s.visit.vetId]
       const id = `vac-${petId}`
+      const markKit = () => {
+        const checked = useDemo.getState().kitChecked
+        for (const d of late) {
+          const k = `${s.visit.vetId}:vac-${d.vaccineId}`
+          if (!checked[k]) toggleKit(k)
+        }
+      }
       items.push({
         id,
         tone: days > 20 ? 'red' : 'yellow',
@@ -934,7 +854,8 @@ function Attention({ routes }: { routes: Record<string, DayRoute> }) {
               done: 'No kit',
               run: () => {
                 resolve(id)
-                toast.success(`Doses de ${names.join(' e ')} separadas`, { description: `Vão no kit da ${vet.short} para a visita das ${hhmm(s.startMin)}.` })
+                markKit()
+                toast.success(`Doses de ${names.join(' e ')} separadas`, { description: `Marcadas no kit do dia da ${vet.short}.` })
               },
             }
           : {
@@ -942,6 +863,7 @@ function Attention({ routes }: { routes: Record<string, DayRoute> }) {
               done: 'Incluída',
               run: () => {
                 resolve(id)
+                markKit()
                 toast.success(`${names.join(' e ')} incluída na visita de ${pet.name}`, { description: `${vet.short} recebeu o aviso no app. O tutor será informado do valor.` })
               },
             },
@@ -1025,7 +947,7 @@ function Attention({ routes }: { routes: Record<string, DayRoute> }) {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: Math.min(i, 8) * 0.03, ease: EASE }}
-              className={cn('flex flex-col rounded-[20px] p-4 sm:min-h-[164px] transition-colors duration-300', t.bg)}
+              className={cn('flex flex-col rounded-[20px] p-4 transition-colors duration-300 sm:min-h-[164px]', t.bg)}
             >
               <div className="flex items-center gap-2">
                 <IconCircle size={30} tone="white" className="shadow-none">
