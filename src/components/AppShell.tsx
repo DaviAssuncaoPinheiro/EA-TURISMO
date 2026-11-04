@@ -65,6 +65,7 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
         <nav className="mt-auto mb-auto flex flex-col items-center gap-2.5">
           {NAV.map((n) => (
             <Tip key={n.to} content={n.label} side="right">
+              <span className="inline-flex">
               <NavLink
                 to={n.to}
                 end={n.end}
@@ -78,6 +79,7 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
                 <n.icon className="size-[19px]" strokeWidth={1.9} />
                 {n.badge && due > 0 && <span className="absolute top-1.5 right-1.5 size-2 rounded-full bg-coral ring-2 ring-surface" />}
               </NavLink>
+              </span>
             </Tip>
           ))}
         </nav>
@@ -91,8 +93,8 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
       {/* Área principal */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-surface lg:rounded-[26px] lg:ring-1 lg:ring-white/80">
         <header className="flex h-[72px] shrink-0 items-center gap-3 px-4 md:px-6">
-          <div className="flex items-center gap-2.5 lg:hidden">
-            <LogoMark size={34} />
+          <div className="flex items-center gap-2.5 xl:hidden">
+            <LogoMark size={34} className="lg:hidden" />
             <div className="leading-tight">
               <div className="text-[15px] font-bold tracking-[-0.02em]">Vet Domicílio</div>
               <div className="text-[11.5px] font-medium text-ink-3">Manaus</div>
@@ -100,7 +102,7 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
           </div>
 
           {/* Navegação em pílulas */}
-          <nav className="hidden items-center gap-1.5 lg:flex">
+          <nav className="hidden items-center gap-1.5 xl:flex">
             {NAV.map((n) => (
               <NavLink
                 key={n.to}
@@ -108,7 +110,7 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
                 end={n.end}
                 className={({ isActive }) =>
                   cn(
-                    'relative flex h-10 items-center gap-2 rounded-full px-4 text-[13.5px] font-semibold transition-colors',
+                    'relative flex h-10 items-center gap-2 rounded-full px-3 text-[13.5px] font-semibold whitespace-nowrap transition-colors xl:px-4',
                     isActive ? 'bg-card text-ink shadow-pill' : 'text-ink-2 hover:text-ink',
                   )
                 }
@@ -135,11 +137,11 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
             </div>
             <button
               onClick={() => nav('/agenda?novo=1')}
-              className="hidden h-10 items-center gap-2 rounded-full bg-card px-4 text-[13.5px] font-semibold text-ink shadow-pill hover:bg-surface md:inline-flex"
+              className="hidden h-10 items-center gap-2 rounded-full bg-card px-4 text-[13.5px] font-semibold whitespace-nowrap text-ink shadow-pill hover:bg-surface md:inline-flex"
             >
               <Plus className="size-4" strokeWidth={2.2} /> Nova visita
             </button>
-            <IconButton aria-label="Buscar" onClick={() => setCmdOpen(true)} className="lg:hidden">
+            <IconButton aria-label="Buscar" onClick={() => setCmdOpen(true)} className="xl:hidden">
               <Search className="size-[18px]" strokeWidth={2} />
             </IconButton>
             <IconButton aria-label="Notificações" className="relative" onClick={() => toast('3 tutores responderam aos lembretes de hoje')}>
