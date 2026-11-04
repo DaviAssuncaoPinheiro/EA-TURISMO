@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 type View = 'semana' | 'dia'
 
 export default function Agenda() {
-  const [view, setView] = React.useState<View>('semana')
+  const [view, setView] = React.useState<View>(() => (typeof window !== 'undefined' && window.innerWidth < 768 ? 'dia' : 'semana'))
   const [weekShift, setWeekShift] = React.useState(0)
   const [dayOff, setDayOff] = React.useState(0)
   const [vetId, setVetId] = React.useState<string>('todos')
