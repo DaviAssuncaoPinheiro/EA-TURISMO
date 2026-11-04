@@ -2,18 +2,18 @@
 import * as React from 'react'
 import { useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { Check, ChevronRight, Clock, Hand, HeartPulse, Lock, MapPin, MessageCircle, Navigation, Phone, Stethoscope, Syringe, TriangleExclamationPoint } from 'lucide-react'
+import { Cake, Check, ChevronRight, Clock, FileText, Hand, HeartPulse, Lock, MapPin, MessageCircle, Navigation, PawPrint, Phone, Scale, Stethoscope, Syringe, TriangleAlert } from 'lucide-react'
 import { cn, firstName, kg } from '@/lib/utils'
-import { Badge, PetAvatar } from '@/components/ui'
-import { PET, VET, type Visit } from '@/data/mock'
+import { PetAvatar } from '@/components/ui'
+import { PET, VET, type Pet, type Visit } from '@/data/mock'
 import { ZONE } from '@/data/geo'
 import { ageLabel, fmt, relDays } from '@/data/time'
 import { dueState, VISIT_STATUS } from '@/lib/status'
 import { useDemo } from '@/store'
 import { notify, queueIfOffline, useCampo } from './campoStore'
-import { bairroOf, lastConsult, legOf, simNow, tutorOf, visitById, vName } from './data'
+import { bairroOf, lastConsult, legOf, sexLabel, simNow, tutorOf, visitById, vName } from './data'
 import { latestDoses } from './vaccines'
-import { Btn, ConnectivityBanner, EASE_OUT, Pressable, Screen, SectionLabel } from './kit'
+import { Btn, ConnectivityBanner, EASE_OUT, Pressable, RoundBtn, Screen } from './kit'
 import { OfflineToggle } from './RouteScreen'
 import { useGo } from './nav'
 
@@ -21,8 +21,32 @@ export default function VisitScreen() {
   const { id = '' } = useParams()
   const visit = visitById(id)
   const go = useGo()
-  if (!visit) return <Screen title="Visita" back={{ label: 'Rota', onClick: () => go('', { dir: -1 }) }}>{<p className="p-6 text-ink-3">Visita não encontrada.</p>}</Screen>
+  if (!visit)
+    return (
+      <Screen title="Visita" back={{ label: 'Voltar', onClick: () => go('', { dir: -1 }) }}>
+        <p className="p-6 text-[15px] font-medium text-ink-3">Visita não encontrada.</p>
+      </Screen>
+    )
   return <VisitDetail visit={visit} />
+}
+
+/** Foto grande do pet, com inicial em círculo quando a imagem não carrega */
+function PetHero({ pet }: { pet: Pet }) {
+  const [failed, setFailed] = React.useState(false)
+  const cat = pet.species === 'gato'
+  return (
+    <div className={cn('absolute inset-0', cat ? 'bg-violet-soft' : 'bg-yellow-soft')}>
+      {!failed && pet.photo ? (
+        <img src={pet.photo} alt={pet.name} onError={() => setFailed(true)} className="size-full object-cover" />
+      ) : (
+        <div className="flex size-full items-center justify-center pb-10">
+          <span className="absolute -top-10 -right-10 size-48 rounded-full bg-white/35" />
+          <span className="absolute -bottom-16 -left-12 size-56 rounded-full bg-white/25" />
+          <span className={cn('relative flex size-[128px] items-center justify-center rounded-full bg-card text-[60px] font-bold shadow-card', cat ? 'text-violet' : 'text-yellow-ink')}>{pet.name[0]}</span>
+        </div>
+      )}
+    </div>
+  )
 }
 
 function VisitDetail({ visit }: { visit: Visit }) {
@@ -55,12 +79,12 @@ function VisitDetail({ visit }: { visit: Visit }) {
       const offline = queueIfOffline()
       notify(
         offline
-          ? { kind: 'offline', title: 'Mensagem na fila', body: `Sem sinal agora. O aviso para ${tutorFirst} sai assim que o celular reconectar.` }
-          : { kind: 'whatsapp', title: `Mensagem enviada para ${tutorFirst}`, body: `“${vet.short.startsWith('Dra') ? 'A' : 'O'} ${vet.short} está a caminho, chega em ~${leg.min} min.”` },
+          ? { kind: 'offline', title: 'Mensagem na fila', body: `Sem sinal. O aviso para ${tutorFirst} sai quando reconectar.` }
+          : { kind: 'whatsapp', title: `Aviso enviado para ${tutorFirst}`, body: `${vet.short} está a caminho. Chega em ${leg.min} min.` },
       )
     } else if (status === 'a-caminho' && !arrived) {
       useCampo.getState().setArrived(visit.id)
-      notify({ kind: 'app', title: 'Chegada registrada', body: `${b.name} · ${tutor.complement ?? tutor.address}. Bom atendimento!` })
+      notify({ kind: 'app', title: 'Chegada registrada', body: `${b.name}, ${tutor.complement ?? tutor.address}.` })
     } else if (status === 'a-caminho' && arrived) {
       setVisitStatus(visit.id, 'em-atendimento')
       useCampo.getState().setStarted(visit.id, simNow().toISOString())
@@ -85,13 +109,14 @@ function VisitDetail({ visit }: { visit: Visit }) {
         : status === 'em-atendimento'
           ? 'Continuar atendimento'
           : finished
-            ? 'Ver resumo do atendimento'
+            ? 'Ver resumo'
             : 'Atendimento concluído'
+  const limeCta = (status === 'a-caminho' && arrived) || status === 'em-atendimento'
 
   return (
     <Screen
-      title={pet.name}
-      back={{ label: 'Rota', onClick: () => go('', { dir: -1 }) }}
+      title="Visita"
+      back={{ label: 'Voltar à rota', onClick: () => go('', { dir: -1 }) }}
       right={<OfflineToggle />}
       below={<ConnectivityBanner />}
       footer={
@@ -99,7 +124,7 @@ function VisitDetail({ visit }: { visit: Visit }) {
           <Tracker stage={stage} />
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.div key={primaryLabel} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.22, ease: EASE_OUT }}>
-              <Btn tone={status === 'a-caminho' && arrived ? 'accent' : 'primary'} className="w-full" onClick={onPrimary} disabled={status === 'concluida' && !finished}>
+              <Btn tone={limeCta ? 'lime' : 'primary'} className="h-[58px] w-full text-[16.5px]" onClick={onPrimary} disabled={status === 'concluida' && !finished}>
                 {status === 'concluida' ? <Check className="size-5" /> : status === 'agendada' ? <Navigation className="size-[18px]" /> : status === 'a-caminho' && !arrived ? <MapPin className="size-[18px]" /> : <Stethoscope className="size-[18px]" />}
                 {primaryLabel}
               </Btn>
@@ -108,149 +133,162 @@ function VisitDetail({ visit }: { visit: Visit }) {
         </div>
       }
     >
-      {/* herói */}
-      <div className="px-5 pt-2">
-        <div className="flex items-start gap-4">
-          <div className="relative">
-            <PetAvatar pet={pet} size={92} className="rounded-[28px]" />
-            {pets.length > 1 && (
-              <span className="absolute -right-2 -bottom-2">
-                <PetAvatar pet={pets[1]} size={40} className="rounded-[14px] ring-[3px] ring-paper" />
-              </span>
-            )}
-          </div>
-          <div className="min-w-0 flex-1 pt-1">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <Badge tone={st.tone} dot>
-                {st.label}
-              </Badge>
-              <Badge tone="neutral">{visit.type}</Badge>
+      {/* foto do pet com rótulo translúcido */}
+      <div className="relative mx-4 h-[264px] overflow-hidden rounded-[32px]">
+        <PetHero pet={pet} />
+        <span className="absolute top-3 left-3 inline-flex h-8 items-center gap-1.5 rounded-full bg-white/75 px-3 text-[12.5px] font-bold text-ink backdrop-blur-md">
+          <span className={cn('size-2 rounded-full', status === 'em-atendimento' ? 'bg-lime ring-2 ring-black/80' : status === 'concluida' ? 'bg-green' : status === 'a-caminho' ? 'bg-blue' : 'bg-ink-4')} />
+          {st.label}
+        </span>
+        {pets.length > 1 && (
+          <span className="absolute top-3 right-3">
+            <PetAvatar pet={pets[1]} size={44} className="ring-[3px] ring-white/80" />
+          </span>
+        )}
+        <div className="absolute inset-x-3 bottom-3 flex items-center gap-3 rounded-[22px] bg-white/72 px-4 py-3 backdrop-blur-xl">
+          <div className="min-w-0 flex-1">
+            <div className="text-[15px] font-bold text-ink">{visit.type}</div>
+            <div className="mt-0.5 flex items-center gap-1.5 text-[12.5px] font-semibold text-ink-2">
+              <Clock className="size-3.5" strokeWidth={2.2} />
+              <span className="num">{fmt.time(visit.start)}</span> · {visit.durationMin} min
             </div>
-            <h1 className="mt-2 font-display text-[34px] leading-none font-semibold text-ink">
-              {pets.map((p) => p.name).join(' e ')}
-            </h1>
-            <div className="mt-1.5 text-[15px] text-ink-2">{pet.breed}</div>
           </div>
-        </div>
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          {[
-            { l: 'Idade', v: ageLabel(pet.birth) },
-            { l: 'Peso', v: kg(extraWeight ?? pet.weightKg) },
-            { l: pet.sex === 'M' ? 'Macho' : 'Fêmea', v: pet.neutered ? (pet.sex === 'M' ? 'Castrado' : 'Castrada') : 'Inteiro(a)' },
-          ].map((x) => (
-            <div key={x.l} className="rounded-[14px] border border-line bg-card px-3 py-2.5">
-              <div className="text-[12.5px] text-ink-3">{x.l}</div>
-              <div className="mt-0.5 truncate text-[15px] font-semibold text-ink">{x.v}</div>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 flex items-center gap-2 text-[14.5px] text-ink-2">
-          <Clock className="size-4 text-ink-3" strokeWidth={1.9} />
-          <span className="num font-medium text-ink">{fmt.time(visit.start)}</span>
-          <span className="text-ink-4">·</span>
-          {visit.durationMin} min
           {visit.fixedTime && (
-            <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-terra-50 px-2 py-0.5 text-[12.5px] font-medium text-terra-700">
-              <Lock className="size-3" strokeWidth={2.2} /> horário fixo
+            <span className="inline-flex h-8 items-center gap-1 rounded-full bg-black px-3 text-[12px] font-semibold text-white">
+              <Lock className="size-3" strokeWidth={2.4} /> Horário fixo
             </span>
           )}
         </div>
       </div>
 
-      {/* alertas clínicos */}
-      {(pet.alerts?.length || pendingVaccines.length > 0) && (
-        <div className="mx-4 mt-5 overflow-hidden rounded-[20px] border border-late/20 bg-late-bg">
-          {pet.alerts?.map((a) => (
-            <div key={a} className="flex items-start gap-3 px-4 py-3.5">
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-late text-white">
-                {/card|sopro|mitral/i.test(a) ? <HeartPulse className="size-[18px]" strokeWidth={2} /> : <TriangleExclamationPoint className="size-[18px]" strokeWidth={2} />}
+      {/* nome e chips */}
+      <div className="px-5 pt-5">
+        <h1 className="text-[34px] leading-none font-bold tracking-[-0.035em] text-ink">{pets.map((p) => p.name).join(' e ')}</h1>
+        <div className="mt-1.5 text-[14.5px] font-medium text-ink-3">{sexLabel(pet)}</div>
+        <div className="no-scrollbar -mx-5 mt-4 flex gap-2 overflow-x-auto px-5">
+          {[
+            { icon: PawPrint, v: pet.breed },
+            { icon: Cake, v: ageLabel(pet.birth) },
+            { icon: Scale, v: kg(extraWeight ?? pet.weightKg) },
+          ].map((x) => (
+            <span key={x.v} className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-card pr-4 pl-1.5 text-[14px] font-semibold text-ink shadow-pill">
+              <span className="flex size-8 items-center justify-center rounded-full bg-muted">
+                <x.icon className="size-4" strokeWidth={2} />
               </span>
-              <div className="min-w-0 pt-0.5">
-                <div className="text-[12px] font-semibold tracking-[0.05em] text-late uppercase">Alerta clínico</div>
-                <div className="mt-0.5 text-[15.5px] leading-snug font-semibold text-ink">{a}</div>
-                {pet.conditions && <div className="mt-1 text-[14px] text-ink-2">{pet.conditions.join(' · ')}</div>}
+              {x.v}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* alerta clínico */}
+      {(pet.alerts?.length || pendingVaccines.length > 0) && (
+        <div className="mx-4 mt-5 rounded-[28px] bg-red-soft p-5">
+          <div className="flex items-center gap-2 text-[13.5px] font-bold text-red">
+            <span className="flex size-6 items-center justify-center rounded-full bg-red text-white">
+              <TriangleAlert className="size-3.5" strokeWidth={2.4} />
+            </span>
+            Alerta
+          </div>
+          {pet.alerts?.map((a) => (
+            <div key={a} className="mt-2.5">
+              <div className="flex items-start gap-2 text-[16px] leading-snug font-bold text-ink">
+                {/card|sopro|mitral/i.test(a) && <HeartPulse className="mt-0.5 size-[18px] shrink-0 text-red" strokeWidth={2.2} />}
+                {a}
               </div>
+              {pet.conditions && <div className="mt-1 text-[13.5px] font-medium text-ink-2">{pet.conditions.join(', ')}</div>}
             </div>
           ))}
           {pendingVaccines.length > 0 && (
-            <div className={cn('flex items-center gap-3 px-4 py-3', pet.alerts?.length && 'border-t border-late/15')}>
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-card text-late">
-                <Syringe className="size-[17px]" strokeWidth={2} />
-              </span>
-              <div className="min-w-0 flex-1 text-[14.5px] text-ink">
-                {pendingVaccines.map((d) => (
-                  <div key={d.vaccineId}>
-                    <span className="font-semibold">{vName(d.vaccineId)}</span> <span className="text-late">· {dueState(d.nextDate).label.toLowerCase()}</span>
-                  </div>
-                ))}
-              </div>
+            <div className={cn('flex flex-col gap-2', pet.alerts?.length ? 'mt-4' : 'mt-3')}>
+              {pendingVaccines.map((d) => (
+                <div key={d.vaccineId} className="flex h-11 items-center gap-2.5 rounded-full bg-card/70 pr-4 pl-1.5">
+                  <span className="flex size-8 items-center justify-center rounded-full bg-card text-red">
+                    <Syringe className="size-4" strokeWidth={2} />
+                  </span>
+                  <span className="flex-1 truncate text-[14px] font-semibold text-ink">{vName(d.vaccineId)}</span>
+                  <span className="text-[13px] font-bold text-red">{dueState(d.nextDate).label}</span>
+                </div>
+              ))}
             </div>
           )}
         </div>
       )}
 
-      {pet.temperament && (
-        <div className="mx-4 mt-3 flex items-start gap-3 rounded-[16px] bg-paper-2 px-4 py-3 text-[14.5px] text-ink-2">
-          <Hand className="mt-0.5 size-[18px] shrink-0 text-ink-3" strokeWidth={1.8} />
-          <span>{pet.temperament}</span>
-        </div>
-      )}
-
-      <SectionLabel>Motivo da visita</SectionLabel>
-      <div className="mx-4 rounded-[20px] border border-line bg-card px-4 py-3.5 shadow-card">
-        <div className="text-[16px] leading-snug font-medium text-ink">{visit.reason}</div>
-        {last && (
-          <div className="mt-3 border-t border-line pt-3">
-            <div className="text-[12.5px] text-ink-3">
-              Último registro · {relDays(last.date)} · {VET[last.vetId].short}
-            </div>
-            <div className="mt-0.5 text-[14.5px] font-semibold text-ink">{last.title}</div>
-            <div className="mt-0.5 line-clamp-3 text-[14px] leading-snug text-ink-2">{last.summary}</div>
+      {/* motivo */}
+      <div className="mx-4 mt-3 rounded-[28px] bg-card p-5 shadow-card">
+        <div className="text-[13px] font-semibold text-ink-3">Motivo</div>
+        <div className="mt-1 text-[16.5px] leading-snug font-bold tracking-[-0.01em] text-ink">{visit.reason}</div>
+        {pet.temperament && (
+          <div className="mt-3.5 flex items-start gap-2.5 rounded-[18px] bg-muted px-3.5 py-3 text-[14px] font-medium text-ink-2">
+            <Hand className="mt-0.5 size-4 shrink-0 text-ink" strokeWidth={2} />
+            <span>{pet.temperament}</span>
           </div>
         )}
       </div>
 
-      <SectionLabel>Tutor e endereço</SectionLabel>
-      <div className="mx-4 overflow-hidden rounded-[20px] border border-line bg-card shadow-card">
-        <div className="flex items-center gap-3 px-4 py-3.5">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-sage-100 font-display text-[17px] font-semibold text-sage-800">{tutorFirst[0]}</span>
+      {/* último registro (cartão Insight) */}
+      {last && (
+        <div className="mx-4 mt-3 rounded-[28px] bg-blue-soft p-5">
+          <div className="flex items-center gap-2 text-[13.5px] font-bold text-ink">
+            <span className="flex size-6 items-center justify-center rounded-full bg-black text-white">
+              <FileText className="size-3.5" strokeWidth={2.2} />
+            </span>
+            Último registro
+          </div>
+          <div className="mt-2.5 text-[16px] font-bold text-ink">{last.title}</div>
+          <div className="mt-0.5 line-clamp-2 text-[13.5px] leading-snug font-medium text-ink-2">{last.summary}</div>
+          <div className="mt-3 text-[13px] font-bold text-blue">
+            {relDays(last.date)} · {VET[last.vetId].short}
+          </div>
+        </div>
+      )}
+
+      {/* tutor */}
+      <div className="mx-4 mt-3 rounded-[28px] bg-card p-5 shadow-card">
+        <div className="flex items-center gap-3">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-lime text-[18px] font-bold text-ink">{tutorFirst[0]}</span>
           <div className="min-w-0">
-            <div className="truncate text-[16px] font-semibold text-ink">{tutor.name}</div>
-            <div className="num text-[14px] text-ink-3">{tutor.phone}</div>
+            <div className="truncate text-[16px] font-bold text-ink">{tutor.name}</div>
+            <div className="num text-[13.5px] font-medium text-ink-3">{tutor.phone}</div>
           </div>
         </div>
-        <div className="mx-4 h-px bg-line" />
-        <div className="flex items-start gap-3 px-4 py-3.5">
-          <MapPin className="mt-0.5 size-[18px] shrink-0 text-ink-3" strokeWidth={1.9} />
-          <div className="min-w-0 text-[15px] leading-snug">
-            <div className="font-medium text-ink">{tutor.address}</div>
-            {tutor.complement && <div className="text-ink-2">{tutor.complement}</div>}
-            <div className="mt-1 flex items-center gap-1.5 text-[13.5px] text-ink-3">
-              <span className="size-1.5 rounded-full" style={{ background: zone.hex }} />
-              {b.name} · {zone.name}
-              <span className="text-ink-4">·</span> {leg.km.toLocaleString('pt-BR')} km
+        <div className="mt-4 rounded-[20px] bg-surface p-3.5">
+          <div className="flex items-start gap-2.5">
+            <MapPin className="mt-0.5 size-[17px] shrink-0 text-ink" strokeWidth={2} />
+            <div className="min-w-0 text-[14.5px] leading-snug">
+              <div className="font-bold text-ink">{tutor.address}</div>
+              {tutor.complement && <div className="font-medium text-ink-2">{tutor.complement}</div>}
+              <div className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-ink-3">
+                <span className="size-1.5 rounded-full" style={{ background: zone.hex }} />
+                {b.name} · {leg.km.toLocaleString('pt-BR')} km
+              </div>
             </div>
-            {tutor.note && <div className="mt-2 rounded-lg bg-warn-bg px-2.5 py-1.5 text-[13.5px] text-warn">{tutor.note}</div>}
           </div>
+          {tutor.note && <div className="mt-3 rounded-[14px] bg-yellow-soft px-3 py-2 text-[13px] font-semibold text-yellow-ink">{tutor.note}</div>}
         </div>
-        <div className="grid grid-cols-3 gap-2 px-3 pb-3">
+        <div className="mt-4 grid grid-cols-3">
           {[
-            { icon: Phone, label: 'Ligar', onClick: () => action(`Ligando para ${tutorFirst}…`, tutor.phone) },
-            { icon: MessageCircle, label: 'WhatsApp', onClick: () => action('Abrindo conversa', `${tutor.name} · ${tutor.phone}`) },
-            { icon: Navigation, label: 'Rota no Maps', onClick: () => action('Abrindo Google Maps', `${tutor.address}, ${b.name} · ${leg.km.toLocaleString('pt-BR')} km · ~${leg.min} min`) },
+            { icon: Phone, label: 'Ligar', tone: 'muted' as const, onClick: () => action(`Ligando para ${tutorFirst}`, tutor.phone) },
+            { icon: MessageCircle, label: 'WhatsApp', tone: 'muted' as const, onClick: () => action('Abrindo conversa', `${tutor.name}, ${tutor.phone}`) },
+            { icon: Navigation, label: 'Rota', tone: 'black' as const, onClick: () => action('Abrindo o mapa', `${tutor.address}, ${b.name}. ${leg.km.toLocaleString('pt-BR')} km, ${leg.min} min.`) },
           ].map((a) => (
-            <Pressable key={a.label} onClick={a.onClick} className="flex h-[64px] flex-col items-center justify-center gap-1 rounded-[14px] bg-sage-50 text-[13.5px] font-semibold text-sage-800 active:bg-sage-100">
-              <a.icon className="size-5" strokeWidth={1.9} />
-              {a.label}
-            </Pressable>
+            <div key={a.label} className="flex flex-col items-center gap-1.5">
+              <RoundBtn label={a.label} tone={a.tone} size={56} onClick={a.onClick}>
+                <a.icon className={cn('size-5', a.tone === 'black' && 'text-lime')} strokeWidth={2} />
+              </RoundBtn>
+              <span className="text-[12.5px] font-semibold text-ink-2">{a.label}</span>
+            </div>
           ))}
         </div>
       </div>
 
       {status === 'concluida' && finished && (
-        <Pressable onClick={onPrimary} className="mx-4 mt-4 flex w-[calc(100%-2rem)] items-center gap-3 rounded-[18px] bg-ok-bg px-4 py-3 text-left">
-          <Check className="size-5 text-ok" />
-          <span className="flex-1 text-[14.5px] font-medium text-ink">Atendimento registrado e enviado ao tutor</span>
+        <Pressable onClick={onPrimary} className="mx-4 mt-3 flex w-[calc(100%-2rem)] items-center gap-3 rounded-[24px] bg-lime-soft px-4 py-3.5 text-left">
+          <span className="flex size-8 items-center justify-center rounded-full bg-lime">
+            <Check className="size-4" strokeWidth={2.6} />
+          </span>
+          <span className="flex-1 text-[14.5px] font-semibold text-ink">Registrado e enviado ao tutor</span>
           <ChevronRight className="size-4 text-ink-3" />
         </Pressable>
       )}
@@ -262,17 +300,18 @@ function Tracker({ stage }: { stage: number }) {
   const steps = ['A caminho', 'Chegada', 'Atendimento']
   if (stage >= 3) return null
   return (
-    <div className="mb-3 flex items-center gap-1.5 px-1">
+    <div className="mb-3 flex gap-1.5">
       {steps.map((s, i) => (
-        <React.Fragment key={s}>
-          <div className={cn('flex items-center gap-1.5 text-[12.5px] font-medium', i <= stage ? 'text-sage-800' : 'text-ink-4')}>
-            <span className={cn('flex size-[18px] items-center justify-center rounded-full text-[10px] font-bold transition-colors', i < stage ? 'bg-sage-700 text-white' : i === stage ? 'bg-terra-600 text-white' : 'bg-paper-2 text-ink-3')}>
-              {i < stage ? <Check className="size-2.5" strokeWidth={3.4} /> : i + 1}
-            </span>
-            {s}
-          </div>
-          {i < steps.length - 1 && <div className={cn('h-px flex-1', i < stage ? 'bg-sage-600' : 'bg-line-2')} />}
-        </React.Fragment>
+        <span
+          key={s}
+          className={cn(
+            'flex h-8 flex-1 items-center justify-center gap-1 rounded-full text-[12.5px] font-semibold transition-colors duration-300',
+            i < stage ? 'bg-black text-white' : i === stage ? 'bg-lime text-ink' : 'bg-muted text-ink-3',
+          )}
+        >
+          {i < stage && <Check className="size-3.5 text-lime" strokeWidth={3} />}
+          {s}
+        </span>
       ))}
     </div>
   )

@@ -3,7 +3,7 @@ import { BAIRRO, BASE, ZONE, type ZoneId } from '@/data/geo'
 import { EVENTS, NOW, PET, ROUTE_LARISSA, TUTOR, VACCINE, VISITS, type Pet, type Species, type Visit } from '@/data/mock'
 import { day, fmt } from '@/data/time'
 
-/* ───────── Visitas do dia por veterinário ───────── */
+/* Visitas do dia por veterinário */
 
 export const isToday = (d: string) => new Date(d).toDateString() === day(0).toDateString()
 
@@ -27,7 +27,7 @@ export function zonesOfDay(visits: Visit[]): ZoneId[] {
   return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([z]) => z)
 }
 
-/* ───────── Distâncias (calibradas pela rota real da Dra. Larissa) ───────── */
+/* Distâncias (calibradas pela rota real da Dra. Larissa) */
 
 type P = { x: number; y: number }
 const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y)
@@ -67,7 +67,7 @@ export function nextStopAfter(visit: Visit, status: Record<string, string>) {
 
 export const minutesSince = (iso: string, now?: Date) => Math.max(0, Math.round((+(now ?? simNow()) - +new Date(iso)) / 60000))
 
-/* ───────── Pet ───────── */
+/* Pet */
 
 export function sexLabel(p: Pet) {
   if (p.sex === 'M') return p.neutered ? 'Macho castrado' : 'Macho'
@@ -78,7 +78,7 @@ export function lastConsult(petId: string) {
   return EVENTS.filter((e) => e.petId === petId && (e.kind === 'consulta' || e.kind === 'vacina' || e.kind === 'procedimento')).sort((a, b) => +new Date(b.date) - +new Date(a.date))[0]
 }
 
-/* ───────── Referências clínicas ───────── */
+/* Referências clínicas */
 
 export const REF: Record<Species, { temp: [number, number]; fc: [number, number]; fr: [number, number]; defaults: { temp: number; fc: number; fr: number } }> = {
   cão: { temp: [37.5, 39.2], fc: [60, 140], fr: [10, 30], defaults: { temp: 38.5, fc: 112, fr: 24 } },
@@ -87,11 +87,11 @@ export const REF: Record<Species, { temp: [number, number]; fc: [number, number]
 
 export const MUCOSAS = ['Normocoradas', 'Hipocoradas', 'Hipercoradas', 'Ictéricas', 'Cianóticas']
 export const HIDRATACAO = ['Normal', 'Leve (5%)', 'Moderada (7%)', 'Grave (>10%)']
-export const TPC = ['< 2 s', '2–3 s', '> 3 s']
+export const TPC = ['< 2 s', '2 a 3 s', '> 3 s']
 
 export const BCS_LABEL = (s: number) => (s <= 3 ? 'Abaixo do ideal' : s <= 5 ? 'Ideal' : s <= 7 ? 'Sobrepeso' : 'Obesidade')
 
-/* ───────── Anamnese ───────── */
+/* Anamnese */
 
 export const SYMPTOMS: Record<Species, string[]> = {
   cão: ['Sem queixas', 'Tosse ao esforço', 'Tosse noturna', 'Cansaço fácil', 'Respiração ofegante', 'Síncope', 'Vômito', 'Diarreia', 'Apetite reduzido', 'Bebendo mais água', 'Coceira', 'Claudicação', 'Apatia'],
@@ -126,7 +126,7 @@ export function dictationFor(visit: Visit, pet: Pet): { text: string; detect: st
   }
 }
 
-/* ───────── Exame físico: achados por região ───────── */
+/* Exame físico: achados por região */
 
 export type Region = 'Cabeça' | 'Pescoço' | 'Tórax' | 'Abdome' | 'Dorso' | 'Membro torácico' | 'Membro pélvico' | 'Quadril' | 'Cauda'
 
@@ -142,7 +142,7 @@ export const FINDINGS: Record<Region, string[]> = {
   Cauda: ['Lesão de pele', 'Glândulas adanais cheias', 'Dor'],
 }
 
-/* ───────── Vacinas: laboratório, preço ───────── */
+/* Vacinas: laboratório, preço */
 
 export const VACCINE_LAB: Record<string, { lab: string; product: string; price: number }> = {
   v10: { lab: 'Zoetis', product: 'Vanguard Plus', price: 120 },
@@ -165,7 +165,7 @@ export function expiryFor(vaccineId: string) {
   return `${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`
 }
 
-/* ───────── Prescrição ───────── */
+/* Prescrição */
 
 export interface MedDef {
   id: string
@@ -217,7 +217,7 @@ export function durationDays(dur: string) {
   return m ? Number(m[1]) : null
 }
 
-/* ───────── Relógio simulado: começa às 10:40 de hoje e anda com o tempo real ───────── */
+/* Relógio simulado: começa às 10:40 de hoje e anda com o tempo real */
 
 const LOADED_AT = Date.now()
 export const simNow = () => new Date(+NOW + (Date.now() - LOADED_AT))

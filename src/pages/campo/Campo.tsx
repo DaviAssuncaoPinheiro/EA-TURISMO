@@ -1,4 +1,4 @@
-// App do veterinário (rota /campo). Desktop: celular em moldura + painel editorial. Mobile: tela cheia.
+// App do veterinário (rota /campo). Desktop: celular em moldura e painel lateral. Celular: tela cheia.
 import * as React from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
@@ -45,7 +45,7 @@ function useSyncEngine() {
     const c = useCampo.getState()
     if (offline && !prev.current) {
       c.setPending((p) => Math.max(p, 2))
-      notify({ kind: 'offline', title: 'Sem sinal', body: 'Pode seguir atendendo. Tudo fica salvo no aparelho e sobe quando o sinal voltar.' })
+      notify({ kind: 'offline', title: 'Sem sinal', body: 'Pode seguir atendendo. Tudo fica salvo no aparelho.' })
     } else if (offline && prev.current && c.pending === 0) {
       c.setPending(2)
     } else if (!offline && prev.current) {
@@ -55,7 +55,7 @@ function useSyncEngine() {
         const t = window.setTimeout(() => {
           c.setSyncing(false)
           c.setPending(0)
-          notify({ kind: 'sync', title: 'Tudo sincronizado', body: `${n} ${n === 1 ? 'registro enviado' : 'registros enviados'}. Ficha, agenda e lembretes atualizados na clínica.` })
+          notify({ kind: 'sync', title: 'Sincronizado', body: `${n} ${n === 1 ? 'registro enviado' : 'registros enviados'} para a clínica.` })
         }, 1900)
         prev.current = offline
         return () => window.clearTimeout(t)
@@ -91,7 +91,7 @@ function AppRoutes() {
         initial="enter"
         animate="center"
         exit="exit"
-        className="absolute inset-0 overflow-hidden bg-paper shadow-[-10px_0_30px_-12px_rgba(20,42,33,.25)]"
+        className="absolute inset-0 overflow-hidden bg-surface shadow-[-10px_0_30px_-12px_rgba(17,18,20,.28)]"
       >
         <Routes location={location}>
           <Route index element={<RouteScreen />} />
@@ -108,6 +108,8 @@ function AppRoutes() {
 export default function Campo() {
   const desktop = useMedia('(min-width: 1024px)')
   const offline = useDemo((s) => s.offline)
+  const location = useLocation()
+  const darkTop = depthOf(location.pathname) === 0
   const scale = usePhoneScale()
   const [root, setRoot] = React.useState<HTMLDivElement | null>(null)
   useSyncEngine()
@@ -131,7 +133,7 @@ export default function Campo() {
     return (
       <div
         ref={setRoot}
-        className="fixed inset-0 overflow-hidden bg-paper"
+        className="fixed inset-0 overflow-hidden bg-surface"
         style={{ transform: 'translateZ(0)', ['--sat' as string]: 'max(env(safe-area-inset-top), 4px)', ['--sab' as string]: 'env(safe-area-inset-bottom, 0px)' }}
       >
         {app}
@@ -142,15 +144,13 @@ export default function Campo() {
   const fw = PHONE.w + PHONE.bezel * 2
   const fh = PHONE.h + PHONE.bezel * 2
   return (
-    <div className="relative flex min-h-dvh items-center justify-center gap-[clamp(40px,7vw,120px)] overflow-clip bg-paper px-10 py-[18px]">
-      <div className="paper-grain pointer-events-none absolute inset-0 opacity-70" />
-      <div className="pointer-events-none absolute right-0 bottom-0 size-[620px] translate-x-1/3 translate-y-1/3 rounded-full bg-sage-100/50 blur-3xl" />
+    <div className="relative flex min-h-dvh items-center justify-center gap-[clamp(40px,6vw,104px)] overflow-clip bg-canvas px-10 py-[18px]">
       <div className="relative">
         <SidePanel height={fh * scale} />
       </div>
       <div className="relative shrink-0" style={{ width: fw * scale, height: fh * scale }}>
         <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
-          <PhoneFrame ref={setRoot} offline={offline}>
+          <PhoneFrame ref={setRoot} offline={offline} dark={darkTop}>
             {app}
           </PhoneFrame>
         </div>

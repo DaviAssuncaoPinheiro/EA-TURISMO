@@ -1,4 +1,4 @@
-// Tela 3 · Registro do atendimento (stepper Anamnese → Retorno)
+// Tela 3 · Registro do atendimento em 5 etapas
 import * as React from 'react'
 import { useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
@@ -9,7 +9,7 @@ import { useDemo } from '@/store'
 import { notify, useCampo, type Draft } from './campoStore'
 import { minutesSince, tutorOf, visitById } from './data'
 import { commitVisit } from './finalize'
-import { Btn, ConnectivityBanner, EASE_IOS, EASE_OUT, Pressable, Screen } from './kit'
+import { Btn, ConnectivityBanner, EASE_IOS, Pressable, Screen } from './kit'
 import { useGo } from './nav'
 import { StepAnamnese } from './StepAnamnese'
 import { StepExame } from './StepExame'
@@ -26,7 +26,7 @@ export default function RecordScreen() {
   React.useLayoutEffect(() => {
     if (visit && !draft) useCampo.getState().ensureDraft(visit)
   }, [visit, draft])
-  if (!visit || !draft) return <div className="absolute inset-0 bg-paper" />
+  if (!visit || !draft) return <div className="absolute inset-0 bg-surface" />
   return <Record visit={visit} draft={draft} />
 }
 
@@ -64,8 +64,8 @@ function Record({ visit, draft }: { visit: Visit; draft: Draft }) {
     window.setTimeout(() => {
       notify(
         f.savedOffline
-          ? { kind: 'offline', title: 'Atendimento salvo no aparelho', body: `Sem sinal. O resumo para ${tutor} e a ficha do ${pet.name} sobem assim que reconectar.` }
-          : { kind: 'whatsapp', title: `Resumo enviado para ${tutor}`, body: `Atendimento do ${pet.name}, receita e ${f.reminders.length} lembretes programados.` },
+          ? { kind: 'offline', title: 'Salvo no aparelho', body: `O resumo para ${tutor} sai quando o sinal voltar.` }
+          : { kind: 'whatsapp', title: `Resumo enviado para ${tutor}`, body: `Atendimento do ${pet.name}, receita e ${f.reminders.length} lembretes.` },
       )
       go(`/visita/${visit.id}/concluido`, { dir: 1, replace: true })
     }, 650)
@@ -78,18 +78,16 @@ function Record({ visit, draft }: { visit: Visit; draft: Draft }) {
     <Screen
       title={
         <div className="leading-tight">
-          <div className="truncate text-[16px] font-semibold">
-            {pet.name} · {visit.type}
-          </div>
-          <div className="flex items-center justify-center gap-1 text-[12px] font-medium text-terra-700">
-            <span className="size-1.5 animate-pulse rounded-full bg-terra-500" /> Em atendimento · <Elapsed visit={visit} />
+          <div className="truncate text-[16px] font-bold">{pet.name}</div>
+          <div className="flex items-center justify-center gap-1.5 text-[12px] font-semibold text-ink-3">
+            <span className="size-1.5 animate-pulse rounded-full bg-green" /> <Elapsed visit={visit} />
           </div>
         </div>
       }
-      back={{ label: 'Visita', onClick: () => go(`/visita/${visit.id}`, { dir: -1 }) }}
+      back={{ label: 'Voltar à visita', onClick: () => go(`/visita/${visit.id}`, { dir: -1 }) }}
       right={
-        <span className={cn('flex h-8 items-center gap-1 rounded-full px-2.5 text-[12.5px] font-medium', offline ? 'bg-ink text-paper' : 'text-ok')}>
-          {offline ? <CloudOff className="size-4" /> : <CloudCheck className="size-4" />}
+        <span className={cn('flex h-9 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-bold', offline ? 'bg-black text-white' : 'bg-card text-ink shadow-pill')}>
+          {offline ? <CloudOff className="size-4 text-lime" strokeWidth={2.2} /> : <CloudCheck className="size-4 text-green" strokeWidth={2.2} />}
           {offline ? 'No aparelho' : 'Salvo'}
         </span>
       }
@@ -102,27 +100,27 @@ function Record({ visit, draft }: { visit: Visit; draft: Draft }) {
       scrollKey={step}
       contentProps={{ style: { touchAction: 'pan-y' } }}
       footer={
-        <div className="flex gap-2.5">
-          {step > 0 && (
-            <Btn tone="outline" className="w-[56px] shrink-0 px-0" onClick={() => setStep(step - 1)} aria-label="Etapa anterior">
-              <ChevronLeft className="size-5" />
-            </Btn>
-          )}
-          {last ? (
-            <Btn tone="accent" className="flex-1" onClick={finish} disabled={saving}>
-              {saving ? (
-                <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }} className="inline-flex size-5 rounded-full border-2 border-white/40 border-t-white" />
-              ) : (
-                <Check className="size-5" strokeWidth={2.4} />
-              )}
-              {saving ? 'Salvando atendimento…' : 'Finalizar atendimento'}
-            </Btn>
-          ) : (
-            <Btn tone="primary" className="flex-1" onClick={() => setStep(step + 1)}>
+        last ? (
+          <Btn tone="primary" className="h-[58px] w-full text-[16.5px]" onClick={finish} disabled={saving}>
+            {saving ? (
+              <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.8, ease: 'linear' }} className="inline-flex size-5 rounded-full border-2 border-white/30 border-t-lime" />
+            ) : (
+              <Check className="size-5 text-lime" strokeWidth={2.6} />
+            )}
+            {saving ? 'Salvando' : 'Finalizar atendimento'}
+          </Btn>
+        ) : (
+          <div className="flex gap-2.5">
+            {step > 0 && (
+              <Pressable scale={0.92} onClick={() => setStep(step - 1)} aria-label="Etapa anterior" className="flex size-[58px] shrink-0 items-center justify-center rounded-full bg-card text-ink shadow-pill">
+                <ChevronLeft className="size-5" strokeWidth={2.2} />
+              </Pressable>
+            )}
+            <Btn tone="primary" className="h-[58px] flex-1 text-[16.5px]" onClick={() => setStep(step + 1)}>
               Próximo: {STEPS[step + 1]} <ChevronRight className="size-5" />
             </Btn>
-          )}
-        </div>
+          </div>
+        )
       }
     >
       <motion.div
@@ -158,25 +156,37 @@ function Record({ visit, draft }: { visit: Visit; draft: Draft }) {
 
 function Stepper({ step, onStep }: { step: number; onStep: (n: number) => void }) {
   return (
-    <div className="relative px-3 pb-2.5">
-      <div className="grid grid-cols-5">
-        {STEPS.map((s, i) => (
-          <Pressable key={s} scale={0.94} onClick={() => onStep(i)} className="flex flex-col items-center gap-1 py-1">
-            <span
-              className={cn(
-                'flex size-[26px] items-center justify-center rounded-full text-[12.5px] font-bold transition-colors duration-300',
-                i < step ? 'bg-sage-700 text-white' : i === step ? 'bg-sage-900 text-paper ring-4 ring-sage-100' : 'bg-paper-2 text-ink-3',
-              )}
-            >
-              {i < step ? <Check className="size-3.5" strokeWidth={3} /> : i + 1}
-            </span>
-            <span className={cn('text-[12px] font-semibold transition-colors', i === step ? 'text-ink' : i < step ? 'text-sage-700' : 'text-ink-3')}>{s}</span>
-          </Pressable>
-        ))}
-      </div>
-      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-line/70">
-        <motion.div className="h-full bg-sage-700" animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }} transition={{ duration: 0.4, ease: EASE_OUT }} />
-      </div>
+    <div className="flex items-center justify-center gap-1.5 px-4 pt-1 pb-3">
+      {STEPS.map((s, i) => {
+        const on = i === step
+        const done = i < step
+        return (
+          <motion.button
+            key={s}
+            layout
+            transition={{ type: 'spring', bounce: 0.15, duration: 0.4 }}
+            onClick={() => onStep(i)}
+            aria-label={s}
+            className={cn(
+              'flex h-10 shrink-0 items-center justify-center rounded-full text-[13.5px] font-bold [-webkit-tap-highlight-color:transparent]',
+              on ? 'gap-2 bg-black pr-4 pl-1.5 text-white' : done ? 'w-10 bg-lime text-ink' : 'w-10 bg-card text-ink-3 shadow-pill',
+            )}
+          >
+            {on ? (
+              <>
+                <span className="num flex size-7 items-center justify-center rounded-full bg-lime text-[12.5px] text-ink">{i + 1}</span>
+                <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
+                  {s}
+                </motion.span>
+              </>
+            ) : done ? (
+              <Check className="size-4" strokeWidth={3} />
+            ) : (
+              <span className="num">{i + 1}</span>
+            )}
+          </motion.button>
+        )
+      })}
     </div>
   )
 }

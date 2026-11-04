@@ -1,15 +1,15 @@
-// Primitivos de interface do app de campo (tamanhos de toque de celular).
+// Primitivos de interface do app de campo (tamanhos de toque de celular, visual v2).
 import * as React from 'react'
 import { AnimatePresence, motion, useScroll, useTransform, type HTMLMotionProps } from 'motion/react'
 import { Drawer } from 'vaul'
 import * as SwitchPrimitive from '@radix-ui/react-switch'
-import { Check, ChevronLeft, CloudOff, MessageCircle, Minus, Plus, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Check, CloudOff, MessageCircle, Minus, Plus, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { LogoMark } from '@/components/AppShell'
 import { useDemo } from '@/store'
 import { useCampo, type Notice } from './campoStore'
 
-/* ───────── Contexto do "aparelho" ───────── */
+/* Contexto do aparelho */
 
 export const PhoneCtx = React.createContext<{ framed: boolean; root: HTMLElement | null }>({ framed: false, root: null })
 export const usePhone = () => React.useContext(PhoneCtx)
@@ -17,32 +17,74 @@ export const usePhone = () => React.useContext(PhoneCtx)
 export const EASE_IOS = [0.32, 0.72, 0, 1] as const
 export const EASE_OUT = [0.16, 1, 0.3, 1] as const
 
-/* ───────── Pressable: feedback tátil visual ───────── */
+/* Pressable: feedback de toque */
 
 export const Pressable = React.forwardRef<HTMLButtonElement, HTMLMotionProps<'button'> & { scale?: number }>(({ className, scale = 0.97, ...p }, ref) => (
   <motion.button ref={ref} whileTap={{ scale }} transition={{ duration: 0.12 }} className={cn('select-none [-webkit-tap-highlight-color:transparent]', className)} {...p} />
 ))
 Pressable.displayName = 'Pressable'
 
-type BtnTone = 'primary' | 'accent' | 'outline' | 'subtle' | 'ghost' | 'dark'
+/* Botão em pílula */
+
+type BtnTone = 'primary' | 'lime' | 'outline' | 'subtle' | 'ghost' | 'dark' | 'danger'
 const btnTone: Record<BtnTone, string> = {
-  primary: 'bg-sage-800 text-paper shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_1px_2px_rgba(20,42,33,.25)] active:bg-sage-900',
-  accent: 'bg-terra-600 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.14),0_1px_2px_rgba(154,68,36,.3)] active:bg-terra-700',
-  outline: 'bg-card text-ink border border-line-2 shadow-card active:bg-card-2',
-  subtle: 'bg-paper-2 text-ink active:bg-line',
-  ghost: 'text-ink-2 active:bg-paper-2',
-  dark: 'bg-sage-950 text-paper',
+  primary: 'bg-black text-white active:bg-black-2',
+  lime: 'bg-lime text-ink active:bg-lime-2',
+  outline: 'bg-card text-ink shadow-pill active:bg-surface',
+  subtle: 'bg-muted text-ink active:bg-muted-2',
+  ghost: 'text-ink-2 active:bg-muted',
+  dark: 'bg-white/10 text-white active:bg-white/15',
+  danger: 'bg-red-soft text-red active:bg-[#fbd7d8]',
 }
 
 export function Btn({ tone = 'primary', className, children, ...p }: HTMLMotionProps<'button'> & { tone?: BtnTone }) {
   return (
-    <Pressable className={cn('inline-flex h-[52px] items-center justify-center gap-2 rounded-[14px] px-5 text-[16px] font-semibold tracking-[-0.01em] transition-colors disabled:opacity-45', btnTone[tone], className)} {...p}>
+    <Pressable className={cn('inline-flex h-14 items-center justify-center gap-2 rounded-full px-6 text-[16px] font-semibold tracking-[-0.01em] transition-colors disabled:opacity-40', btnTone[tone], className)} {...p}>
       {children}
     </Pressable>
   )
 }
 
-/* ───────── Chip ───────── */
+/** Botão redondo só com ícone */
+export function RoundBtn({
+  children,
+  onClick,
+  label,
+  className,
+  tone = 'card',
+  size = 44,
+}: {
+  children: React.ReactNode
+  onClick?: () => void
+  label: string
+  className?: string
+  tone?: 'card' | 'muted' | 'black' | 'lime' | 'glass' | 'red'
+  size?: number
+}) {
+  return (
+    <Pressable
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      scale={0.9}
+      style={{ width: size, height: size }}
+      className={cn(
+        'flex shrink-0 items-center justify-center rounded-full transition-colors',
+        tone === 'card' && 'bg-card text-ink shadow-pill',
+        tone === 'muted' && 'bg-muted text-ink',
+        tone === 'black' && 'bg-black text-white',
+        tone === 'lime' && 'bg-lime text-ink',
+        tone === 'glass' && 'bg-white/10 text-white',
+        tone === 'red' && 'bg-red-soft text-red',
+        className,
+      )}
+    >
+      {children}
+    </Pressable>
+  )
+}
+
+/* Chip de seleção (ativo preto) */
 
 export function Chip({ on, onClick, children, className, size = 'md' }: { on?: boolean; onClick?: () => void; children: React.ReactNode; className?: string; size?: 'sm' | 'md' }) {
   return (
@@ -51,16 +93,16 @@ export function Chip({ on, onClick, children, className, size = 'md' }: { on?: b
       onClick={onClick}
       aria-pressed={on}
       className={cn(
-        'inline-flex shrink-0 items-center gap-1.5 rounded-full border font-medium transition-colors',
-        size === 'md' ? 'h-11 px-4 text-[15px]' : 'h-9 px-3.5 text-[14px]',
-        on ? 'border-sage-800 bg-sage-800 text-paper' : 'border-line-2 bg-card text-ink-2 active:bg-card-2',
+        'inline-flex shrink-0 items-center gap-1.5 rounded-full font-semibold transition-colors',
+        size === 'md' ? 'h-11 px-4 text-[14.5px]' : 'h-10 px-3.5 text-[13.5px]',
+        on ? 'bg-black text-white' : 'bg-muted text-ink-2 active:bg-muted-2',
         className,
       )}
     >
       <AnimatePresence initial={false}>
         {on && (
-          <motion.span initial={{ width: 0, opacity: 0 }} animate={{ width: 'auto', opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="-ml-0.5 overflow-hidden">
-            <Check className="size-4" strokeWidth={2.4} />
+          <motion.span initial={{ width: 0, opacity: 0 }} animate={{ width: 'auto', opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.18 }} className="-ml-0.5 overflow-hidden text-lime">
+            <Check className="size-4" strokeWidth={2.6} />
           </motion.span>
         )}
       </AnimatePresence>
@@ -69,7 +111,7 @@ export function Chip({ on, onClick, children, className, size = 'md' }: { on?: b
   )
 }
 
-/* ───────── Toggle estilo iOS ───────── */
+/* Toggle estilo iOS */
 
 export function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label?: string }) {
   return (
@@ -77,25 +119,25 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
       checked={checked}
       onCheckedChange={onChange}
       aria-label={label}
-      className="relative h-[31px] w-[51px] shrink-0 rounded-full bg-line-2 transition-colors duration-200 data-[state=checked]:bg-sage-700"
+      className="relative h-[31px] w-[51px] shrink-0 rounded-full bg-muted-2 transition-colors duration-200 data-[state=checked]:bg-black"
     >
       <SwitchPrimitive.Thumb className="block size-[27px] translate-x-[2px] rounded-full bg-white shadow-[0_2px_6px_rgba(0,0,0,.18),0_0_0_.5px_rgba(0,0,0,.04)] transition-transform duration-200 ease-[cubic-bezier(.32,.72,0,1)] will-change-transform data-[state=checked]:translate-x-[22px]" />
     </SwitchPrimitive.Root>
   )
 }
 
-/* ───────── Rótulos ───────── */
+/* Título de seção (ref. "Recent activity · View all") */
 
 export function SectionLabel({ children, action, className }: { children: React.ReactNode; action?: React.ReactNode; className?: string }) {
   return (
-    <div className={cn('flex items-end justify-between px-5 pt-6 pb-2', className)}>
-      <div className="text-[13px] font-semibold tracking-[0.01em] text-ink-3 uppercase">{children}</div>
+    <div className={cn('flex items-center justify-between px-1 pt-6 pb-3', className)}>
+      <h2 className="text-[18px] font-bold tracking-[-0.02em] text-ink">{children}</h2>
       {action}
     </div>
   )
 }
 
-/* ───────── Tela com nav bar e título grande que encolhe ───────── */
+/* Tela com cabeçalho de botão redondo e título central */
 
 export function Screen({
   title,
@@ -142,59 +184,53 @@ export function Screen({
   }, [scrollKey])
   const titleOpacity = useTransform(scrollY, large ? [34, 58] : [0, 1], [large ? 0 : 1, 1])
   const barBg = useTransform(scrollY, [0, 24], [0, 1])
-  const largeScale = useTransform(scrollY, [-80, 0, 60], [1.06, 1, 0.94])
-  const largeOpacity = useTransform(scrollY, [0, 46], [1, 0])
 
   return (
-    <div className={cn('absolute inset-0 flex flex-col bg-paper', className)}>
+    <div className={cn('absolute inset-0 flex flex-col bg-surface', className)}>
       <header ref={headRef} className="absolute inset-x-0 top-0 z-30 pt-[var(--sat)]">
-        <motion.div style={{ opacity: barBg }} className="pointer-events-none absolute inset-0 border-b border-line/80 bg-paper/85 backdrop-blur-xl backdrop-saturate-150" />
-        <div className="relative flex h-12 items-center px-2">
-          <div className="flex min-w-[88px] items-center">
+        <motion.div style={{ opacity: barBg }} className="pointer-events-none absolute inset-0 bg-surface/85 backdrop-blur-xl backdrop-saturate-150" />
+        <div className="relative flex h-[60px] items-center gap-2 px-4">
+          <div className="flex min-w-[96px] items-center">
             {left}
             {back && (
-              <Pressable onClick={back.onClick} className="flex h-11 items-center gap-0.5 rounded-lg pr-2 pl-1 text-[16px] font-medium text-sage-700">
-                <ChevronLeft className="size-[26px]" strokeWidth={2.1} />
-                <span className="max-w-[90px] truncate">{back.label}</span>
-              </Pressable>
+              <RoundBtn label={back.label} onClick={back.onClick}>
+                <ArrowLeft className="size-[19px]" strokeWidth={2} />
+              </RoundBtn>
             )}
           </div>
-          <motion.div style={{ opacity: titleOpacity }} className="min-w-0 flex-1 truncate text-center text-[16px] font-semibold tracking-[-0.01em] text-ink">
+          <motion.div style={{ opacity: titleOpacity }} className="min-w-0 flex-1 truncate text-center text-[17px] font-bold tracking-[-0.02em] text-ink">
             {title}
           </motion.div>
-          <div className="flex min-w-[88px] items-center justify-end gap-1 pr-1">{right}</div>
+          <div className="flex min-w-[96px] items-center justify-end gap-2">{right}</div>
         </div>
-        {below}
+        <div className="relative">{below}</div>
       </header>
       <div
         ref={ref}
         {...contentProps}
         className={cn('no-scrollbar relative flex-1 overflow-x-hidden overflow-y-auto overscroll-contain', contentProps?.className)}
-        style={{ paddingTop: headH != null ? headH : 'calc(var(--sat) + 48px)', ...contentProps?.style }}
+        style={{ paddingTop: headH != null ? headH : 'calc(var(--sat) + 60px)', ...contentProps?.style }}
       >
         {large && (
-          <motion.div style={{ scale: largeScale, opacity: largeOpacity }} className="origin-left px-5 pt-1 pb-1">
-            {eyebrow && <div className="mb-1 text-[13px] font-medium text-ink-3">{eyebrow}</div>}
-            <h1 className="font-display text-[32px] leading-[1.08] font-semibold text-ink">{large}</h1>
-          </motion.div>
+          <div className="px-5 pt-1 pb-1">
+            {eyebrow && <div className="mb-1 text-[13.5px] font-medium text-ink-3">{eyebrow}</div>}
+            <h1 className="text-[30px] leading-[1.08] font-bold tracking-[-0.03em] text-ink">{large}</h1>
+          </div>
         )}
         {children}
         <div style={{ height: footer ? 24 : 'calc(var(--sab) + 24px)' }} />
       </div>
-      {footer && <div className="relative z-20 border-t border-line bg-card/92 px-4 pt-3 backdrop-blur-xl" style={{ paddingBottom: 'calc(var(--sab) + 10px)' }}>{footer}</div>}
+      {footer && (
+        <div className="relative z-20 bg-surface/92 px-4 pt-3 backdrop-blur-xl" style={{ paddingBottom: 'calc(var(--sab) + 12px)' }}>
+          <div className="pointer-events-none absolute inset-x-0 -top-6 h-6 bg-gradient-to-t from-surface to-transparent" />
+          {footer}
+        </div>
+      )}
     </div>
   )
 }
 
-export function IconBtn({ children, onClick, label, className, active }: { children: React.ReactNode; onClick?: () => void; label: string; className?: string; active?: boolean }) {
-  return (
-    <Pressable aria-label={label} title={label} onClick={onClick} scale={0.9} className={cn('flex size-11 items-center justify-center rounded-full text-ink-2 transition-colors', active && 'bg-late-bg text-late', className)}>
-      {children}
-    </Pressable>
-  )
-}
-
-/* ───────── Bottom sheet (vaul) dentro do aparelho ───────── */
+/* Bottom sheet (vaul) dentro do aparelho */
 
 export function Sheet({
   open,
@@ -217,19 +253,19 @@ export function Sheet({
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange} container={root} repositionInputs={false}>
       <Drawer.Portal container={root}>
-        <Drawer.Overlay className="fixed inset-0 z-[80] bg-sage-950/35" />
+        <Drawer.Overlay className="fixed inset-0 z-[80] bg-black/40" />
         <Drawer.Content
           aria-describedby={undefined}
-          className={cn('fixed inset-x-0 bottom-0 z-[90] flex max-h-[90%] flex-col rounded-t-[26px] outline-none', dark ? 'bg-sage-950 text-paper' : 'bg-card')}
+          className={cn('fixed inset-x-0 bottom-0 z-[90] flex max-h-[90%] flex-col rounded-t-[32px] outline-none', dark ? 'bg-black text-white' : 'bg-card')}
         >
-          <div className={cn('mx-auto mt-2 mb-1 h-[5px] w-9 shrink-0 rounded-full', dark ? 'bg-white/20' : 'bg-line-2')} />
-          <div className="px-5 pt-2 pb-3">
-            <Drawer.Title className={cn('text-[19px] font-semibold tracking-[-0.015em]', dark ? 'text-paper' : 'text-ink')}>{title}</Drawer.Title>
-            {description && <Drawer.Description className={cn('mt-0.5 text-[14px]', dark ? 'text-sage-200' : 'text-ink-3')}>{description}</Drawer.Description>}
+          <div className={cn('mx-auto mt-2.5 mb-1 h-[5px] w-10 shrink-0 rounded-full', dark ? 'bg-white/20' : 'bg-muted-2')} />
+          <div className="px-5 pt-2 pb-4">
+            <Drawer.Title className={cn('text-[20px] font-bold tracking-[-0.02em]', dark ? 'text-white' : 'text-ink')}>{title}</Drawer.Title>
+            {description && <Drawer.Description className={cn('mt-0.5 text-[14px] font-medium', dark ? 'text-white/55' : 'text-ink-3')}>{description}</Drawer.Description>}
           </div>
           <div className="no-scrollbar min-h-0 flex-1 overflow-y-auto px-5 pb-4">{children}</div>
           {footer && (
-            <div className={cn('border-t px-4 pt-3', dark ? 'border-white/10' : 'border-line')} style={{ paddingBottom: 'calc(var(--sab) + 10px)' }}>
+            <div className="px-4 pt-2" style={{ paddingBottom: 'calc(var(--sab) + 12px)' }}>
               {footer}
             </div>
           )}
@@ -240,7 +276,7 @@ export function Sheet({
   )
 }
 
-/* ───────── Stepper numérico grande ───────── */
+/* Stepper numérico grande com botões redondos */
 
 function useHoldRepeat(fn: () => void) {
   const t = React.useRef<number | null>(null)
@@ -288,7 +324,7 @@ export function NumberStepper({
   decimals?: number
   unit: string
   hint?: React.ReactNode
-  tone?: 'ok' | 'warn' | 'late'
+  tone?: 'late'
   extra?: React.ReactNode
 }) {
   const clamp = (n: number) => +Math.min(max, Math.max(min, n)).toFixed(decimals)
@@ -296,53 +332,52 @@ export function NumberStepper({
   valRef.current = value
   const dec = useHoldRepeat(() => onChange(clamp(valRef.current - step)))
   const inc = useHoldRepeat(() => onChange(clamp(valRef.current + step)))
-  const toneCls = tone === 'late' ? 'text-late' : tone === 'warn' ? 'text-warn' : 'text-ink'
   return (
-    <div className="flex items-center gap-3 py-3.5">
-      <Pressable scale={0.88} aria-label={`Diminuir ${label}`} {...dec} className="flex size-[52px] shrink-0 items-center justify-center rounded-full border border-line-2 bg-card text-ink-2 shadow-card active:bg-paper-2">
-        <Minus className="size-5" strokeWidth={2.2} />
+    <div className="flex items-center gap-3 py-4">
+      <Pressable scale={0.88} aria-label={`Diminuir ${label}`} {...dec} className="flex size-[54px] shrink-0 items-center justify-center rounded-full bg-muted text-ink active:bg-muted-2">
+        <Minus className="size-5" strokeWidth={2.4} />
       </Pressable>
       <div className="min-w-0 flex-1 text-center">
-        <div className="flex items-center justify-center gap-1.5 text-[13px] font-medium text-ink-3">
+        <div className="flex items-center justify-center gap-1.5 text-[13px] font-semibold text-ink-3">
           {icon}
           {label}
         </div>
-        <div className={cn('mt-0.5 flex items-baseline justify-center gap-1 leading-none', toneCls)}>
-          <span className="num font-display text-[34px] font-semibold tracking-[-0.02em]">{value.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</span>
-          <span className="text-[15px] font-medium text-ink-3">{unit}</span>
+        <div className={cn('mt-1 flex items-baseline justify-center gap-1 leading-none', tone === 'late' ? 'text-red' : 'text-ink')}>
+          <span className="num text-[36px] font-bold tracking-[-0.03em]">{value.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}</span>
+          <span className="text-[15px] font-semibold text-ink-3">{unit}</span>
         </div>
-        {hint && <div className="mt-1 text-[12.5px] text-ink-3">{hint}</div>}
+        {hint && <div className={cn('mt-1.5 text-[12.5px] font-medium', tone === 'late' ? 'text-red' : 'text-ink-3')}>{hint}</div>}
         {extra}
       </div>
-      <Pressable scale={0.88} aria-label={`Aumentar ${label}`} {...inc} className="flex size-[52px] shrink-0 items-center justify-center rounded-full border border-line-2 bg-card text-ink-2 shadow-card active:bg-paper-2">
-        <Plus className="size-5" strokeWidth={2.2} />
+      <Pressable scale={0.88} aria-label={`Aumentar ${label}`} {...inc} className="flex size-[54px] shrink-0 items-center justify-center rounded-full bg-black text-white active:bg-black-2">
+        <Plus className="size-5" strokeWidth={2.4} />
       </Pressable>
     </div>
   )
 }
 
-/* ───────── Notificações do aparelho (banner iOS) ───────── */
+/* Notificações do aparelho (banner iOS) */
 
 function NoticeIcon({ kind }: { kind: Notice['kind'] }) {
   if (kind === 'whatsapp')
     return (
-      <span className="flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-[#2f8f5b] text-white">
+      <span className="flex size-[38px] shrink-0 items-center justify-center rounded-[11px] bg-green text-white">
         <MessageCircle className="size-5" strokeWidth={2} fill="currentColor" fillOpacity={0.15} />
       </span>
     )
   if (kind === 'sync')
     return (
-      <span className="flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-ok text-white">
-        <RefreshCw className="size-5" strokeWidth={2} />
+      <span className="flex size-[38px] shrink-0 items-center justify-center rounded-[11px] bg-lime text-ink">
+        <RefreshCw className="size-5" strokeWidth={2.2} />
       </span>
     )
   if (kind === 'offline')
     return (
-      <span className="flex size-[38px] shrink-0 items-center justify-center rounded-[10px] bg-ink-2 text-white">
+      <span className="flex size-[38px] shrink-0 items-center justify-center rounded-[11px] bg-black text-white">
         <CloudOff className="size-5" strokeWidth={2} />
       </span>
     )
-  return <LogoMark size={38} className="shrink-0 rounded-[10px]" />
+  return <LogoMark size={38} className="shrink-0" />
 }
 
 function NoticeItem({ n }: { n: Notice }) {
@@ -363,15 +398,15 @@ function NoticeItem({ n }: { n: Notice }) {
       dragElastic={{ top: 0.6, bottom: 0.1 }}
       onDragEnd={(_, i) => i.offset.y < -24 && dismiss(n.id)}
       onClick={() => dismiss(n.id)}
-      className="pointer-events-auto flex cursor-grab items-start gap-3 rounded-[22px] border border-white/60 bg-card/88 p-3 shadow-[0_12px_40px_-12px_rgba(20,42,33,.45),0_1px_3px_rgba(20,42,33,.12)] backdrop-blur-2xl backdrop-saturate-150"
+      className="pointer-events-auto flex cursor-grab items-start gap-3 rounded-[24px] bg-card/90 p-3 shadow-float ring-1 ring-black/[0.04] backdrop-blur-2xl backdrop-saturate-150"
     >
       <NoticeIcon kind={n.kind} />
       <div className="min-w-0 flex-1 pt-0.5">
         <div className="flex items-baseline justify-between gap-2">
-          <div className="truncate text-[14.5px] font-semibold text-ink">{n.title}</div>
-          <div className="shrink-0 text-[12px] text-ink-3">agora</div>
+          <div className="truncate text-[14.5px] font-bold text-ink">{n.title}</div>
+          <div className="shrink-0 text-[12px] font-medium text-ink-3">agora</div>
         </div>
-        <div className="mt-0.5 line-clamp-3 text-[14px] leading-snug text-ink-2">{n.body}</div>
+        <div className="mt-0.5 line-clamp-3 text-[13.5px] leading-snug font-medium text-ink-2">{n.body}</div>
       </div>
     </motion.div>
   )
@@ -390,9 +425,9 @@ export function PhoneToaster() {
   )
 }
 
-/* ───────── Barra de status offline / sincronização ───────── */
+/* Faixa de offline e sincronização */
 
-export function ConnectivityBanner() {
+export function ConnectivityBanner({ dark }: { dark?: boolean }) {
   const offline = useDemo((s) => s.offline)
   const pending = useCampo((s) => s.pending)
   const syncing = useCampo((s) => s.syncing)
@@ -401,24 +436,21 @@ export function ConnectivityBanner() {
     <AnimatePresence initial={false}>
       {show && (
         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: EASE_OUT }} className="overflow-hidden">
-          <div className="px-4 pb-2">
-            <div className={cn('relative flex h-9 items-center gap-2 overflow-hidden rounded-full px-3.5 text-[13.5px] font-medium', syncing ? 'bg-ok-bg text-ok' : 'bg-ink text-paper')}>
+          <div className={cn('pb-2', !dark && 'px-4')}>
+            <div className={cn('relative flex h-10 items-center gap-2 overflow-hidden rounded-full px-4 text-[13.5px] font-semibold', syncing ? 'bg-lime text-ink' : dark ? 'bg-white/10 text-white' : 'bg-black text-white')}>
               {syncing ? (
                 <>
                   <motion.span animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 0.9, ease: 'linear' }} className="inline-flex">
                     <RefreshCw className="size-4" strokeWidth={2.2} />
                   </motion.span>
-                  Sincronizando {pending} {pending === 1 ? 'registro' : 'registros'}…
-                  <motion.span initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 1.8, ease: 'easeInOut' }} className="absolute inset-x-0 bottom-0 h-[3px] origin-left bg-ok/60" />
+                  Enviando {pending} {pending === 1 ? 'registro' : 'registros'}
+                  <motion.span initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 1.8, ease: 'easeInOut' }} className="absolute inset-x-0 bottom-0 h-[3px] origin-left bg-black/25" />
                 </>
               ) : (
                 <>
-                  <CloudOff className="size-4 opacity-80" strokeWidth={2} />
-                  <span>Offline</span>
-                  <span className="opacity-50">·</span>
-                  <span className="truncate opacity-85">
-                    {pending > 0 ? `${pending} ${pending === 1 ? 'registro aguardando' : 'registros aguardando'} envio` : 'tudo salvo no aparelho'}
-                  </span>
+                  <CloudOff className="size-4 text-lime" strokeWidth={2.2} />
+                  <span>Sem sinal</span>
+                  <span className="truncate font-medium text-white/60">{pending > 0 ? `${pending} ${pending === 1 ? 'registro' : 'registros'} na fila` : 'salvando no aparelho'}</span>
                 </>
               )}
             </div>

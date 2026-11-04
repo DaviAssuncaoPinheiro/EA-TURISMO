@@ -1,20 +1,22 @@
-// Mini-mapa compacto da rota do dia (o mapa grande fica no painel).
+// Mini mapa da rota do dia: terra clara, rio azul acinzentado, rota preta e pins numerados.
+import * as React from 'react'
 import { motion } from 'motion/react'
-import { BASE, IGARAPES, RIVER_PATH, ZONES } from '@/data/geo'
+import { AVENIDAS, BASE, IGARAPES, RIVER_PATH, ZONES } from '@/data/geo'
 import type { Visit, VisitStatus } from '@/data/mock'
 import { bairroOf } from './data'
 
-export function MiniMap({ visits, status, activeId, height = 150 }: { visits: Visit[]; status: Record<string, VisitStatus>; activeId?: string; height?: number }) {
+export function MiniMap({ visits, status, activeId, height = 170 }: { visits: Visit[]; status: Record<string, VisitStatus>; activeId?: string; height?: number }) {
+  const fid = React.useId().replace(/:/g, '')
   const pts = visits.map((v) => ({ v, b: bairroOf(v) }))
   const xs = [BASE.x, ...pts.map((p) => p.b.x)]
   const ys = [BASE.y, ...pts.map((p) => p.b.y)]
-  const pad = 34
+  const pad = 36
   let x0 = Math.min(...xs) - pad
   let x1 = Math.max(...xs) + pad
   let y0 = Math.min(...ys) - pad
   let y1 = Math.max(...ys) + pad
-  // mantém proporção ~ 2.3:1
-  const ratio = 350 / height
+  // mantém a proporção do cartão
+  const ratio = 346 / height
   const w = x1 - x0
   const h = y1 - y0
   if (w / h < ratio) {
@@ -27,7 +29,7 @@ export function MiniMap({ visits, status, activeId, height = 150 }: { visits: Vi
     y1 = y0 + nh
   }
   const vw = x1 - x0
-  const unit = vw / 350 // 1px de tela em unidades do mapa
+  const u = vw / 346 // 1px de tela em unidades do mapa
 
   const path = ['M', BASE.x, BASE.y, ...pts.flatMap((p) => ['L', p.b.x, p.b.y])].join(' ')
   const doneIdx = pts.reduce((acc, p, i) => (status[p.v.id] === 'concluida' ? i + 1 : acc), 0)
@@ -35,32 +37,45 @@ export function MiniMap({ visits, status, activeId, height = 150 }: { visits: Vi
 
   return (
     <svg viewBox={`${x0} ${y0} ${vw} ${y1 - y0}`} className="block w-full" style={{ height }} aria-label="Mapa da rota do dia">
-      <rect x={x0} y={y0} width={vw} height={y1 - y0} fill="var(--color-paper-2)" />
+      <defs>
+        <filter id={`pin-${fid}`} x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy={u * 1.2} stdDeviation={u * 1.6} floodColor="#111214" floodOpacity="0.18" />
+        </filter>
+      </defs>
+      <rect x={x0} y={y0} width={vw} height={y1 - y0} fill="var(--color-muted)" />
       {ZONES.map((z) => (
-        <polygon key={z.id} points={z.polygon.map((p) => p.join(',')).join(' ')} fill={z.hex} fillOpacity={0.09} stroke={z.hex} strokeOpacity={0.35} strokeWidth={unit} strokeDasharray={`${unit * 3} ${unit * 3}`} />
+        <polygon key={z.id} points={z.polygon.map((p) => p.join(',')).join(' ')} fill="var(--color-card)" fillOpacity={0.5} stroke="var(--color-line-2)" strokeWidth={u * 0.8} />
+      ))}
+      {AVENIDAS.map((a) => (
+        <path key={a.name} d={a.d} fill="none" stroke="var(--color-card)" strokeWidth={u * 3.2} strokeLinecap="round" />
       ))}
       {IGARAPES.map((d, i) => (
-        <path key={i} d={d} fill="none" stroke="var(--color-river)" strokeOpacity={0.22} strokeWidth={unit * 2.2} strokeLinecap="round" />
+        <path key={i} d={d} fill="none" stroke="var(--color-river)" strokeWidth={u * 2.4} strokeLinecap="round" />
       ))}
-      <path d={RIVER_PATH} fill="var(--color-river)" fillOpacity={0.88} />
+      <path d={RIVER_PATH} fill="var(--color-river)" />
       {/* rota planejada */}
-      <path d={path} fill="none" stroke="var(--color-ink-3)" strokeWidth={unit * 1.6} strokeDasharray={`${unit * 4} ${unit * 4}`} strokeLinejoin="round" strokeLinecap="round" />
+      <path d={path} fill="none" stroke="var(--color-ink-3)" strokeWidth={u * 1.6} strokeDasharray={`${u * 4} ${u * 4}`} strokeLinejoin="round" strokeLinecap="round" />
       {/* trecho percorrido */}
-      <motion.path d={donePath} fill="none" stroke="var(--color-sage-700)" strokeWidth={unit * 3} strokeLinejoin="round" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.2 }} />
+      <motion.path d={donePath} fill="none" stroke="var(--color-black)" strokeWidth={u * 3.2} strokeLinejoin="round" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.2 }} />
       {/* base */}
-      <rect x={BASE.x - unit * 6} y={BASE.y - unit * 6} width={unit * 12} height={unit * 12} rx={unit * 3} fill="var(--color-ink)" />
+      <g filter={`url(#pin-${fid})`}>
+        <rect x={BASE.x - u * 8} y={BASE.y - u * 8} width={u * 16} height={u * 16} rx={u * 5} fill="var(--color-black)" />
+        <circle cx={BASE.x} cy={BASE.y} r={u * 3} fill="var(--color-lime)" />
+      </g>
       {pts.map((p, i) => {
         const st = status[p.v.id]
         const active = p.v.id === activeId
         const done = st === 'concluida'
-        const r = unit * (active ? 11 : 9)
         return (
           <g key={p.v.id}>
             {active && (
-              <motion.circle cx={p.b.x} cy={p.b.y} fill="var(--color-terra-500)" initial={{ opacity: 0.5, r }} animate={{ opacity: 0, r: r * 2.3 }} transition={{ repeat: Infinity, duration: 1.8, ease: 'easeOut' }} />
+              <motion.circle cx={p.b.x} cy={p.b.y} fill="var(--color-lime)" initial={{ opacity: 0.7, r: u * 12 }} animate={{ opacity: 0, r: u * 26 }} transition={{ repeat: Infinity, duration: 1.8, ease: 'easeOut' }} />
             )}
-            <circle cx={p.b.x} cy={p.b.y} r={r} fill={active ? 'var(--color-terra-600)' : done ? 'var(--color-sage-700)' : 'var(--color-card)'} stroke={active || done ? 'var(--color-card)' : 'var(--color-ink-2)'} strokeWidth={unit * 1.6} />
-            <text x={p.b.x} y={p.b.y} dy="0.36em" textAnchor="middle" fontSize={unit * (active ? 11 : 10)} fontWeight={700} fontFamily="var(--font-sans)" fill={active || done ? 'var(--color-paper)' : 'var(--color-ink)'}>
+            <g filter={`url(#pin-${fid})`}>
+              <circle cx={p.b.x} cy={p.b.y} r={u * (active ? 13 : 11)} fill={active ? 'var(--color-lime)' : 'var(--color-card)'} />
+              {!active && <circle cx={p.b.x} cy={p.b.y} r={u * 8} fill={done ? 'var(--color-muted-2)' : 'var(--color-black)'} />}
+            </g>
+            <text x={p.b.x} y={p.b.y} dy="0.36em" textAnchor="middle" fontSize={u * (active ? 11 : 9)} fontWeight={800} fontFamily="var(--font-sans)" fill={active ? 'var(--color-ink)' : done ? 'var(--color-ink-3)' : '#fff'}>
               {i + 1}
             </text>
           </g>

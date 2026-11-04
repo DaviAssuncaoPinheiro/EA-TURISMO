@@ -1,4 +1,4 @@
-// Sugestões automáticas de lembretes + gravação do atendimento no store global.
+// Sugestões automáticas de lembretes e gravação do atendimento no store global.
 import { VACCINE, VET, type ClinicalEvent, type Pet, type Reminder, type ReminderKind, type VaccineDose, type Visit } from '@/data/mock'
 import { daysFromToday, fmt, iso, TODAY } from '@/data/time'
 import { kg } from '@/lib/utils'
@@ -31,8 +31,8 @@ export function suggestReminders(visit: Visit, pet: Pet, d: Draft): Suggestion[]
   const applied = Object.entries(d.vaccines).filter(([, p]) => p.apply)
   for (const [vid] of applied) {
     const v = VACCINE[vid]
-    if (isPuppy(pet) && ['v10', 'v4', 'v5'].includes(vid)) out.push({ key: `vac-${vid}`, kind: 'vacina', title: `Próxima dose ${v.short}`, item: `${vName(vid)} (próxima dose)`, days: 21, why: 'Protocolo de filhote · intervalo de 21 dias', on: true })
-    else out.push({ key: `vac-${vid}`, kind: 'vacina', title: `Reforço ${vName(vid)}`, item: vName(vid), days: v.boosterDays, why: 'Aplicada hoje · reforço anual', on: true })
+    if (isPuppy(pet) && ['v10', 'v4', 'v5'].includes(vid)) out.push({ key: `vac-${vid}`, kind: 'vacina', title: `Próxima dose ${v.short}`, item: `${vName(vid)} (próxima dose)`, days: 21, why: 'Protocolo de filhote, intervalo de 21 dias', on: true })
+    else out.push({ key: `vac-${vid}`, kind: 'vacina', title: `Reforço ${vName(vid)}`, item: vName(vid), days: v.boosterDays, why: 'Aplicada hoje, reforço anual', on: true })
   }
   const extra = useDemo.getState().extraDoses
   for (const r of vaccineRows(pet, extra).due) {
@@ -42,23 +42,23 @@ export function suggestReminders(visit: Visit, pet: Pet, d: Draft): Suggestion[]
   const cardio = d.meds.some((m) => MED[m.medId]?.group === 'Cardiologia') || pet.conditions?.some((c) => /mitral|card/i.test(c))
   if (cardio) {
     out.push({ key: 'ret-cardio', kind: 'retorno', title: 'Retorno cardiológico', days: 30, why: 'Reavaliar ausculta e dose do pimobendan', on: true })
-    out.push({ key: 'eco', kind: 'exame', title: 'Ecocardiograma de controle', days: 180, why: 'Estágio B1 (ACVIM) · reestadiar a cada 6 meses', on: true })
+    out.push({ key: 'eco', kind: 'exame', title: 'Ecocardiograma de controle', days: 180, why: 'Estágio B1, repetir a cada 6 meses', on: true })
   }
   for (const m of d.meds) {
     if (m.keep) continue
     const n = durationDays(m.dur)
     if (n) out.push({ key: `med-${m.uid}`, kind: 'retorno', title: `Reavaliar após ${MED[m.medId].name}`, days: n + 1, why: `Fim do tratamento (${m.dur.toLowerCase()})`, on: true })
   }
-  if (d.weight > pet.idealKg[1]) out.push({ key: 'peso', kind: 'retorno', title: 'Pesagem de controle', days: 60, why: `Acima do peso ideal (${pet.idealKg.join('–').replace(/\./g, ',')} kg)`, on: !cardio })
+  if (d.weight > pet.idealKg[1]) out.push({ key: 'peso', kind: 'retorno', title: 'Pesagem de controle', days: 60, why: `Acima do peso ideal (${pet.idealKg.join(' a ').replace(/\./g, ',')} kg)`, on: !cardio })
   if (d.findings.length && !cardio) out.push({ key: 'achados', kind: 'retorno', title: 'Retorno para reavaliar achados', days: 15, why: `${d.findings.length} ${d.findings.length === 1 ? 'achado marcado' : 'achados marcados'} no exame`, on: true })
-  if (isPuppy(pet)) out.push({ key: 'verm', kind: 'vermífugo', title: 'Vermífugo do filhote', days: 30, why: 'Filhote · vermifugar a cada 30 dias até 6 meses', on: true })
+  if (isPuppy(pet)) out.push({ key: 'verm', kind: 'vermífugo', title: 'Vermífugo do filhote', days: 30, why: 'A cada 30 dias até 6 meses', on: true })
   if (!out.length) out.push({ key: 'checkup', kind: 'retorno', title: 'Check-up anual', days: 365, why: 'Rotina preventiva', on: false })
   // aplica edições do veterinário
   return out.map((s) => ({ ...s, ...(d.reminderEdits[s.key] ?? {}) }))
 }
 
 function eventTitle(visit: Visit) {
-  if (visit.type === 'Retorno') return visit.reason.split(' — ')[0]
+  if (visit.type === 'Retorno') return visit.reason.split(':')[0]
   if (visit.type === 'Consulta') return 'Consulta domiciliar'
   return visit.type
 }
@@ -70,7 +70,7 @@ export function buildSummary(visit: Visit, pet: Pet, d: Draft, sugg: Suggestion[
   const delta = +(d.weight - d.prevWeight).toFixed(1)
   const dTxt = delta === 0 ? 'estável' : `${delta > 0 ? '+' : '−'}${Math.abs(delta).toLocaleString('pt-BR')} kg`
   parts.push(`Peso ${kg(d.weight)} (${dTxt}). T ${d.temp.toLocaleString('pt-BR')} °C · FC ${d.fc} bpm · FR ${d.fr} mpm. Mucosas ${d.mucosa.toLowerCase()}, TPC ${d.tpc}, hidratação ${d.hidratacao.toLowerCase()}, ECC ${d.bcs}/9.`)
-  if (d.findings.length) parts.push(`Achados: ${d.findings.map((f) => `${f.region.toLowerCase()} — ${[...f.tags, f.note].filter(Boolean).join(', ').toLowerCase() || 'ver nota'}`).join('; ')}.`)
+  if (d.findings.length) parts.push(`Achados: ${d.findings.map((f) => `${f.region.toLowerCase()}: ${[...f.tags, f.note].filter(Boolean).join(', ').toLowerCase() || 'ver nota'}`).join('; ')}.`)
   const applied = Object.entries(d.vaccines).filter(([, p]) => p.apply)
   if (applied.length) parts.push(`Vacina: ${applied.map(([vid, p]) => `${vName(vid)}${p.lot ? ` (lote ${p.lot})` : ''}`).join(', ')}.`)
   if (d.meds.length) parts.push(`Prescrição: ${d.meds.map((m) => `${MED[m.medId].name} ${MED[m.medId].conc}, ${m.dose.toLowerCase()} ${m.freq.toLowerCase()}${m.keep ? ' (mantido)' : ''}, ${m.dur.toLowerCase()}`).join('; ')}.`)
@@ -132,7 +132,7 @@ export function commitVisit(visit: Visit, pet: Pet, d: Draft): FinishedVisit {
       sendDate: iso(Math.max(1, s.days - (s.days >= 30 ? 7 : 2)), '09:00'),
       status: 'programado',
       createdBy: vetId,
-      origin: `Orientação na visita de ${fmt.short(TODAY)} · ${VET[vetId].short}`,
+      origin: `Visita de ${fmt.short(TODAY)}, ${VET[vetId].short}`,
     }))
 
   demo.setVisitStatus(visit.id, 'concluida')

@@ -1,4 +1,4 @@
-// Moldura de iPhone feita em CSS (só no desktop) + barra de status.
+// Moldura de iPhone feita em CSS (só no desktop) e barra de status.
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 
@@ -35,9 +35,9 @@ function Battery() {
   )
 }
 
-export function StatusBar({ offline }: { offline: boolean }) {
+export function StatusBar({ offline, dark }: { offline: boolean; dark?: boolean }) {
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-[110] flex h-[54px] items-center justify-between pr-[30px] pl-[46px] text-ink">
+    <div className={cn('pointer-events-none absolute inset-x-0 top-0 z-[110] flex h-[54px] items-center justify-between pr-[30px] pl-[46px] transition-colors duration-300', dark ? 'text-white' : 'text-ink')}>
       <span className="num pt-0.5 text-[16.5px] font-semibold tracking-[-0.01em]">10:40</span>
       <span className="flex items-center gap-[6px] pt-0.5">
         <SignalBars off={offline} />
@@ -48,28 +48,28 @@ export function StatusBar({ offline }: { offline: boolean }) {
   )
 }
 
-export const PhoneFrame = React.forwardRef<HTMLDivElement, { offline: boolean; children: React.ReactNode; className?: string }>(({ offline, children, className }, ref) => {
+export const PhoneFrame = React.forwardRef<HTMLDivElement, { offline: boolean; dark?: boolean; children: React.ReactNode; className?: string }>(({ offline, dark, children, className }, ref) => {
   const { w, h, bezel } = PHONE
   return (
     <div className={cn('relative', className)} style={{ width: w + bezel * 2, height: h + bezel * 2 }}>
       {/* botões laterais */}
-      <span className="absolute top-[118px] -left-[3px] h-8 w-[4px] rounded-l-sm bg-[#2b2f2c]" />
-      <span className="absolute top-[178px] -left-[3px] h-[60px] w-[4px] rounded-l-sm bg-[#2b2f2c]" />
-      <span className="absolute top-[250px] -left-[3px] h-[60px] w-[4px] rounded-l-sm bg-[#2b2f2c]" />
-      <span className="absolute top-[200px] -right-[3px] h-[96px] w-[4px] rounded-r-sm bg-[#2b2f2c]" />
+      <span className="absolute top-[118px] -left-[3px] h-8 w-[4px] rounded-l-sm bg-black-2" />
+      <span className="absolute top-[178px] -left-[3px] h-[60px] w-[4px] rounded-l-sm bg-black-2" />
+      <span className="absolute top-[250px] -left-[3px] h-[60px] w-[4px] rounded-l-sm bg-black-2" />
+      <span className="absolute top-[200px] -right-[3px] h-[96px] w-[4px] rounded-r-sm bg-black-2" />
       {/* corpo */}
       <div
-        className="absolute inset-0 rounded-[66px] bg-[#1b1e1c] shadow-[0_50px_100px_-30px_rgba(20,42,33,.55),0_30px_60px_-30px_rgba(20,42,33,.4),inset_0_0_0_1.5px_#4a4f4b,inset_0_0_0_4px_#121413]"
+        className="absolute inset-0 rounded-[66px] bg-black shadow-[0_50px_100px_-30px_rgba(17,18,20,.45),0_30px_60px_-30px_rgba(17,18,20,.35),inset_0_0_0_1.5px_#3a3d44,inset_0_0_0_4px_#0b0c0d]"
         style={{ padding: bezel }}
       >
         <div
           ref={ref}
-          className="relative h-full w-full overflow-hidden rounded-[54px] bg-paper"
+          className="relative h-full w-full overflow-hidden rounded-[54px] bg-surface"
           style={{ transform: 'translateZ(0)', ['--sat' as string]: '54px', ['--sab' as string]: '28px' }}
         >
-          <StatusBar offline={offline} />
+          <StatusBar offline={offline} dark={dark} />
           <div className="absolute top-[11px] left-1/2 z-[130] h-[37px] w-[124px] -translate-x-1/2 rounded-full bg-black">
-            <span className="absolute top-1/2 right-[14px] size-[10px] -translate-y-1/2 rounded-full bg-[#11151a] ring-1 ring-[#1d2430]" />
+            <span className="absolute top-1/2 right-[14px] size-[10px] -translate-y-1/2 rounded-full bg-[#15171b] ring-1 ring-[#23262c]" />
           </div>
           {children}
           <div className="pointer-events-none absolute bottom-[8px] left-1/2 z-[130] h-[5px] w-[136px] -translate-x-1/2 rounded-full bg-ink/85" />

@@ -145,7 +145,7 @@ export function BodyMap({ species, findings, onAdd, onOpen }: { species: Species
   )
 }
 
-/* ───────── Escore de condição corporal (vista de cima) ───────── */
+/* Escore de condição corporal (vista de cima) */
 
 function BcsFigure({ s, active }: { s: number; active: boolean }) {
   const ws = 7 + s * 0.55

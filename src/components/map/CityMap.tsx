@@ -55,7 +55,7 @@ export interface CityMapProps {
   routeOrder?: string[]
   /** rota de comparação, desenhada como fantasma tracejado */
   compareOrder?: string[]
-  /** 'optimized' = sálvia contínua; 'naive' = terracota (rota ruim) */
+  /** 'optimized' = linha preta contínua; 'naive' = coral tracejada (como foi marcada) */
   routeVariant?: 'optimized' | 'naive'
   showRoute?: boolean
   /** troque para redesenhar a rota do zero (ex.: ao trocar de veterinário) */
@@ -88,26 +88,27 @@ export interface CityMapProps {
 /* ───────────── constantes visuais ───────────── */
 
 export const STATUS_RING: Record<VisitStatus, string> = {
-  concluida: 'var(--color-ok)',
-  'em-atendimento': 'var(--color-terra-500)',
-  'a-caminho': 'var(--color-info)',
-  agendada: 'var(--color-ink-3)',
-  cancelada: 'var(--color-late)',
+  concluida: 'var(--color-green)',
+  'em-atendimento': 'var(--color-lime)',
+  'a-caminho': 'var(--color-blue)',
+  agendada: 'var(--color-ink-4)',
+  cancelada: 'var(--color-red)',
 }
 
-const LAND_OUT = '#e9e1cd'
-const LAND_CITY = '#f6f1e6'
+/** terra fora da cidade, terra urbana e halo de texto */
+const LAND_OUT = '#eef0f3'
+const LAND_CITY = '#fafbfc'
+const HALO = '#ffffff'
 const EASE = [0.16, 1, 0.3, 1] as const
 
+/** rampa sequencial de uma cor só (azul claro → azul sólido) */
 const HEAT_STOPS: [number, [number, number, number]][] = [
-  [0, [0xee, 0xf3, 0xec]],
-  [0.22, [0xcb, 0xdc, 0xcf]],
-  [0.45, [0x93, 0xb4, 0x9d]],
-  [0.68, [0x5e, 0x8a, 0x72]],
-  [0.86, [0x2f, 0x54, 0x43]],
-  [1, [0x1e, 0x3a, 0x2e]],
+  [0, [0xf1, 0xf5, 0xff]],
+  [0.3, [0xd4, 0xe1, 0xff]],
+  [0.6, [0x93, 0xb5, 0xfc]],
+  [0.85, [0x5a, 0x8d, 0xfb]],
+  [1, [0x2f, 0x69, 0xe8]],
 ]
-/** rampa sequencial sálvia (papel → tinta) */
 export function heatColor(t: number) {
   const v = Math.min(1, Math.max(0, t))
   for (let i = 1; i < HEAT_STOPS.length; i++) {
@@ -119,12 +120,31 @@ export function heatColor(t: number) {
       return `rgb(${c[0]},${c[1]},${c[2]})`
     }
   }
-  return 'rgb(30,58,46)'
+  return 'rgb(47,105,232)'
 }
-export const heatIsDark = (t: number) => t > 0.56
+export const heatIsDark = (t: number) => t > 0.66
 
-const RIVER_EDGE_D = RIVER_PATH.split(' L')[0]
-const SOLIMOES_EDGE_D = SOLIMOES_PATH.split(' L')[0]
+/** Polígono com cantos arredondados (zonas com contorno macio) */
+function roundedPoly(pts: [number, number][], r: number) {
+  const n = pts.length
+  let d = ''
+  for (let i = 0; i < n; i++) {
+    const p0 = pts[(i - 1 + n) % n]
+    const p1 = pts[i]
+    const p2 = pts[(i + 1) % n]
+    const v1 = [p0[0] - p1[0], p0[1] - p1[1]]
+    const v2 = [p2[0] - p1[0], p2[1] - p1[1]]
+    const l1 = Math.hypot(v1[0], v1[1])
+    const l2 = Math.hypot(v2[0], v2[1])
+    const rr = Math.min(r, l1 / 2.4, l2 / 2.4)
+    const a = [p1[0] + (v1[0] / l1) * rr, p1[1] + (v1[1] / l1) * rr]
+    const b = [p1[0] + (v2[0] / l2) * rr, p1[1] + (v2[1] / l2) * rr]
+    d += `${i === 0 ? 'M' : 'L'}${a[0].toFixed(1)},${a[1].toFixed(1)} Q${p1[0]},${p1[1]} ${b[0].toFixed(1)},${b[1].toFixed(1)} `
+  }
+  return d + 'Z'
+}
+const ZONE_D = Object.fromEntries(ZONES.map((z) => [z.id, roundedPoly(z.polygon, 16)])) as Record<ZoneId, string>
+const CITY_D = ZONES.map((z) => roundedPoly(z.polygon, 4)).join(' ')
 
 /** Inverte um path "M x,y C ... C ..." para o texto das avenidas não ficar de cabeça para baixo */
 function reversePath(d: string) {
@@ -144,7 +164,8 @@ const AVENUE_TEXT_PATHS = AVENIDAS.map((a) => {
 
 const RESERVA_DUCKE = 'M812,34 C850,22 900,18 944,32 C972,44 988,72 984,108 C980,134 958,152 930,150 C908,146 896,128 880,122 C856,112 830,104 812,88 C800,72 800,48 812,34 Z'
 const PONTE = 'M358,598 L318,680'
-/** Mata ao redor da cidade (tudo acima do limite norte/leste das zonas) */
+const RIVER_EDGE_D = RIVER_PATH.split(' L')[0]
+/** Área fora da cidade (tudo acima do limite norte/leste das zonas) */
 const FOREST =
   'M-50,-50 L1050,-50 L1050,612 L878,598 L908,540 L946,424 L956,300 L936,186 L884,132 L802,96 L736,62 L620,38 L470,46 L356,78 L330,200 L70,262 L-50,240 Z'
 
@@ -296,15 +317,15 @@ function CityMapInner({
   const max = heatMax ?? (heat ? Math.max(1, ...Object.values(heat).map((n) => n ?? 0)) : 1)
 
   /* rótulos: zonas → pins → bairros */
-  const zoneFont = px(compact ? 9.5 : 10.5)
-  const pinRects = visits.map((v) => circleRect(points[v.id], pinR + px(3)))
+  const zoneFont = px(compact ? 10.5 : 11.5)
+  const pinRects = visits.map((v) => circleRect(points[v.id], pinR + px(5)))
   const baseRect = circleRect(BASE_PT, px(11))
   const vetRect = vetNow ? circleRect(vetNow.at, px(13)) : null
   const hitsAny = (r: Rect, list: Rect[]) => list.some((t) => r.x0 < t.x1 && r.x1 > t.x0 && r.y0 < t.y1 && r.y1 > t.y0)
   // rótulo da zona desvia de pins (tenta o lugar original, depois acima/abaixo)
   const zoneLabelPos: Record<string, Pt> = {}
   const zoneLabelRects: Rect[] = ZONES.map((z) => {
-    const w = Math.max(z.name.length * zoneFont * 0.68, heat ? px(78) : 0)
+    const w = Math.max(z.name.length * zoneFont * 0.6, heat ? px(78) : 0)
     const extra = heat ? px(overlay ? 54 : 30) : 0
     const at = (dy: number): Rect => ({ x0: z.label[0] - w / 2, y0: z.label[1] + dy - zoneFont, x1: z.label[0] + w / 2, y1: z.label[1] + dy + zoneFont * 0.4 + extra })
     const obst = [...pinRects, baseRect, ...(vetRect ? [vetRect] : [])]
@@ -345,58 +366,55 @@ function CityMapInner({
   const routePts = (order?: string[]) => (order ? [BASE_PT, ...order.filter((id) => points[id]).map((id) => points[id])] : [])
   const routeD = routeOrder && routeOrder.length ? smoothPath(routePts(routeOrder)) : ''
   const compareD = compareOrder && compareOrder.length ? smoothPath(routePts(compareOrder)) : ''
-  const routeColor = routeVariant === 'naive' ? 'var(--color-terra-600)' : 'var(--color-sage-800)'
+  const naive = routeVariant === 'naive'
 
   const selected = visits.find((v) => v.id === selectedVisitId)
   const fitsX = (cx: number, halfW: number) => cx - halfW >= box.x && cx + halfW <= box.x + box.w
   const scaleUnits = 2 / KM_PER_UNIT
+  const dimZone = (id: ZoneId) => Boolean((highlighted && !highlighted.has(id)) || (selectedZone && selectedZone !== id && !heat))
 
   const zoneLabelsEl = (
-        <g pointerEvents="none">
-          {ZONES.map((z) => {
-            const isSel = selectedZone === z.id
-            const dim = (highlighted && !highlighted.has(z.id)) || (selectedZone && !isSel)
-            const hv = heat?.[z.id]
-            const t = hv != null ? hv / max : 0
-            const dark = heat && heatIsDark(t) && !dim
-            return (
-              <g key={z.id} opacity={dim ? 0.4 : 1}>
-                <text
-                  x={zoneLabelPos[z.id].x}
-                  y={zoneLabelPos[z.id].y}
-                  textAnchor="middle"
-                  fontSize={zoneFont}
-                  fontWeight={500}
-                  fill={heat ? (dark ? '#f4efe4' : 'var(--color-sage-900)') : z.hex}
-                  stroke={heat ? 'none' : LAND_CITY}
-                  strokeWidth={px(3)}
-                  paintOrder="stroke"
-                  style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', filter: heat ? undefined : 'brightness(0.78)' }}
-                >
-                  {z.name.toUpperCase()}
-                </text>
-                {heat && hv != null && (
-                  <text x={zoneLabelPos[z.id].x} y={zoneLabelPos[z.id].y + px(25)} textAnchor="middle" fill={dark ? '#f4efe4' : 'var(--color-sage-950)'}>
-                    <tspan fontSize={px(compact ? 18 : 24)} fontWeight={600} style={{ fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>
-                      {hv}
-                    </tspan>
-                    <tspan dx={px(4)} fontSize={px(9.5)} opacity={0.8}>
-                      {heatUnit}
-                    </tspan>
-                  </text>
-                )}
-              </g>
-            )
-          })}
-        </g>
+    <g pointerEvents="none">
+      {ZONES.map((z) => {
+        const dim = dimZone(z.id)
+        const hv = heat?.[z.id]
+        const t = hv != null ? hv / max : 0
+        const dark = heat && heatIsDark(t)
+        const pos = zoneLabelPos[z.id]
+        return (
+          <g key={z.id} opacity={dim ? 0.45 : 1}>
+            <text
+              x={pos.x}
+              y={pos.y}
+              textAnchor="middle"
+              fontSize={zoneFont}
+              fontWeight={600}
+              fill={dark ? 'rgba(255,255,255,.85)' : heat ? 'var(--color-ink-2)' : 'var(--color-ink-3)'}
+              stroke={heat ? 'none' : HALO}
+              strokeWidth={px(3)}
+              strokeLinejoin="round"
+              paintOrder="stroke"
+            >
+              {z.name}
+            </text>
+            {heat && hv != null && (
+              <text x={pos.x} y={pos.y + px(compact ? 20 : 26)} textAnchor="middle" fill={dark ? '#fff' : 'var(--color-ink)'}>
+                <tspan fontSize={px(compact ? 17 : 22)} fontWeight={700} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {hv}
+                </tspan>
+                <tspan dx={px(4)} fontSize={px(10)} fontWeight={600} opacity={0.7}>
+                  {heatUnit}
+                </tspan>
+              </text>
+            )}
+          </g>
+        )
+      })}
+    </g>
   )
 
   return (
-    <div
-      ref={wrapRef}
-      className={cn('relative w-full overflow-hidden', !aspect && 'h-full', className)}
-      style={aspect ? { aspectRatio: String(aspect) } : undefined}
-    >
+    <div ref={wrapRef} className={cn('relative w-full overflow-hidden', !aspect && 'h-full', className)} style={aspect ? { aspectRatio: String(aspect) } : undefined}>
       <svg
         role="img"
         aria-label={ariaLabel}
@@ -406,74 +424,61 @@ function CityMapInner({
         style={{ fontFamily: 'var(--font-sans)' }}
       >
         <defs>
-          <style>{`
-            @keyframes vd-flow-${uid} { to { stroke-dashoffset: -480; } }
-            @keyframes vd-flow-r-${uid} { to { stroke-dashoffset: 480; } }
-            @keyframes vd-route-${uid} { to { stroke-dashoffset: -60; } }
-            .vd-cur-${uid} { animation: vd-flow-${uid} linear infinite; }
-            .vd-cur-r-${uid} { animation: vd-flow-r-${uid} linear infinite; }
-          `}</style>
-          <pattern id={`forest-${uid}`} width="9" height="9" patternUnits="userSpaceOnUse">
-            <circle cx="2" cy="2" r="0.9" fill="#7f9b84" opacity="0.32" />
-            <circle cx="6.5" cy="6.5" r="0.7" fill="#7f9b84" opacity="0.22" />
-          </pattern>
-          <pattern id={`ducke-${uid}`} width="7" height="7" patternUnits="userSpaceOnUse">
-            <circle cx="2" cy="2" r="1.3" fill="#5e8a72" opacity="0.4" />
-            <circle cx="5.5" cy="5.5" r="1" fill="#5e8a72" opacity="0.3" />
-          </pattern>
-          <clipPath id={`river-${uid}`}>
-            <path d={RIVER_PATH} />
-          </clipPath>
-          <clipPath id={`sol-${uid}`}>
-            <path d={SOLIMOES_PATH} />
-          </clipPath>
+          <filter id={`shadow-${uid}`} x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow dx={0} dy={px(1.5)} stdDeviation={px(2.2)} floodColor="#111214" floodOpacity={0.2} />
+          </filter>
           <clipPath id={`pin-${uid}`} clipPathUnits="objectBoundingBox">
             <circle cx="0.5" cy="0.5" r="0.5" />
           </clipPath>
+          <mask id={`draw-${uid}`} maskUnits="userSpaceOnUse" x={-50} y={-50} width={1100} height={780}>
+            {routeD && (
+              <motion.path
+                key={routeKey + routeVariant}
+                d={routeD}
+                fill="none"
+                stroke="#fff"
+                strokeWidth={px(14)}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                initial={{ pathLength: 0 }}
+                animate={{ pathLength: 1 }}
+                transition={{ duration: 1.2, ease: EASE }}
+              />
+            )}
+          </mask>
           {AVENUE_TEXT_PATHS.map((d, i) => (
             <path key={i} id={`av-${uid}-${i}`} d={d} />
           ))}
         </defs>
 
-        {/* terra fora da cidade, com textura de floresta */}
+        {/* terra */}
         <rect x={-50} y={-50} width={1100} height={780} fill={LAND_CITY} onClick={() => { onSelectZone?.(null); onSelectVisit?.(null) }} />
         <path d={FOREST} fill={LAND_OUT} pointerEvents="none" />
-        <path d={FOREST} fill={`url(#forest-${uid})`} pointerEvents="none" />
-
-        {/* Reserva Ducke */}
-        <path d={RESERVA_DUCKE} fill="#cfdccb" opacity={0.7} pointerEvents="none" />
-        <path d={RESERVA_DUCKE} fill={`url(#ducke-${uid})`} pointerEvents="none" />
-        {!compact && fitsX(898, px(36)) && (
-          <text x={898} y={88} textAnchor="middle" fontSize={px(9.5)} fontStyle="italic" fill="var(--color-sage-700)" style={{ fontFamily: 'var(--font-display)' }} opacity={0.85} pointerEvents="none">
+        <path d={RESERVA_DUCKE} fill="var(--color-green-soft)" pointerEvents="none" />
+        {!compact && fitsX(898, px(40)) && (
+          <text x={898} y={90} textAnchor="middle" fontSize={px(10)} fontWeight={600} fill="var(--color-green)" opacity={0.8} pointerEvents="none">
             Reserva Ducke
           </text>
         )}
-
-        {/* base urbana */}
-        <g pointerEvents="none">
-          {ZONES.map((z) => (
-            <polygon key={z.id} points={z.polygon.map((p) => p.join(',')).join(' ')} fill={LAND_CITY} stroke={LAND_CITY} strokeWidth={1.5} strokeLinejoin="round" />
-          ))}
-        </g>
+        <path d={CITY_D} fill="#fff" pointerEvents="none" />
 
         {/* zonas */}
         <g>
           {ZONES.map((z) => {
             const isSel = selectedZone === z.id
             const isHover = hoverZone === z.id
-            const dim = (highlighted && !highlighted.has(z.id)) || (selectedZone && !isSel)
+            const dim = dimZone(z.id)
             const hv = heat?.[z.id]
             const t = hv != null ? hv / max : 0
             const fill = heat ? heatColor(t) : z.hex
-            const fillOpacity = heat ? (dim ? 0.35 : isSel ? 0.95 : 0.82) : isSel ? 0.2 : dim ? 0.035 : highlighted ? 0.15 : isHover ? 0.16 : 0.1
+            const fillOpacity = heat ? 1 : isSel ? 0.22 : dim ? 0.04 : isHover ? 0.2 : highlighted ? 0.15 : 0.11
             return (
-              <motion.polygon
+              <motion.path
                 key={z.id}
-                points={z.polygon.map((p) => p.join(',')).join(' ')}
+                d={ZONE_D[z.id]}
                 initial={false}
                 animate={{ fill, fillOpacity }}
                 transition={{ duration: 0.45, ease: EASE }}
-                strokeLinejoin="round"
                 onMouseEnter={() => onSelectZone && setHoverZone(z.id)}
                 onMouseLeave={() => setHoverZone(null)}
                 onClick={(e) => {
@@ -481,127 +486,63 @@ function CityMapInner({
                   onSelectZone?.(selectedZone === z.id ? null : z.id)
                 }}
                 style={{ cursor: onSelectZone ? 'pointer' : 'default' }}
-                stroke={heat ? LAND_CITY : 'none'}
-                strokeWidth={heat ? px(1.5) : 0}
               />
             )
           })}
         </g>
 
         {/* igarapés */}
-        <g fill="none" stroke="var(--color-river-2)" strokeLinecap="round" pointerEvents="none">
+        <g fill="none" stroke="var(--color-river)" strokeLinecap="round" pointerEvents="none">
           {IGARAPES.map((d, i) => (
-            <g key={i}>
-              <path d={d} strokeWidth={px(3.2)} opacity={0.12} />
-              <path d={d} strokeWidth={px(1.3)} opacity={0.55} />
-            </g>
+            <path key={i} d={d} strokeWidth={px(2)} />
           ))}
         </g>
 
         {/* avenidas */}
         <g fill="none" strokeLinecap="round" pointerEvents="none">
           {AVENIDAS.map((a) => (
-            <path key={a.name + 'c'} d={a.d} stroke="var(--color-line-2)" strokeWidth={px(3.6)} opacity={0.55} />
+            <path key={a.name + 'c'} d={a.d} stroke={heat ? 'rgba(255,255,255,.45)' : '#e6e8ec'} strokeWidth={px(4.2)} />
           ))}
           {AVENIDAS.map((a) => (
-            <path key={a.name} d={a.d} stroke="#fffdf8" strokeWidth={px(2.2)} />
+            <path key={a.name} d={a.d} stroke="#fff" strokeWidth={px(2.6)} opacity={heat ? 0.55 : 1} />
           ))}
         </g>
 
-        {/* contornos pontilhados das zonas */}
-        <g fill="none" pointerEvents="none">
-          {ZONES.map((z) => {
-            const isSel = selectedZone === z.id
-            const dim = (highlighted && !highlighted.has(z.id)) || (selectedZone && !isSel)
-            return (
-              <polygon
-                key={z.id}
-                points={z.polygon.map((p) => p.join(',')).join(' ')}
-                stroke={heat ? 'var(--color-sage-900)' : z.hex}
-                strokeWidth={isSel ? px(1.6) : px(1)}
-                strokeDasharray={isSel ? undefined : `${px(1.5)} ${px(3)}`}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                opacity={dim ? 0.3 : heat ? 0.35 : 0.75}
-              />
-            )
-          })}
+        {/* divisa entre zonas: fio branco, e contorno da zona ativa */}
+        <g fill="none" pointerEvents="none" strokeLinejoin="round">
+          {ZONES.map((z) => (
+            <path key={z.id} d={ZONE_D[z.id]} stroke="#fff" strokeWidth={px(heat ? 3 : 2.5)} />
+          ))}
+          {ZONES.filter((z) => selectedZone === z.id || (hoverZone === z.id && onSelectZone)).map((z) => (
+            <path key={z.id + 's'} d={ZONE_D[z.id]} stroke={heat ? 'var(--color-ink)' : z.hex} strokeWidth={px(selectedZone === z.id ? 2 : 1.4)} opacity={selectedZone === z.id ? 0.9 : 0.5} />
+          ))}
         </g>
 
-        {/* Rio Negro */}
+        {/* Rio Negro e Solimões */}
         <g pointerEvents="none">
           <path d={RIVER_PATH} fill="var(--color-river)" />
-          <path d={RIVER_EDGE_D} fill="none" stroke="#4a3d33" strokeWidth={px(1)} opacity={0.9} />
-          <g clipPath={`url(#river-${uid})`} fill="none" stroke="#f4efe4" strokeLinecap="round">
-            {Array.from({ length: 12 }).map((_, k) => (
-              <path
-                key={k}
-                d={RIVER_EDGE_D}
-                transform={`translate(${-(k + 1) * 4.5}, ${(k + 1) * 6.5 + (k % 3) * 1.5})`}
-                strokeWidth={0.8 + (k % 3) * 0.25}
-                strokeDasharray={k % 2 ? '46 34 14 40' : '24 52 60 30'}
-                opacity={0.05 + (k % 4) * 0.018}
-                className={`vd-cur-${uid}`}
-                style={{ animationDuration: `${52 + (k % 5) * 11}s`, animationDelay: `${-k * 7}s` }}
-              />
-            ))}
-          </g>
-          {/* Solimões barrento e o encontro das águas */}
-          <path d={SOLIMOES_PATH} fill="var(--color-solimoes)" />
-          <g clipPath={`url(#sol-${uid})`} fill="none" stroke="#dcc7a0" strokeLinecap="round">
-            {[1, 2, 3, 4].map((k) => (
-              <path key={k} d={SOLIMOES_EDGE_D} transform={`translate(0, ${k * 6})`} strokeWidth={0.9} strokeDasharray="38 26" opacity={0.5} className={`vd-cur-${uid}`} style={{ animationDuration: `${48 + k * 9}s` }} />
-            ))}
-          </g>
-          <g fill="none" strokeLinecap="round">
-            {[
-              [-2.5, 0.5, '44 18', 1.6],
-              [-5.5, 0.28, '22 30', 1.2],
-              [-9, 0.14, '10 44', 1],
-            ].map(([dy, op, dash, w], i) => (
-              <path
-                key={i}
-                d={SOLIMOES_EDGE_D}
-                transform={`translate(${i * 6}, ${dy})`}
-                stroke="var(--color-solimoes)"
-                strokeWidth={w as number}
-                opacity={op as number}
-                strokeDasharray={dash as string}
-                className={`vd-cur-${uid}`}
-                style={{ animationDuration: `${70 + i * 15}s` }}
-              />
-            ))}
-          </g>
-          {/* ponte */}
-          <path d={PONTE} stroke="#d9cfbc" strokeWidth={px(2.4)} opacity={0.75} />
-          <path d={PONTE} stroke="var(--color-river)" strokeWidth={px(0.6)} strokeDasharray={`${px(2)} ${px(2)}`} opacity={0.7} />
+          <path d={RIVER_EDGE_D} fill="none" stroke="var(--color-river-2)" strokeWidth={px(1)} />
+          <path d={SOLIMOES_PATH} fill="var(--color-solimoes)" opacity={0.75} />
+          <path d={PONTE} stroke="#fff" strokeWidth={px(3)} strokeLinecap="round" />
           {!compact && (
-            <>
-              <text x={205} y={634} transform="rotate(13 205 634)" fontSize={px(15)} fontStyle="italic" fill="#f4efe4" opacity={0.5} style={{ fontFamily: 'var(--font-display)', letterSpacing: '0.04em' }}>
-                Rio Negro
-              </text>
-              <text x={372} y={668} fontSize={px(8)} fill="#f4efe4" opacity={0.45} style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>
-                PONTE RIO NEGRO
-              </text>
-            </>
+            <text x={205} y={634} transform="rotate(13 205 634)" fontSize={px(12)} fontWeight={600} fill="#7f95b3">
+              Rio Negro
+            </text>
           )}
-          {fitsX(888, px(52)) && <text x={888} y={634} textAnchor="middle" fontSize={px(compact ? 7.5 : 8.5)} fill="#f4efe4" opacity={0.72} style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>
-            ENCONTRO DAS ÁGUAS
-          </text>}
-          {!compact && (
-            <text x={968} y={671} textAnchor="end" fontSize={px(8)} fontStyle="italic" fill="#5a452c" opacity={0.75} style={{ fontFamily: 'var(--font-display)' }}>
-              Rio Solimões
+          {fitsX(888, px(52)) && (
+            <text x={888} y={636} textAnchor="middle" fontSize={px(compact ? 9 : 10)} fontWeight={600} fill="#7f95b3">
+              Encontro das Águas
             </text>
           )}
         </g>
 
         {/* nomes de avenidas */}
-        {avenueNames && (
-          <g pointerEvents="none" fontSize={px(7.5)} fill="var(--color-ink-4)" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.03em' }}>
+        {avenueNames && !heat && (
+          <g pointerEvents="none" fontSize={px(8.5)} fontWeight={500} fill="var(--color-ink-4)">
             {AVENIDAS.map((a, i) => (
-              <text key={a.name} dy={-px(3)} stroke={LAND_CITY} strokeWidth={px(2.5)} paintOrder="stroke" strokeLinejoin="round">
+              <text key={a.name} dy={-px(4)} stroke={HALO} strokeWidth={px(2.5)} paintOrder="stroke" strokeLinejoin="round">
                 <textPath href={`#av-${uid}-${i}`} startOffset="50%" textAnchor="middle">
-                  {a.name.toLowerCase()}
+                  {a.name}
                 </textPath>
               </text>
             ))}
@@ -612,13 +553,13 @@ function CityMapInner({
         <g pointerEvents="none">
           {BAIRROS.filter((b) => !visitBairros.has(b.id)).map((b) => {
             const hl = bairroHighlight?.includes(b.id)
-            const dim = (highlighted && !highlighted.has(b.zone)) || (selectedZone && selectedZone !== b.zone)
-            return <circle key={b.id} cx={b.x} cy={b.y} r={px(hl ? 2.6 : 1.9)} fill={hl ? 'var(--color-ink)' : 'var(--color-ink-3)'} opacity={dim ? 0.3 : hl ? 0.9 : 0.6} />
+            const dim = dimZone(b.zone)
+            return <circle key={b.id} cx={b.x} cy={b.y} r={px(hl ? 2.6 : 2)} fill={heat ? 'var(--color-ink-2)' : hl ? 'var(--color-ink-2)' : 'var(--color-ink-4)'} opacity={dim ? 0.3 : heat ? 0.4 : 1} />
           })}
           {bairroLabels.map((l) => {
             const b = BAIRROS.find((x) => x.id === l.id)!
             const hl = bairroHighlight?.includes(b.id)
-            const dim = (highlighted && !highlighted.has(b.zone)) || (selectedZone && selectedZone !== b.zone)
+            const dim = dimZone(b.zone)
             return (
               <text
                 key={l.id}
@@ -627,9 +568,9 @@ function CityMapInner({
                 textAnchor={l.anchor}
                 fontSize={bairroFont}
                 fontWeight={hl ? 600 : 500}
-                fill={hl ? 'var(--color-ink)' : 'var(--color-ink-3)'}
-                opacity={dim ? 0.35 : 1}
-                stroke={heat && !dim ? 'rgba(246,241,230,.85)' : LAND_CITY}
+                fill={hl ? 'var(--color-ink-2)' : 'var(--color-ink-3)'}
+                opacity={dim ? 0.4 : 1}
+                stroke={heat ? 'rgba(255,255,255,.7)' : HALO}
                 strokeWidth={px(2.6)}
                 paintOrder="stroke"
                 strokeLinejoin="round"
@@ -641,56 +582,36 @@ function CityMapInner({
         </g>
 
         {focus !== 'visits' && zoneLabelsEl}
-        {/* rota */}
+
+        {/* rota de comparação (como foi marcada), apagada */}
         {showRoute && compareD && (
           <motion.path
             key={routeKey + '-ghost'}
             d={compareD}
             fill="none"
-            stroke="var(--color-terra-600)"
-            strokeWidth={px(1.6)}
-            strokeDasharray={`${px(4)} ${px(4)}`}
+            stroke="var(--color-coral)"
+            strokeWidth={px(1.8)}
+            strokeDasharray={`${px(5)} ${px(5)}`}
             strokeLinecap="round"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.4 }}
+            animate={{ opacity: 0.45 }}
             transition={{ duration: 0.6, delay: 0.3 }}
             pointerEvents="none"
           />
         )}
+        {/* rota: preta contínua (otimizada) ou coral tracejada (como foi marcada) */}
         {showRoute && routeD && (
-          <g pointerEvents="none" key={routeKey}>
-            <motion.path
+          <g pointerEvents="none" key={routeKey + routeVariant} mask={`url(#draw-${uid})`}>
+            <path d={routeD} fill="none" stroke="#fff" strokeWidth={px(naive ? 6 : 7.5)} strokeLinecap="round" strokeLinejoin="round" opacity={0.95} />
+            <path
               d={routeD}
               fill="none"
-              stroke="#fffcf6"
-              strokeWidth={px(7)}
+              stroke={naive ? 'var(--color-coral)' : 'var(--color-black)'}
+              strokeWidth={px(naive ? 2.6 : 3.2)}
               strokeLinecap="round"
               strokeLinejoin="round"
-              initial={{ pathLength: 0, opacity: 0.9, d: routeD }}
-              animate={{ pathLength: 1, d: routeD }}
-              transition={{ pathLength: { duration: 1.3, ease: EASE }, d: { duration: 0.9, ease: EASE } }}
-            />
-            <motion.path
-              d={routeD}
-              fill="none"
-              strokeWidth={px(2.8)}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              initial={{ pathLength: 0, d: routeD, stroke: routeColor }}
-              animate={{ pathLength: 1, d: routeD, stroke: routeColor }}
-              transition={{ pathLength: { duration: 1.3, ease: EASE }, d: { duration: 0.9, ease: EASE }, stroke: { duration: 0.5 } }}
-            />
-            <motion.path
-              d={routeD}
-              fill="none"
-              stroke="#fffcf6"
-              strokeWidth={px(1.1)}
-              strokeLinecap="round"
-              strokeDasharray={`${px(1.5)} ${px(9)}`}
-              initial={{ opacity: 0, d: routeD }}
-              animate={{ opacity: 0.75, d: routeD }}
-              transition={{ opacity: { delay: 1.1, duration: 0.5 }, d: { duration: 0.9, ease: EASE } }}
-              style={{ animation: `vd-route-${uid} 3.5s linear infinite` }}
+              strokeDasharray={naive ? `${px(7)} ${px(6)}` : undefined}
+              opacity={naive ? 1 : 0.88}
             />
           </g>
         )}
@@ -700,26 +621,17 @@ function CityMapInner({
         {/* base */}
         {(visits.length > 0 || focus === 'visits') && (
           <g transform={`translate(${BASE.x} ${BASE.y})`} pointerEvents="none">
-            <rect x={-px(9)} y={-px(9)} width={px(18)} height={px(18)} rx={px(5)} fill="var(--color-sage-900)" stroke="#fffcf6" strokeWidth={px(2)} />
+            <circle r={px(11)} fill="var(--color-black)" stroke="#fff" strokeWidth={px(2.5)} filter={`url(#shadow-${uid})`} />
             <path
-              d={`M${-px(4.2)},${px(0.2)} L0,${-px(3.8)} L${px(4.2)},${px(0.2)} M${-px(3)},${-px(0.8)} L${-px(3)},${px(4)} L${px(3)},${px(4)} L${px(3)},${-px(0.8)}`}
+              d={`M${-px(4.4)},${px(0.4)} L0,${-px(3.8)} L${px(4.4)},${px(0.4)} M${-px(3)},${-px(0.8)} L${-px(3)},${px(4.2)} L${px(3)},${px(4.2)} L${px(3)},${-px(0.8)}`}
               fill="none"
-              stroke="#f4efe4"
-              strokeWidth={px(1.4)}
+              stroke="var(--color-lime)"
+              strokeWidth={px(1.5)}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-            <text
-              y={px(22)}
-              textAnchor="middle"
-              fontSize={px(8.5)}
-              fill="var(--color-sage-900)"
-              stroke={LAND_CITY}
-              strokeWidth={px(2.5)}
-              paintOrder="stroke"
-              style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}
-            >
-              BASE
+            <text y={px(25)} textAnchor="middle" fontSize={px(10)} fontWeight={700} fill="var(--color-ink-2)" stroke={HALO} strokeWidth={px(3)} paintOrder="stroke" strokeLinejoin="round">
+              Base
             </text>
           </g>
         )}
@@ -736,10 +648,10 @@ function CityMapInner({
                 y={l.y}
                 textAnchor={l.anchor}
                 fontSize={petFont}
-                fontWeight={600}
-                fill={done ? 'var(--color-ink-3)' : hoverVisit === v.id ? 'var(--color-ink)' : 'var(--color-ink-2)'}
-                stroke={LAND_CITY}
-                strokeWidth={px(3)}
+                fontWeight={700}
+                fill={done ? 'var(--color-ink-3)' : 'var(--color-ink)'}
+                stroke={HALO}
+                strokeWidth={px(3.2)}
                 paintOrder="stroke"
                 strokeLinejoin="round"
               >
@@ -757,10 +669,12 @@ function CityMapInner({
             const pet = PET[v.petId]
             const isSel = v.id === selectedVisitId
             const isHover = v.id === hoverVisit
-            const ring = STATUS_RING[v.status]
             const done = v.status === 'concluida'
             const live = v.status === 'em-atendimento'
+            const onWay = v.status === 'a-caminho'
             const r = pinR
+            const label = v.order != null ? String(v.order) : ''
+            const pillW = px(label.length > 1 ? 19 : 15)
             return (
               <g
                 key={v.id}
@@ -784,53 +698,45 @@ function CityMapInner({
               >
                 {live && (
                   <motion.circle
-                    r={r}
-                    fill="none"
-                    stroke="var(--color-terra-500)"
-                    strokeWidth={px(2)}
-                    initial={{ scale: 1, opacity: 0.6 }}
-                    animate={{ scale: 2.1, opacity: 0 }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeOut' }}
+                    r={r + px(4)}
+                    fill="var(--color-lime)"
+                    initial={{ scale: 1, opacity: 0.7 }}
+                    animate={{ scale: 1.9, opacity: 0 }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
                     style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
                   />
                 )}
                 <motion.g
                   initial={{ scale: 0, opacity: 0 }}
-                  animate={{ scale: isSel ? 1.18 : isHover ? 1.08 : 1, opacity: 1 }}
+                  animate={{ scale: isSel ? 1.16 : isHover ? 1.07 : 1, opacity: 1 }}
                   transition={{ duration: 0.35, ease: EASE }}
                   style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
                 >
-                  {isSel && <circle r={r + px(6.5)} fill="var(--color-sage-900)" opacity={0.12} />}
-                  <circle r={r + px(2.2)} fill={ring} opacity={done ? 0.75 : 1} />
-                  <circle r={r + px(0.4)} fill="#fffcf6" />
-                  <circle r={r - px(1)} fill={pet?.species === 'gato' ? 'var(--color-sage-100)' : 'var(--color-terra-100)'} />
-                  <text
-                    y={px(4.5)}
-                    textAnchor="middle"
-                    fontSize={px(compact ? 11 : 13)}
-                    fontWeight={600}
-                    fill={pet?.species === 'gato' ? 'var(--color-sage-800)' : 'var(--color-terra-700)'}
-                    style={{ fontFamily: 'var(--font-display)' }}
-                  >
+                  {isSel && <circle r={r + px(7)} fill="var(--color-black)" opacity={0.1} />}
+                  {live && <circle r={r + px(4.5)} fill="var(--color-lime)" />}
+                  {onWay && <circle r={r + px(4)} fill="var(--color-blue)" />}
+                  <circle r={r + px(2)} fill="#fff" filter={live || onWay ? undefined : `url(#shadow-${uid})`} />
+                  <circle r={r - px(0.5)} fill={pet?.species === 'gato' ? 'var(--color-violet-soft)' : '#ffe9d6'} opacity={done ? 0.6 : 1} />
+                  <text y={px(compact ? 4 : 4.6)} textAnchor="middle" fontSize={px(compact ? 11 : 13)} fontWeight={700} fill={pet?.species === 'gato' ? 'var(--color-violet)' : '#a8541b'} opacity={done ? 0.6 : 1}>
                     {pet?.name[0]}
                   </text>
                   {pet && imgOk(pet.photo) && (
                     <image
                       href={pet.photo}
-                      x={-(r - px(1))}
-                      y={-(r - px(1))}
-                      width={(r - px(1)) * 2}
-                      height={(r - px(1)) * 2}
+                      x={-(r - px(0.5))}
+                      y={-(r - px(0.5))}
+                      width={(r - px(0.5)) * 2}
+                      height={(r - px(0.5)) * 2}
                       preserveAspectRatio="xMidYMid slice"
                       clipPath={`url(#pin-${uid})`}
-                      opacity={done ? 0.7 : 1}
+                      opacity={done ? 0.55 : 1}
                     />
                   )}
-                  {v.order != null && (
-                    <g transform={`translate(${r * 0.78} ${-r * 0.78})`}>
-                      <circle r={px(7.5)} fill={done ? 'var(--color-ok)' : live ? 'var(--color-terra-600)' : 'var(--color-sage-900)'} stroke="#fffcf6" strokeWidth={px(1.5)} />
-                      <text y={px(3.2)} textAnchor="middle" fontSize={px(9)} fontWeight={600} fill="#fff" style={{ fontFamily: 'var(--font-mono)' }}>
-                        {v.order}
+                  {label && (
+                    <g transform={`translate(${r * 0.82} ${-r * 0.82})`}>
+                      <rect x={-pillW / 2} y={-px(7.5)} width={pillW} height={px(15)} rx={px(7.5)} fill={done ? 'var(--color-ink-3)' : 'var(--color-black)'} stroke="#fff" strokeWidth={px(1.6)} />
+                      <text y={px(3.3)} textAnchor="middle" fontSize={px(9)} fontWeight={700} fill={live ? 'var(--color-lime)' : '#fff'} style={{ fontVariantNumeric: 'tabular-nums' }}>
+                        {label}
                       </text>
                     </g>
                   )}
@@ -844,15 +750,16 @@ function CityMapInner({
         {vetNow && (
           <motion.g initial={false} animate={{ x: vetNow.at.x, y: vetNow.at.y }} transition={{ duration: 0.8, ease: EASE }} pointerEvents="none">
             <motion.circle
-              r={px(10)}
-              fill={vetNow.color}
-              initial={{ scale: 1, opacity: 0.45 }}
-              animate={{ scale: 2.6, opacity: 0 }}
+              r={px(11)}
+              fill="var(--color-lime)"
+              initial={{ scale: 1, opacity: 0.9 }}
+              animate={{ scale: 2.5, opacity: 0 }}
               transition={{ duration: 1.8, repeat: Infinity, ease: 'easeOut' }}
               style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
             />
-            <circle r={px(10.5)} fill={vetNow.color} stroke="#fffcf6" strokeWidth={px(2.2)} />
-            <text y={px(3.3)} textAnchor="middle" fontSize={px(8.5)} fontWeight={700} fill="#fff">
+            <circle r={px(13)} fill="var(--color-lime)" opacity={0.45} />
+            <circle r={px(10)} fill="var(--color-black)" stroke="#fff" strokeWidth={px(2.2)} filter={`url(#shadow-${uid})`} />
+            <text y={px(3.2)} textAnchor="middle" fontSize={px(8.5)} fontWeight={800} fill="var(--color-lime)">
               {vetNow.initials}
             </text>
             <title>{vetNow.title ?? 'Veterinário agora'}</title>
@@ -867,30 +774,23 @@ function CityMapInner({
           const pet = PET[selected.petId]
           const title = (pet?.name ?? '') + (selected.extraPets ? ` +${selected.extraPets}` : '')
           const cap = selected.caption ?? ''
-          const fs = px(12)
-          const cs = px(10.5)
-          const w = Math.max(title.length * fs * 0.6, cap.length * cs * 0.56) + px(22)
-          const h = px(cap ? 40 : 26)
-          const above = p.y - pinR * 1.2 - h - px(10) > box.y
-          const y = above ? -pinR * 1.2 - px(10) - h : pinR * 1.2 + px(10)
+          const fs = px(12.5)
+          const cs = px(11)
+          const w = Math.max(title.length * fs * 0.62, cap.length * cs * 0.56) + px(26)
+          const h = px(cap ? 44 : 30)
+          const above = p.y - pinR * 1.2 - h - px(12) > box.y
+          const y = above ? -pinR * 1.2 - px(12) - h : pinR * 1.2 + px(12)
           let x = -w / 2
           if (p.x + x < box.x + px(6)) x = box.x + px(6) - p.x
           if (p.x + x + w > box.x + box.w - px(6)) x = box.x + box.w - px(6) - w - p.x
           return (
-            <motion.g
-              key={selected.id}
-              transform={`translate(${p.x} ${p.y})`}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-              pointerEvents="none"
-            >
-              <rect x={x} y={y} width={w} height={h} rx={px(8)} fill="var(--color-sage-950)" />
-              <text x={x + px(11)} y={y + px(17)} fontSize={fs} fontWeight={600} fill="#fffcf6">
+            <motion.g key={selected.id} transform={`translate(${p.x} ${p.y})`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }} pointerEvents="none">
+              <rect x={x} y={y} width={w} height={h} rx={px(12)} fill="var(--color-black)" filter={`url(#shadow-${uid})`} />
+              <text x={x + px(13)} y={y + px(19)} fontSize={fs} fontWeight={700} fill="#fff">
                 {title}
               </text>
               {cap && (
-                <text x={x + px(11)} y={y + px(31)} fontSize={cs} fill="#cbdccf">
+                <text x={x + px(13)} y={y + px(34)} fontSize={cs} fontWeight={500} fill="rgba(255,255,255,.6)">
                   {cap}
                 </text>
               )}
@@ -898,13 +798,13 @@ function CityMapInner({
           )
         })()}
 
-        {/* escala e norte */}
+        {/* escala */}
         {!compact && (
-          <g transform={`translate(${box.x + px(18)} ${box.y + box.h - px(18)})`} pointerEvents="none">
-            <line x1={0} x2={scaleUnits} y1={0} y2={0} stroke="#f4efe4" strokeWidth={px(1.4)} opacity={0.7} />
-            <line x1={0} x2={0} y1={-px(4)} y2={px(0.5)} stroke="#f4efe4" strokeWidth={px(1.4)} opacity={0.7} />
-            <line x1={scaleUnits} x2={scaleUnits} y1={-px(4)} y2={px(0.5)} stroke="#f4efe4" strokeWidth={px(1.4)} opacity={0.7} />
-            <text x={scaleUnits + px(6)} y={px(3)} fontSize={px(9)} fill="#f4efe4" opacity={0.75} style={{ fontFamily: 'var(--font-mono)' }}>
+          <g transform={`translate(${box.x + box.w - px(18) - scaleUnits - px(30)} ${box.y + box.h - px(18)})`} pointerEvents="none">
+            <line x1={0} x2={scaleUnits} y1={0} y2={0} stroke="var(--color-ink-3)" strokeWidth={px(1.4)} strokeLinecap="round" />
+            <line x1={0} x2={0} y1={-px(4)} y2={0} stroke="var(--color-ink-3)" strokeWidth={px(1.4)} strokeLinecap="round" />
+            <line x1={scaleUnits} x2={scaleUnits} y1={-px(4)} y2={0} stroke="var(--color-ink-3)" strokeWidth={px(1.4)} strokeLinecap="round" />
+            <text x={scaleUnits + px(6)} y={px(3.5)} fontSize={px(10)} fontWeight={600} fill="var(--color-ink-3)">
               2 km
             </text>
           </g>
@@ -923,10 +823,10 @@ export function MapStatusLegend({ className }: { className?: string }) {
     ['agendada', 'Agendada'],
   ]
   return (
-    <div className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-ink-2', className)}>
+    <div className={cn('flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] font-semibold text-ink-2', className)}>
       {items.map(([s, l]) => (
         <span key={s} className="inline-flex items-center gap-1.5">
-          <span className="size-2.5 rounded-full border-2 bg-card" style={{ borderColor: STATUS_RING[s] }} />
+          <span className="size-2 rounded-full" style={{ background: STATUS_RING[s] }} />
           {l}
         </span>
       ))}
