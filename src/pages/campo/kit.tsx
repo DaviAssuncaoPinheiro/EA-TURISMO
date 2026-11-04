@@ -107,8 +107,10 @@ export function Screen({
   footer,
   below,
   className,
+  scrollKey,
+  contentProps,
 }: {
-  title: string
+  title: React.ReactNode
   large?: React.ReactNode
   eyebrow?: React.ReactNode
   back?: { label: string; onClick: () => void }
@@ -117,9 +119,25 @@ export function Screen({
   footer?: React.ReactNode
   below?: React.ReactNode
   className?: string
+  /** quando muda, a rolagem volta ao topo */
+  scrollKey?: string | number
+  contentProps?: React.HTMLAttributes<HTMLDivElement>
 }) {
   const ref = React.useRef<HTMLDivElement>(null)
+  const headRef = React.useRef<HTMLElement>(null)
+  const [headH, setHeadH] = React.useState<number | null>(null)
   const { scrollY } = useScroll({ container: ref })
+  React.useLayoutEffect(() => {
+    const el = headRef.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setHeadH(el.offsetHeight))
+    ro.observe(el)
+    setHeadH(el.offsetHeight)
+    return () => ro.disconnect()
+  }, [])
+  React.useEffect(() => {
+    ref.current?.scrollTo({ top: 0 })
+  }, [scrollKey])
   const titleOpacity = useTransform(scrollY, large ? [34, 58] : [0, 1], [large ? 0 : 1, 1])
   const barBg = useTransform(scrollY, [0, 24], [0, 1])
   const largeScale = useTransform(scrollY, [-80, 0, 60], [1.06, 1, 0.94])
@@ -127,7 +145,7 @@ export function Screen({
 
   return (
     <div className={cn('absolute inset-0 flex flex-col bg-paper', className)}>
-      <header className="absolute inset-x-0 top-0 z-30 pt-[var(--sat)]">
+      <header ref={headRef} className="absolute inset-x-0 top-0 z-30 pt-[var(--sat)]">
         <motion.div style={{ opacity: barBg }} className="pointer-events-none absolute inset-0 border-b border-line/80 bg-paper/85 backdrop-blur-xl backdrop-saturate-150" />
         <div className="relative flex h-12 items-center px-2">
           <div className="flex min-w-[88px] items-center">
@@ -145,7 +163,12 @@ export function Screen({
         </div>
         {below}
       </header>
-      <div ref={ref} className="no-scrollbar relative flex-1 overflow-x-hidden overflow-y-auto overscroll-contain" style={{ paddingTop: 'calc(var(--sat) + 48px)' }}>
+      <div
+        ref={ref}
+        {...contentProps}
+        className={cn('no-scrollbar relative flex-1 overflow-x-hidden overflow-y-auto overscroll-contain', contentProps?.className)}
+        style={{ paddingTop: headH != null ? headH : 'calc(var(--sat) + 48px)', ...contentProps?.style }}
+      >
         {large && (
           <motion.div style={{ scale: largeScale, opacity: largeOpacity }} className="origin-left px-5 pt-1 pb-1">
             {eyebrow && <div className="mb-1 text-[13px] font-medium text-ink-3">{eyebrow}</div>}

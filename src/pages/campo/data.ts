@@ -65,7 +65,7 @@ export function nextStopAfter(visit: Visit, status: Record<string, string>) {
   return list.slice(i + 1).find((v) => status[v.id] === 'agendada' || status[v.id] === 'a-caminho')
 }
 
-export const minutesSince = (iso: string, now = NOW) => Math.max(0, Math.round((+now - +new Date(iso)) / 60000))
+export const minutesSince = (iso: string, now?: Date) => Math.max(0, Math.round((+(now ?? simNow()) - +new Date(iso)) / 60000))
 
 /* ───────── Pet ───────── */
 
@@ -216,3 +216,8 @@ export function durationDays(dur: string) {
   const m = dur.match(/(\d+)\s*dias/)
   return m ? Number(m[1]) : null
 }
+
+/* ───────── Relógio simulado: começa às 10:40 de hoje e anda com o tempo real ───────── */
+
+const LOADED_AT = Date.now()
+export const simNow = () => new Date(+NOW + (Date.now() - LOADED_AT))
