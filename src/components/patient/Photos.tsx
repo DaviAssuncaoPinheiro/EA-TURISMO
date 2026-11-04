@@ -417,7 +417,7 @@ export function PhotosSection({ pet }: { pet: Pet }) {
           </IconCircle>
           <div className="min-w-0">
             <h3 className="text-[17px] leading-tight font-bold tracking-[-0.02em] text-ink">Fotos</h3>
-            <div className="truncate text-[12.5px] font-medium text-ink-3">{photos.length ? `${photos.length} ${photos.length === 1 ? 'foto' : 'fotos'} · antes e depois` : 'Antes e depois'}</div>
+            <div className="truncate text-[12.5px] font-medium text-ink-3">{photos.length ? `${photos.length} ${photos.length === 1 ? 'foto' : 'fotos'}` : 'Antes e depois'}</div>
           </div>
         </div>
         {photos.length > 0 && (
@@ -492,7 +492,7 @@ export function PhotosSection({ pet }: { pet: Pet }) {
             <div className="flex min-w-0 flex-col">
               <div className="flex flex-wrap items-center gap-2">
                 <h4 className="text-[16px] font-bold tracking-[-0.01em] text-ink">{group.subject}</h4>
-                {list.length > 1 ? <Badge tone="lime">{spanDays} dias de evolução</Badge> : <Badge>1 foto</Badge>}
+                {list.length > 1 ? <Badge tone="lime">{spanDays === 0 ? 'Mesmo dia' : `${spanDays} ${spanDays === 1 ? 'dia' : 'dias'} de evolução`}</Badge> : <Badge>1 foto</Badge>}
               </div>
 
               {list.length > 1 ? (
@@ -519,14 +519,17 @@ export function PhotosSection({ pet }: { pet: Pet }) {
               <div className="mt-4 flex items-center justify-between gap-2">
                 <span className="text-[13px] font-bold text-ink">Linha do tempo</span>
                 {list.length > 2 && (
-                  <Segmented<Slot>
-                    value={slot}
-                    onChange={setSlot}
-                    options={[
-                      { value: 'before', label: 'Trocar antes' },
-                      { value: 'after', label: 'Trocar depois' },
-                    ]}
-                  />
+                  <span className="flex items-center gap-2">
+                    <span className="text-[12.5px] font-medium text-ink-3 max-[359px]:hidden">Trocar</span>
+                    <Segmented<Slot>
+                      value={slot}
+                      onChange={setSlot}
+                      options={[
+                        { value: 'before', label: 'Antes' },
+                        { value: 'after', label: 'Depois' },
+                      ]}
+                    />
+                  </span>
                 )}
               </div>
               <div className="mt-2.5">

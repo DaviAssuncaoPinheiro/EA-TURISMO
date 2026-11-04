@@ -41,8 +41,8 @@ export function DigitalCard({ pet, tutor, late, className }: { pet: Pet; tutor: 
 
   return (
     <section data-testid="digital-card" className={cn('relative overflow-hidden rounded-[24px] bg-black p-5 text-white shadow-card', className)}>
-      <span aria-hidden className="pointer-events-none absolute -top-16 -right-16 size-44 rounded-full bg-lime/15" />
-      <span aria-hidden className="pointer-events-none absolute -top-6 -right-6 size-20 rounded-full bg-lime/25" />
+      <span aria-hidden className="pointer-events-none absolute -top-16 -right-16 size-44 rounded-full bg-lime/10" />
+      <span aria-hidden className="pointer-events-none absolute -top-6 -right-6 size-20 rounded-full bg-lime/15" />
 
       <div className="relative flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
@@ -54,6 +54,14 @@ export function DigitalCard({ pet, tutor, late, className }: { pet: Pet; tutor: 
             <p className="mt-0.5 text-[12.5px] font-medium text-white/60">Mostre em hotel, creche, pet shop ou viagem</p>
           </div>
         </div>
+        <Link
+          to={`/carteira/${pet.id}`}
+          target="_blank"
+          aria-label="Abrir carteira"
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white px-3 text-[12.5px] font-semibold text-ink transition-[background,transform] hover:bg-surface active:scale-[.97]"
+        >
+          <ArrowUpRight className="size-3.5" strokeWidth={2.2} /> Abrir
+        </Link>
       </div>
 
       <div className="relative mt-5 flex items-center gap-4">
@@ -72,22 +80,13 @@ export function DigitalCard({ pet, tutor, late, className }: { pet: Pet; tutor: 
         </div>
       </div>
 
-      <div className="relative mt-5 grid grid-cols-[1fr_1fr_auto] gap-2">
+      <div className="relative mt-5 grid grid-cols-2 gap-2">
         <Button variant="outline" onClick={copy} className="h-11 min-w-0 bg-white/10 px-3 text-white shadow-none hover:bg-white/15">
           <Copy className="size-4 shrink-0" strokeWidth={2} /> <span className="truncate">Copiar link</span>
         </Button>
         <Button variant="lime" onClick={send} className="h-11 min-w-0 px-3">
           <Send className="size-4 shrink-0" strokeWidth={2} /> <span className="truncate">Enviar ao tutor</span>
         </Button>
-        <Link
-          to={`/carteira/${pet.id}`}
-          target="_blank"
-          aria-label="Abrir carteira"
-          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full bg-white px-4 text-[13.5px] font-semibold text-ink transition-[background,transform] hover:bg-surface active:scale-[.97]"
-        >
-          <ArrowUpRight className="size-4" strokeWidth={2} />
-          <span className="max-sm:hidden xl:hidden 2xl:inline">Abrir</span>
-        </Link>
       </div>
     </section>
   )

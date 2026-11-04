@@ -72,32 +72,34 @@ const DEFS = `<defs>
 
 function patas(rand: () => number, s: number) {
   const pads = [
-    { x: 250, y: 230, rx: 52, ry: 64 },
-    { x: 360, y: 175, rx: 56, ry: 70 },
-    { x: 470, y: 178, rx: 56, ry: 70 },
-    { x: 575, y: 238, rx: 52, ry: 64 },
+    { x: 228, y: 210, rx: 44, ry: 54 },
+    { x: 345, y: 160, rx: 46, ry: 58 },
+    { x: 465, y: 160, rx: 46, ry: 58 },
+    { x: 582, y: 210, rx: 44, ry: 54 },
   ]
   const gaps = [
-    { x: 305, y: 250, rx: 34 + 18 * s, ry: 52 + 14 * s },
-    { x: 416, y: 230, rx: 30 + 18 * s, ry: 52 + 14 * s },
-    { x: 524, y: 252, rx: 34 + 18 * s, ry: 52 + 14 * s },
-    { x: 410, y: 340, rx: 150 + 30 * s, ry: 40 + 10 * s },
+    { x: 286, y: 200, rx: 26 + 22 * s, ry: 62 + 18 * s },
+    { x: 405, y: 170, rx: 26 + 22 * s, ry: 62 + 18 * s },
+    { x: 524, y: 200, rx: 26 + 22 * s, ry: 62 + 18 * s },
+    { x: 405, y: 300, rx: 170 + 30 * s, ry: 34 + 14 * s },
   ]
   let g = `<rect width="${W}" height="${H}" fill="#3a2a21"/>`
   g += fur(rand, ['#22170f', '#3f2c20', '#5d4130', '#17100c', '#7a5638', '#2c1f17'], 950, 95, 40, [16, 34])
   /* pele exposta entre os dedos (alopecia) */
-  for (const a of gaps) g += `<ellipse cx="${a.x}" cy="${a.y}" rx="${a.rx}" ry="${a.ry}" fill="#dca79c" fill-opacity="${r1(0.35 + 0.6 * s)}" filter="url(#b2)"/>`
+  for (const a of gaps) g += `<ellipse cx="${a.x}" cy="${a.y}" rx="${a.rx}" ry="${a.ry}" fill="#e2b0a4" fill-opacity="${r1(0.25 + 0.75 * s)}" filter="url(#b2)"/>`
   /* eritema */
-  for (const a of gaps) g += `<ellipse cx="${a.x}" cy="${a.y}" rx="${a.rx * 0.9}" ry="${a.ry * 0.85}" fill="#cf3c47" fill-opacity="${r1(0.85 * s)}" filter="url(#b)"/>`
-  for (const a of gaps) g += dots(rand, Math.round(26 * s), a, '#a8242f', [2.5, 6], s)
-  for (const a of gaps) g += dots(rand, Math.round(10 * s), a, '#c9a15f', [3, 7], 0.8 * s)
+  for (const a of gaps) g += `<ellipse cx="${a.x}" cy="${a.y}" rx="${r1(a.rx * 1.15)}" ry="${r1(a.ry * 1.05)}" fill="#d63b46" fill-opacity="${r1(0.95 * s)}" filter="url(#b)"/>`
+  for (const a of gaps) g += `<ellipse cx="${a.x}" cy="${a.y}" rx="${r1(a.rx * 0.55)}" ry="${r1(a.ry * 0.55)}" fill="#e4525b" fill-opacity="${r1(0.8 * s)}" filter="url(#b2)"/>`
+  for (const a of gaps) g += dots(rand, Math.round(30 * s), a, '#9e1f2b', [2.5, 6.5], s)
+  for (const a of gaps) g += dots(rand, Math.round(12 * s), a, '#d6b06a', [3, 7], 0.85 * s)
   /* pelos voltando a crescer */
-  for (const a of gaps) g += fur(rand, ['#3f2c20', '#5d4130', '#22170f'], Math.round(70 * (1 - s)), 95, 50, [10, 22], a)
+  for (const a of gaps) g += fur(rand, ['#3f2c20', '#5d4130', '#22170f'], Math.round(90 * (1 - s)), 95, 50, [10, 24], a)
   /* coxins */
   for (const p of pads) g += `<ellipse cx="${p.x}" cy="${p.y}" rx="${p.rx}" ry="${p.ry}" fill="url(#pad)"/>`
-  g += `<path d="M260 420C300 330 520 330 560 420C590 500 520 560 410 560C300 560 230 500 260 420Z" fill="url(#pad)"/>`
-  for (const p of pads) g += dots(rand, 40, { x: p.x, y: p.y, rx: p.rx * 0.8, ry: p.ry * 0.8 }, '#6d605b', [1, 2.2], 0.5)
-  g += `<ellipse cx="380" cy="400" rx="60" ry="22" fill="#fff" fill-opacity=".07"/>`
+  g += `<path d="M285 440C310 360 500 360 525 440C545 505 490 550 405 550C320 550 265 505 285 440Z" fill="url(#pad)"/>`
+  for (const p of pads) g += dots(rand, 36, { x: p.x, y: p.y, rx: p.rx * 0.8, ry: p.ry * 0.8 }, '#6d605b', [1, 2.2], 0.5)
+  for (const p of pads) g += `<ellipse cx="${p.x - 10}" cy="${p.y - 18}" rx="${p.rx * 0.4}" ry="${p.ry * 0.22}" fill="#fff" fill-opacity=".09"/>`
+  g += `<ellipse cx="380" cy="420" rx="56" ry="18" fill="#fff" fill-opacity=".08"/>`
   return g
 }
 

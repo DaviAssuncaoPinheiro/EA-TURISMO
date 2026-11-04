@@ -131,8 +131,8 @@ function CarteiraView({ pet }: { pet: Pet }) {
 
         {/* cartão de identidade */}
         <motion.article {...rise(1)} className="relative overflow-hidden rounded-[28px] bg-black p-5 text-white shadow-float sm:p-6 print:shadow-none">
-          <span aria-hidden className="pointer-events-none absolute -top-20 -right-20 size-56 rounded-full bg-lime/12" />
-          <span aria-hidden className="pointer-events-none absolute -top-8 -right-8 size-24 rounded-full bg-lime/20" />
+          <span aria-hidden className="pointer-events-none absolute -top-20 -right-20 size-56 rounded-full bg-lime/[.08]" />
+          <span aria-hidden className="pointer-events-none absolute -top-8 -right-8 size-24 rounded-full bg-lime/[.14]" />
 
           <div className="relative flex items-center gap-4">
             <span className="shrink-0 rounded-full bg-lime p-[3px]">
@@ -237,21 +237,23 @@ function CarteiraView({ pet }: { pet: Pet }) {
                   const Icon = p.def.kind === 'vermífugo' ? Pill : Bug
                   const product = p.def.name.match(/\((.*)\)/)?.[1] ?? p.def.name
                   return (
-                    <li key={p.preventiveId} className={cn('flex items-center gap-3 px-5 py-3.5', i > 0 && 'border-t border-line')}>
+                    <li key={p.preventiveId} className={cn('flex items-start gap-3 px-5 py-3.5', i > 0 && 'border-t border-line')}>
                       <IconCircle size={38}>
                         <Icon className="size-[17px]" strokeWidth={1.9} />
                       </IconCircle>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-[14px] font-bold text-ink">
-                          {p.def.kind === 'vermífugo' ? 'Vermífugo' : 'Antipulgas'} <span className="font-semibold text-ink-3">· {product}</span>
+                        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                          <span className="text-[14px] font-bold text-ink">
+                            {p.def.kind === 'vermífugo' ? 'Vermífugo' : 'Antipulgas'} <span className="font-semibold text-ink-3">· {product}</span>
+                          </span>
+                          <Badge tone={s.tone} dot className="shrink-0">
+                            {s.tone === 'ok' ? 'Em dia' : s.label.replace('Atrasada', 'Vencido')}
+                          </Badge>
                         </div>
-                        <div className="num truncate text-[12.5px] font-medium text-ink-3">
-                          {fmt.date(p.date)} · próxima {fmt.date(p.nextDate)}
+                        <div className="num mt-0.5 text-[12.5px] font-medium text-ink-3">
+                          Aplicado {fmt.date(p.date)} · próxima {fmt.date(p.nextDate)}
                         </div>
                       </div>
-                      <Badge tone={s.tone} dot className="shrink-0">
-                        {s.tone === 'ok' ? 'Em dia' : s.label.replace('Atrasada', 'Vencido')}
-                      </Badge>
                     </li>
                   )
                 })}
