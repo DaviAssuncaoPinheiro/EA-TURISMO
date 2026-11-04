@@ -1,8 +1,8 @@
 import * as React from 'react'
-import { LayoutGroup, motion } from 'motion/react'
-import { BellRing, Inbox, LayoutGrid, List, Send, Settings2 } from 'lucide-react'
+import { LayoutGroup } from 'motion/react'
+import { Inbox, LayoutGrid, List, Send, Settings2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button, Empty, PageHeader, Segmented, VetAvatar } from '@/components/ui'
+import { Button, Card, Chip, Empty, PageHeader, Segmented, VetAvatar } from '@/components/ui'
 import { VETS } from '@/data/mock'
 import { ZONES, type ZoneId } from '@/data/geo'
 import { daysFromToday } from '@/data/time'
@@ -10,30 +10,14 @@ import { REMINDER_KIND } from '@/lib/status'
 import { cn } from '@/lib/utils'
 import { useDemo } from '@/store'
 import { enrich, GROUPS, TICKET, type GroupKey, type Item, type ReminderKind } from '@/components/reminders/data'
-import { Panel, useIsDesktop } from '@/components/reminders/Panel'
+import { Panel as Drawer, useIsDesktop } from '@/components/reminders/Panel'
 import { BoardCard, ListRow } from '@/components/reminders/ReminderItem'
 import { ReminderDetail } from '@/components/reminders/ReminderDetail'
 import { ResultStrip } from '@/components/reminders/ResultStrip'
 import { INITIAL_RULES, RulesPanel } from '@/components/reminders/RulesPanel'
 
 const KINDS = Object.keys(REMINDER_KIND) as ReminderKind[]
-const GROUP_DOT: Record<GroupKey, string> = { atrasados: 'bg-late', enviar: 'bg-ink-3', enviados: 'bg-info', confirmados: 'bg-ok' }
-
-function Pill({ active, onClick, children, className }: { active: boolean; onClick: () => void; children: React.ReactNode; className?: string }) {
-  return (
-    <button
-      onClick={onClick}
-      aria-pressed={active}
-      className={cn(
-        'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-medium whitespace-nowrap transition-colors',
-        active ? 'border-sage-800 bg-sage-800 text-paper' : 'border-line-2 bg-card text-ink-2 hover:border-ink-4 hover:text-ink',
-        className,
-      )}
-    >
-      {children}
-    </button>
-  )
-}
+const GROUP_DOT: Record<GroupKey, string> = { atrasados: 'bg-red', enviar: 'bg-ink-4', enviados: 'bg-blue', confirmados: 'bg-green' }
 
 export default function Lembretes() {
   const reminders = useDemo((s) => s.reminders)
@@ -75,7 +59,7 @@ export default function Lembretes() {
 
   const sendBatch = () => {
     if (sending || !batch.length) {
-      if (!batch.length) toast('Nenhuma mensagem pendente', { description: 'Tudo o que estava programado já foi enviado.' })
+      if (!batch.length) toast('Nenhuma mensagem pendente', { description: 'Tudo já foi enviado.' })
       return
     }
     setSending(true)
@@ -87,7 +71,7 @@ export default function Lembretes() {
         window.setTimeout(() => setFlash((f) => { const x = new Set(f); x.delete(id); return x }), 1100)
         if (n === ids.length - 1) {
           setSending(false)
-          toast.success(`${ids.length} mensagens enviadas`, { description: 'Entregues pelo WhatsApp Business. As respostas chegam aqui.' })
+          toast.success(`${ids.length} mensagens enviadas`, { description: 'Entregues pelo WhatsApp Business.' })
         }
       }, 260 * n)
     })
@@ -97,19 +81,17 @@ export default function Lembretes() {
   const filtersActive = kind !== 'todos' || vet !== 'todos' || zone !== 'todas'
 
   return (
-    <div className="mx-auto w-full max-w-[1320px] px-4 py-6 pb-28 md:px-8 md:py-8 md:pb-10">
+    <div className="w-full px-4 pt-2 pb-28 md:px-6 md:pt-4 md:pb-8">
       <PageHeader
-        eyebrow="Retornos e vacinas"
         title="Lembretes"
-        description="Nascem da orientação do veterinário na consulta e saem por WhatsApp no momento certo, já oferecendo o dia em que a equipe estará no bairro."
+        description="Vacinas e retornos enviados por WhatsApp"
         actions={
           <>
-            <Button variant="outline" onClick={() => setRulesOpen(true)}>
-              <Settings2 size={16} strokeWidth={1.8} /> Regras automáticas
+            <Button variant="outline" size="lg" className="h-11 px-5 text-[14px]" onClick={() => setRulesOpen(true)}>
+              <Settings2 size={16} strokeWidth={1.9} /> Regras
             </Button>
-            <Button variant="accent" onClick={sendBatch} disabled={sending}>
-              <Send size={16} strokeWidth={1.8} /> Enviar lote de hoje
-              {batch.length > 0 && <span className="num ml-0.5 rounded-full bg-white/20 px-1.5 text-[11.5px] leading-[18px]">{batch.length}</span>}
+            <Button variant="primary" size="lg" className="h-11 px-5 text-[14px]" onClick={sendBatch} disabled={sending}>
+              <Send size={16} strokeWidth={1.9} /> Enviar lote{batch.length > 0 && ` (${batch.length})`}
             </Button>
           </>
         }
@@ -117,16 +99,15 @@ export default function Lembretes() {
 
       <ResultStrip lateVaccines={lateVacc.length} lateBooked={lateBooked} revenue={revenue} visits={won.length} />
 
-      {/* filtros */}
-      <div className="mt-7 flex flex-col gap-3">
+      <div className="mt-5 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <div className="no-scrollbar -mx-4 flex min-w-0 flex-1 gap-1.5 overflow-x-auto px-4 md:mx-0 md:px-0">
-            <Pill active={kind === 'todos'} onClick={() => setKind('todos')}>Todos <span className="num opacity-60">{all.length}</span></Pill>
+          <div className="no-scrollbar -mx-4 flex min-w-0 flex-1 gap-2 overflow-x-auto px-4 py-1 md:mx-0 md:px-0">
+            <Chip active={kind === 'todos'} onClick={() => setKind('todos')} className="shrink-0">Todos <span className="num opacity-60">{all.length}</span></Chip>
             {KINDS.map((k) => (
-              <Pill key={k} active={kind === k} onClick={() => setKind(kind === k ? 'todos' : k)}>
+              <Chip key={k} active={kind === k} onClick={() => setKind(kind === k ? 'todos' : k)} className="shrink-0">
                 {REMINDER_KIND[k].label}
                 <span className="num opacity-60">{all.filter((i) => i.r.kind === k).length}</span>
-              </Pill>
+              </Chip>
             ))}
           </div>
           <Segmented
@@ -135,93 +116,80 @@ export default function Lembretes() {
             value={view}
             onChange={setView}
             options={[
-              { value: 'quadro', label: <><LayoutGrid size={14} strokeWidth={1.8} /> Quadro</> },
-              { value: 'lista', label: <><List size={14} strokeWidth={1.8} /> Lista</> },
+              { value: 'quadro', label: <><LayoutGrid size={14} strokeWidth={1.9} /> Quadro</> },
+              { value: 'lista', label: <><List size={14} strokeWidth={1.9} /> Lista</> },
             ]}
           />
         </div>
-        <div className="no-scrollbar -mx-4 flex items-center gap-1.5 overflow-x-auto px-4 md:mx-0 md:px-0">
-          <span className="eyebrow mr-1 shrink-0">Veterinário</span>
+        <div className="no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 py-1 md:mx-0 md:px-0">
           {VETS.map((v) => (
-            <Pill key={v.id} active={vet === v.id} onClick={() => setVet(vet === v.id ? 'todos' : v.id)} className="pl-1.5">
-              <VetAvatar vetId={v.id} size={20} /> {v.short}
-            </Pill>
+            <Chip key={v.id} active={vet === v.id} onClick={() => setVet(vet === v.id ? 'todos' : v.id)} className="shrink-0 pl-1.5">
+              <VetAvatar vetId={v.id} size={24} /> {v.short}
+            </Chip>
           ))}
-          <span className="mx-2 h-5 w-px shrink-0 bg-line-2" />
-          <span className="eyebrow mr-1 shrink-0">Zona</span>
+          <span className="mx-1 h-5 w-px shrink-0 bg-line-2" />
           {ZONES.map((z) => (
-            <Pill key={z.id} active={zone === z.id} onClick={() => setZone(zone === z.id ? 'todas' : z.id)}>
-              <span className="size-2 rounded-full" style={{ background: z.hex }} /> {z.short}
-            </Pill>
+            <Chip key={z.id} active={zone === z.id} onClick={() => setZone(zone === z.id ? 'todas' : z.id)} color={z.hex} className="shrink-0">
+              {z.short}
+            </Chip>
           ))}
           {filtersActive && (
-            <button onClick={() => { setKind('todos'); setVet('todos'); setZone('todas') }} className="ml-1 shrink-0 text-[12.5px] font-medium text-terra-600 hover:text-terra-700">
-              Limpar filtros
+            <button onClick={() => { setKind('todos'); setVet('todos'); setZone('todas') }} className="ml-1 h-9 shrink-0 rounded-full px-3 text-[13px] font-semibold text-ink-2 hover:bg-muted hover:text-ink">
+              Limpar
             </button>
           )}
         </div>
       </div>
 
-      {/* pipeline */}
       <LayoutGroup>
         {items.length === 0 ? (
-          <div className="mt-6 rounded-xl border border-dashed border-line-2 bg-card/50">
-            <Empty icon={<Inbox size={28} strokeWidth={1.5} />} title="Nenhum lembrete com esses filtros">Tente outro tipo, veterinário ou zona.</Empty>
-          </div>
+          <Card className="mt-5">
+            <Empty icon={<Inbox size={24} strokeWidth={1.8} />} title="Nenhum lembrete">Tente outro filtro.</Empty>
+          </Card>
         ) : effective === 'quadro' ? (
-          <div className="mt-5 grid grid-cols-4 items-start gap-3">
+          <div className="mt-4 grid grid-cols-4 items-start gap-3">
             {GROUPS.map((g) => (
-              <div key={g.key} className="min-w-0 rounded-xl bg-paper-2/60 p-2 ring-1 ring-line/70">
-                <div className="flex items-start gap-2 px-2 pt-1.5 pb-2.5">
-                  <span className={cn('mt-[7px] size-2 shrink-0 rounded-full', GROUP_DOT[g.key])} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="truncate text-[13.5px] font-semibold text-ink">{g.title}</h3>
-                      <span className="num rounded-full bg-card px-1.5 text-[11.5px] leading-5 font-medium text-ink-2 ring-1 ring-line">{byGroup[g.key].length}</span>
-                    </div>
-                    <p className="truncate text-[11.5px] text-ink-3">{g.hint}</p>
-                  </div>
+              <div key={g.key} className="min-w-0 rounded-[28px] bg-muted p-2">
+                <div className="flex items-center gap-2 px-3 pt-2.5 pb-3">
+                  <span className={cn('size-2.5 shrink-0 rounded-full', GROUP_DOT[g.key])} />
+                  <h3 className="min-w-0 flex-1 truncate text-[15px] font-bold text-ink">{g.title}</h3>
+                  <span className="num inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-card px-2 text-[12px] font-bold text-ink shadow-pill">{byGroup[g.key].length}</span>
                 </div>
-                <div className="scroll-thin flex max-h-[640px] flex-col gap-2 overflow-y-auto px-0.5 pb-0.5">
+                <div className="scroll-thin flex max-h-[680px] flex-col gap-2 overflow-y-auto pb-0.5">
                   {byGroup[g.key].map((it, n) => (
                     <BoardCard key={it.r.id} it={it} index={n} selected={selId === it.r.id} flash={flash.has(it.r.id)} onOpen={() => open(it.r.id)} />
                   ))}
-                  {byGroup[g.key].length === 0 && <div className="rounded-lg border border-dashed border-line-2 px-3 py-6 text-center text-[12px] text-ink-3">Nada por aqui</div>}
+                  {byGroup[g.key].length === 0 && <div className="rounded-[20px] px-3 py-8 text-center text-[12.5px] text-ink-3">Nada por aqui</div>}
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="mt-5 space-y-6">
+          <div className="mt-4 space-y-5">
             {GROUPS.filter((g) => byGroup[g.key].length > 0).map((g) => (
               <section key={g.key}>
-                <div className="mb-2 flex items-center gap-2 px-1">
-                  <span className={cn('size-2 rounded-full', GROUP_DOT[g.key])} />
-                  <h3 className="text-[14px] font-semibold text-ink">{g.title}</h3>
-                  <span className="num text-[12px] text-ink-3">{byGroup[g.key].length}</span>
-                  <span className="ml-1 hidden text-[12px] text-ink-3 sm:inline">· {g.hint}</span>
+                <div className="mb-2.5 flex items-center gap-2 px-1">
+                  <span className={cn('size-2.5 rounded-full', GROUP_DOT[g.key])} />
+                  <h3 className="text-[16px] font-bold text-ink">{g.title}</h3>
+                  <span className="num text-[13px] font-semibold text-ink-3">{byGroup[g.key].length}</span>
                 </div>
-                <div className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-card shadow-card">
+                <Card className="divide-y divide-line overflow-hidden">
                   {byGroup[g.key].map((it) => (
                     <ListRow key={it.r.id} it={it} selected={selId === it.r.id} flash={flash.has(it.r.id)} onOpen={() => open(it.r.id)} />
                   ))}
-                </div>
+                </Card>
               </section>
             ))}
           </div>
         )}
       </LayoutGroup>
 
-      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 flex items-center gap-2 text-[12px] text-ink-3">
-        <BellRing size={14} strokeWidth={1.8} /> Lembretes criados no app de campo, ao finalizar um atendimento, entram aqui com o selo Novo.
-      </motion.p>
-
-      <Panel open={!!selected} onOpenChange={(o) => !o && setSelId(null)} title={selected ? `Lembrete de ${selected.pet.name}` : 'Lembrete'}>
+      <Drawer open={!!selected} onOpenChange={(o) => !o && setSelId(null)} title={selected ? `Lembrete de ${selected.pet.name}` : 'Lembrete'}>
         {selected && <ReminderDetail item={selected} custom={custom[selected.r.id]} onCustom={(id, v) => setCustom((c) => { const n = { ...c }; if (v === undefined) delete n[id]; else n[id] = v; return n })} onClose={() => setSelId(null)} />}
-      </Panel>
-      <Panel open={rulesOpen} onOpenChange={setRulesOpen} title="Regras automáticas" width="w-[520px]">
+      </Drawer>
+      <Drawer open={rulesOpen} onOpenChange={setRulesOpen} title="Regras" width="w-[520px]">
         <RulesPanel rules={rules} setRules={setRules} hour={hour} setHour={setHour} suggestDay={suggestDay} setSuggestDay={setSuggestDay} onClose={() => setRulesOpen(false)} />
-      </Panel>
+      </Drawer>
     </div>
   )
 }

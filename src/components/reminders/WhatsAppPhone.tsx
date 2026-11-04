@@ -74,18 +74,18 @@ export function WhatsAppPhone({ item, message, onQuick, className }: { item: Ite
   const followAt = new Date(sentAt.getTime() + 3 * 86400000)
 
   return (
-    <div className={cn('mx-auto w-[292px] rounded-[40px] bg-sage-950 p-[9px] shadow-float ring-1 ring-black/10', className)}>
+    <div className={cn('mx-auto w-[292px] rounded-[40px] bg-black p-[9px] shadow-float', className)}>
       <div className="relative overflow-hidden rounded-[32px] bg-[#efeae2]">
         {/* status bar */}
         <div className="flex h-6 items-center justify-between bg-[#008069] px-5 pt-1 text-[10px] font-medium text-white/90">
           <span>9:41</span>
-          <span className="absolute left-1/2 top-1.5 h-[14px] w-[72px] -translate-x-1/2 rounded-full bg-sage-950" />
+          <span className="absolute left-1/2 top-1.5 h-[14px] w-[72px] -translate-x-1/2 rounded-full bg-black" />
           <span className="tracking-tight">5G ▮▮▮</span>
         </div>
         {/* header */}
         <div className="flex items-center gap-1.5 bg-[#008069] px-2 pb-2 pt-1.5 text-white">
           <ArrowLeft size={19} strokeWidth={2} />
-          <span className="size-9 shrink-0 overflow-hidden rounded-full bg-paper">
+          <span className="size-9 shrink-0 overflow-hidden rounded-full bg-card">
             <LogoMark size={36} />
           </span>
           <div className="min-w-0 flex-1 leading-tight">

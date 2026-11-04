@@ -130,7 +130,7 @@ export function AppShell() {
 
           <div className="ml-auto flex items-center gap-2.5">
             <div className="hidden items-center gap-2.5 xl:flex">
-              <AvatarStack extra={2} size={36}>
+              <AvatarStack size={36}>
                 {VETS.map((v) => (
                   <NavLink key={v.id} to={`/campo?vet=${v.id}`}>
                     <VetAvatar vetId={v.id} size={36} />

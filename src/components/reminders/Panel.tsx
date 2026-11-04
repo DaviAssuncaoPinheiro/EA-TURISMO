@@ -27,11 +27,11 @@ export function Panel({ open, onOpenChange, title, children, width = 'w-[480px]'
           {open && (
             <Dialog.Portal forceMount>
               <Dialog.Overlay asChild forceMount>
-                <motion.div className="fixed inset-0 z-40 bg-sage-950/25" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} />
+                <motion.div className="fixed inset-0 z-40 bg-black/30" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} />
               </Dialog.Overlay>
               <Dialog.Content asChild forceMount aria-describedby={undefined}>
                 <motion.aside
-                  className={cn('fixed inset-y-3 right-3 z-50 flex max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-2xl border border-line bg-paper shadow-float outline-none', width)}
+                  className={cn('fixed inset-y-3 right-3 z-50 flex max-w-[calc(100vw-24px)] flex-col overflow-hidden rounded-[28px] bg-surface shadow-float outline-none', width)}
                   initial={{ x: 48, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   exit={{ x: 48, opacity: 0 }}
@@ -50,8 +50,8 @@ export function Panel({ open, onOpenChange, title, children, width = 'w-[480px]'
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-40 bg-sage-950/40" />
-        <Drawer.Content aria-describedby={undefined} className="fixed inset-x-0 bottom-0 z-50 flex max-h-[94dvh] flex-col overflow-hidden rounded-t-2xl bg-paper outline-none">
+        <Drawer.Overlay className="fixed inset-0 z-40 bg-black/40" />
+        <Drawer.Content aria-describedby={undefined} className="fixed inset-x-0 bottom-0 z-50 flex max-h-[94dvh] flex-col overflow-hidden rounded-t-[28px] bg-surface outline-none">
           <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-line-2" />
           <Drawer.Title className="sr-only">{title}</Drawer.Title>
           {children}

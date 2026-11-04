@@ -10,10 +10,10 @@ const SEED_IDS = new Set(REMINDERS.map((r) => r.id))
 export type GroupKey = 'atrasados' | 'enviar' | 'enviados' | 'confirmados'
 
 export const GROUPS: { key: GroupKey; title: string; hint: string }[] = [
-  { key: 'atrasados', title: 'Atrasados sem resposta', hint: 'Já venceu e o tutor ainda não marcou' },
-  { key: 'enviar', title: 'Para enviar', hint: 'Programados pelas regras' },
-  { key: 'enviados', title: 'Enviados e lidos', hint: 'Aguardando resposta do tutor' },
-  { key: 'confirmados', title: 'Confirmados e agendados', hint: 'Já viraram visita' },
+  { key: 'atrasados', title: 'Atrasados', hint: 'Venceu e sem resposta' },
+  { key: 'enviar', title: 'Para enviar', hint: 'Programados' },
+  { key: 'enviados', title: 'Enviados', hint: 'Aguardando tutor' },
+  { key: 'confirmados', title: 'Agendados', hint: 'Viraram visita' },
 ]
 
 export interface Item {
