@@ -57,7 +57,7 @@ export function StepRetorno({ visit, pet, draft, patch, layout }: StepProps) {
     <StepFrame
       layout={layout}
       intro={
-        <StepIntro eyebrow="Etapa 5 de 5" title="Retorno">
+        <StepIntro eyebrow="Etapa 6 de 6" title="Retorno">
           Lembretes sugeridos a partir desta visita
         </StepIntro>
       }

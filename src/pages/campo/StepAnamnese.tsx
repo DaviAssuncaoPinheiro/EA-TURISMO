@@ -76,7 +76,7 @@ export function StepAnamnese({ visit, pet, draft, patch, layout }: StepProps) {
     <StepFrame
       layout={layout}
       intro={
-        <StepIntro eyebrow="Etapa 1 de 5" title="Anamnese">
+        <StepIntro eyebrow="Etapa 1 de 6" title="Anamnese">
           Relato de {firstName(tutor.name)}
         </StepIntro>
       }

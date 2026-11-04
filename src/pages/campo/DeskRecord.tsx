@@ -1,6 +1,6 @@
 // Registro do atendimento no computador: etapas em pílulas no topo, conteúdo em duas colunas e ações no rodapé.
 import * as React from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, CloudCheck, CloudOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -10,14 +10,13 @@ import { useDemo } from '@/store'
 import { useCampo, type Draft } from './campoStore'
 import { visitById } from './data'
 import { EASE_OUT } from './kit'
-import { useGo } from './nav'
 import { Elapsed, STEPS, useRecordFlow } from './RecordScreen'
 
 export function DeskRecord() {
   const { id = '' } = useParams()
   const visit = visitById(id)
   const draft = useCampo((s) => s.drafts[id])
-  const go = useGo()
+  const nav = useNavigate()
   React.useLayoutEffect(() => {
     if (visit && !draft) useCampo.getState().ensureDraft(visit)
   }, [visit, draft])
@@ -25,8 +24,8 @@ export function DeskRecord() {
     return (
       <div className="rounded-[24px] bg-card p-8 text-[15px] font-medium text-ink-3 shadow-card">
         Visita não encontrada.{' '}
-        <button className="font-semibold text-ink underline" onClick={() => go('', { dir: -1 })}>
-          Voltar à rota
+        <button className="font-semibold text-ink underline" onClick={() => nav('/')}>
+          Voltar
         </button>
       </div>
     )
@@ -69,7 +68,7 @@ function DeskRecordBody({ visit, draft }: { visit: Visit; draft: Draft }) {
             {offline ? 'Salvo no computador' : 'Salvo'}
           </span>
         </div>
-        <nav className="grid grid-cols-5 gap-1.5" aria-label="Etapas">
+        <nav className="grid grid-cols-6 gap-1.5" aria-label="Etapas">
           {STEPS.map((s, i) => {
             const on = i === step
             const done = i < step

@@ -53,7 +53,7 @@ export function StepExame({ pet, draft, patch, layout }: StepProps) {
     <StepFrame
       layout={layout}
       intro={
-        <StepIntro eyebrow="Etapa 2 de 5" title="Exame físico">
+        <StepIntro eyebrow="Etapa 2 de 6" title="Exame físico">
           Segure + ou − para ajustar rápido
         </StepIntro>
       }

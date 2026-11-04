@@ -32,7 +32,7 @@ export function StepPrescricao({ visit, pet, draft, patch, layout }: StepProps) 
     <StepFrame
       layout={layout}
       intro={
-        <StepIntro eyebrow="Etapa 4 de 5" title="Prescrição">
+        <StepIntro eyebrow="Etapa 5 de 6" title="Prescrição">
           Dose, frequência e duração em toques
         </StepIntro>
       }

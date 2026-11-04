@@ -65,7 +65,7 @@ export function StepVacinas({ pet, draft, patch, layout }: StepProps) {
     <StepFrame
       layout={layout}
       intro={
-        <StepIntro eyebrow="Etapa 3 de 5" title="Vacinas">
+        <StepIntro eyebrow="Etapa 4 de 6" title="Vacinas">
           {rows.due.length ? `${rows.due.length} ${rows.due.length === 1 ? 'pendente' : 'pendentes'} para ${pet.name}` : `Carteira de ${pet.name} em dia`}
         </StepIntro>
       }

@@ -1,4 +1,4 @@
-// Tela 3 · Registro do atendimento em 5 etapas
+// Registro do atendimento em 6 etapas
 import * as React from 'react'
 import { useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
@@ -13,11 +13,12 @@ import { Btn, ConnectivityBanner, EASE_IOS, Pressable, Screen } from './kit'
 import { useGo } from './nav'
 import { StepAnamnese } from './StepAnamnese'
 import { StepExame } from './StepExame'
+import { StepFotos } from './StepFotos'
 import { StepVacinas } from './StepVacinas'
 import { StepPrescricao } from './StepPrescricao'
 import { StepRetorno } from './StepRetorno'
 
-export const STEPS = ['Anamnese', 'Exame', 'Vacinas', 'Prescrição', 'Retorno'] as const
+export const STEPS = ['Anamnese', 'Exame', 'Fotos', 'Vacinas', 'Prescrição', 'Retorno'] as const
 
 export default function RecordScreen() {
   const { id = '' } = useParams()
@@ -40,7 +41,7 @@ export function Elapsed({ visit }: { visit: Visit }) {
   return <span className="num">{minutesSince(started ?? visit.start)} min</span>
 }
 
-export const STEP_COMPONENTS = [StepAnamnese, StepExame, StepVacinas, StepPrescricao, StepRetorno]
+export const STEP_COMPONENTS = [StepAnamnese, StepExame, StepFotos, StepVacinas, StepPrescricao, StepRetorno]
 
 /** Etapa atual, navegação entre etapas e finalização (mesmo fluxo no celular e no computador). */
 export function useRecordFlow(visit: Visit, draft: Draft) {
@@ -177,7 +178,7 @@ function Stepper({ step, onStep }: { step: number; onStep: (n: number) => void }
             aria-label={s}
             className={cn(
               'flex h-10 shrink-0 items-center justify-center rounded-full text-[13.5px] font-bold [-webkit-tap-highlight-color:transparent]',
-              on ? 'gap-2 bg-black pr-4 pl-1.5 text-white' : done ? 'w-10 bg-lime text-ink' : 'w-10 bg-card text-ink-3 shadow-pill',
+              on ? 'gap-2 bg-black pr-3.5 pl-1.5 text-white' : done ? 'w-9 bg-lime text-ink' : 'w-9 bg-card text-ink-3 shadow-pill',
             )}
           >
             {on ? (
