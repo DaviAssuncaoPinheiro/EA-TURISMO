@@ -1,17 +1,12 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
 import {
-  CalendarCheck,
   CalendarPlus,
   ChevronLeft,
   ClipboardPen,
   Hand,
-  Scale,
   Send,
-  ShieldCheck,
-  Syringe,
   TriangleAlert,
-  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge, Button, Card, PetAvatar, VetAvatar } from "@/components/ui";
@@ -25,9 +20,8 @@ import {
 } from "@/data/mock";
 import { BAIRRO, ZONE } from "@/data/geo";
 import { ageLabel, day, fmt, relDays } from "@/data/time";
-import { dueState } from "@/lib/status";
 import { cn, firstName } from "@/lib/utils";
-import { petFacts, toneText, type PatientModel } from "./model";
+import { petFacts, type PatientModel } from "./model";
 
 const nf = (n: number) =>
   n.toLocaleString("pt-BR", {
@@ -45,55 +39,6 @@ function suggestSlot(pet: Pet) {
     if (vet) return { date: d, vet, zone: ZONE[zone] };
   }
   return null;
-}
-
-function Metric({
-  icon: Icon,
-  label,
-  value,
-  delta,
-  deltaCls,
-  className,
-}: {
-  icon: LucideIcon;
-  label: React.ReactNode;
-  value: React.ReactNode;
-  delta?: React.ReactNode;
-  deltaCls?: string;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex min-w-0 items-center gap-3 py-4 lg:px-5 lg:first:pl-0",
-        className,
-      )}
-    >
-      <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-ink">
-        <Icon className="size-[18px]" strokeWidth={1.9} />
-      </span>
-      <div className="min-w-0">
-        <div className="truncate text-[12.5px] font-semibold text-ink-3">
-          {label}
-        </div>
-        <div className="flex flex-wrap items-baseline gap-x-2">
-          <span className="num text-[18px] leading-tight font-bold tracking-[-0.02em] text-ink">
-            {value}
-          </span>
-          {delta && (
-            <span
-              className={cn(
-                "num text-[12px] font-semibold whitespace-nowrap",
-                deltaCls,
-              )}
-            >
-              {delta}
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export function PatientHeader({
@@ -123,23 +68,15 @@ export function PatientHeader({
     });
 
   const vn = model.visitNow;
+  const register = () => {
+    if (vn) return nav(`/campo/visita/${vn.visit.id}`);
+    toast("Sem visita hoje. Agendar?", {
+      description: `${pet.name} não tem visita marcada para hoje.`,
+      action: { label: "Agendar", onClick: () => nav("/agenda?novo=1") },
+    });
+  };
   const alerts = pet.alerts ?? [];
 
-  /* métricas */
-  const vac = model.current.map((d) => dueState(d.nextDate));
-  const vLate = vac.filter((s) => s.key === "late").length;
-  const vSoon = vac.filter((s) => s.key === "soon").length;
-  const vOk = vac.length - vLate;
-
-  const w = model.weights;
-  const ref = w.length > 3 ? w[w.length - 4] : w[0];
-  const wDelta = ref ? model.currentKg - ref.kg : 0;
-  const [lo, hi] = pet.idealKg;
-  const awayFromIdeal =
-    (model.currentKg > hi && wDelta > 0) ||
-    (model.currentKg < lo && wDelta < 0);
-
-  const cd = model.lastContactDays;
   const chips = [
     f.species,
     pet.breed,
@@ -152,7 +89,7 @@ export function PatientHeader({
     <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
       <Button
         variant="primary"
-        onClick={() => nav("/campo")}
+        onClick={register}
         className="col-span-2 h-11 sm:h-10"
       >
         <ClipboardPen className="size-4" strokeWidth={2} /> Registrar
@@ -261,74 +198,8 @@ export function PatientHeader({
         <div className="lg:hidden">{actions}</div>
       </div>
 
-      {/* métricas em linha (ref. logip) */}
-      <div className="mt-5 grid grid-cols-2 border-y border-line lg:grid-cols-4 lg:divide-x lg:divide-line">
-        <Metric
-          icon={Syringe}
-          label="Vacinas em dia"
-          value={vac.length ? `${vOk}/${vac.length}` : "0"}
-          delta={
-            vac.length
-              ? vLate
-                ? `▼ ${vLate} atrasada${vLate > 1 ? "s" : ""}`
-                : vSoon
-                  ? `${vSoon} vence em breve`
-                  : "▲ todas"
-              : "sem registro"
-          }
-          deltaCls={
-            vLate || !vac.length
-              ? "text-red"
-              : vSoon
-                ? "text-yellow-ink"
-                : "text-green"
-          }
-          className="pr-3"
-        />
-        <Metric
-          icon={Scale}
-          label="Peso"
-          value={`${nf(model.currentKg)} kg`}
-          delta={
-            Math.abs(wDelta) >= 0.05
-              ? `${wDelta > 0 ? "▲ +" : "▼ −"}${nf(Math.abs(wDelta))}`
-              : "estável"
-          }
-          deltaCls={
-            Math.abs(wDelta) < 0.05
-              ? "text-ink-3"
-              : awayFromIdeal
-                ? "text-red"
-                : "text-green"
-          }
-          className="border-l border-line pl-4 lg:border-l-0"
-        />
-        <Metric
-          icon={CalendarCheck}
-          label="Última visita"
-          value={
-            cd === null
-              ? "Sem registro"
-              : cd === 0
-                ? "Hoje"
-                : cd === 1
-                  ? "Ontem"
-                  : `há ${cd} dias`
-          }
-          className="border-t border-line pr-3 lg:border-t-0"
-        />
-        <Metric
-          icon={ShieldCheck}
-          label={<><span className="sm:hidden">Prevenção</span><span className="max-sm:hidden">Índice preventivo</span></>}
-          value={model.index.score}
-          delta={model.index.label}
-          deltaCls={toneText[model.index.tone]}
-          className="border-t border-l border-line pl-4 lg:border-t-0 lg:border-l-0"
-        />
-      </div>
-
       {(alerts.length > 0 || pet.temperament) && (
-        <div className="mt-4 grid gap-2 md:grid-cols-2">
+        <div className="mt-5 grid gap-2 md:grid-cols-2">
           {alerts.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 4 }}

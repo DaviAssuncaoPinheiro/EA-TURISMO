@@ -6,6 +6,7 @@ import { useDemo } from '@/store'
 import { queueIfOffline, useCampo, type Draft, type FinishedVisit } from './campoStore'
 import { durationDays, MED, minutesSince, simNow, VACCINE_LAB, vName } from './data'
 import { vaccineRows } from './vaccines'
+import { tutorSummary, vitalsOf } from './report'
 
 export interface Suggestion {
   key: string
@@ -146,6 +147,24 @@ export function commitVisit(visit: Visit, pet: Pet, d: Draft): FinishedVisit {
     if (applied.some(([vid]) => r.title.toLowerCase().includes(VACCINE[vid].short.toLowerCase()))) demo.setReminderStatus(r.id, 'confirmado')
   }
 
+  // relatório do tutor (página pública /relatorio/:visitId)
+  const nextDates = reminders.map((r) => ({ label: r.title, date: r.dueDate })).sort((a, b) => +new Date(a.date) - +new Date(b.date))
+  const lines = priceLines(visit, d)
+  demo.saveReport({
+    visitId: visit.id,
+    petId: pet.id,
+    vetId,
+    finishedAt: now.toISOString(),
+    summary: tutorSummary(pet, d, applied.map(([vid]) => vName(vid)), nextDates[0]),
+    weightKg: d.weight,
+    vitals: vitalsOf(pet, d),
+    vaccines: doses.map((x) => ({ name: vName(x.vaccineId), lot: x.lot, next: x.nextDate })),
+    prescription: d.meds.map((m) => ({ name: `${MED[m.medId].name} ${MED[m.medId].conc}`, dose: `${m.dose}, ${m.freq.toLowerCase()}, ${m.dur.toLowerCase()}` })),
+    nextDates,
+    photoIds: useDemo.getState().photos.filter((p) => p.visitId === visit.id).map((p) => p.id),
+    total: lines.reduce((a, l) => a + l.value, 0),
+  })
+
   const savedOffline = queueIfOffline()
   const f: FinishedVisit = {
     eventSummary: summary,
@@ -154,7 +173,7 @@ export function commitVisit(visit: Visit, pet: Pet, d: Draft): FinishedVisit {
     doses: doses.map((x) => ({ vaccineId: x.vaccineId, lot: x.lot })),
     reminders: reminders.map((r) => ({ title: r.title, dueDate: r.dueDate })),
     meds: d.meds.map((m) => `${MED[m.medId].name} ${MED[m.medId].conc}`),
-    lines: priceLines(visit, d),
+    lines,
     durationMin: Math.max(visit.durationMin - 10, minutesSince(started, now)),
     savedOffline,
   }

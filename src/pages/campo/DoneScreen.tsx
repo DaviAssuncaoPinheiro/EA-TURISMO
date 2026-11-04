@@ -1,17 +1,15 @@
 // Tela final · resumo do atendimento
 import * as React from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { ArrowUpRight, Banknote, Bell, Check, CloudOff, CreditCard, FileText, MessageCircle, Navigation, QrCode, Scale, Syringe, X } from 'lucide-react'
+import { Banknote, Bell, Check, CloudOff, CreditCard, FileText, House, MessageCircle, QrCode, Scale, Syringe, X } from 'lucide-react'
 import { brl, cn, firstName, kg } from '@/lib/utils'
-import { PetAvatar } from '@/components/ui'
 import { PET } from '@/data/mock'
-import { fmt } from '@/data/time'
 import { useDemo } from '@/store'
 import { notify, useCampo, type FinishedVisit } from './campoStore'
-import { bairroOf, dateShort, legOf, nextStopAfter, tutorOf, visitById, vName } from './data'
+import { dateShort, tutorOf, visitById, vName } from './data'
 import { Btn, EASE_OUT, Pressable, RoundBtn, Screen } from './kit'
-import { useGo } from './nav'
+import { ReportCard } from './ReportCard'
 
 export function AnimatedCheck({ className }: { className?: string }) {
   return (
@@ -152,14 +150,13 @@ export function PaymentCard({ f, tutorFirst, className }: { f: FinishedVisit; tu
 export default function DoneScreen() {
   const { id = '' } = useParams()
   const visit = visitById(id)
-  const go = useGo()
+  const nav = useNavigate()
   const f = useCampo((s) => s.finished[id])
-  const status = useDemo((s) => s.visitStatus)
   const offline = useDemo((s) => s.offline)
 
   if (!visit || !f) {
     return (
-      <Screen title="Atendimento" back={{ label: 'Voltar à rota', onClick: () => go('', { dir: -1 }) }}>
+      <Screen title="Atendimento" back={{ label: 'Voltar', onClick: () => nav('/') }}>
         <p className="p-6 text-[15px] font-medium text-ink-3">Este resumo não está mais neste aparelho.</p>
       </Screen>
     )
@@ -167,27 +164,20 @@ export default function DoneScreen() {
   const pet = PET[visit.petIds[0]]
   const tutor = tutorOf(visit)
   const tutorFirst = firstName(tutor.name)
-  const next = nextStopAfter(visit, status)
   const pending = f.savedOffline && offline
 
   return (
     <Screen
       title=""
       right={
-        <RoundBtn label="Voltar à rota" onClick={() => go('', { dir: -1 })}>
+        <RoundBtn label="Fechar" onClick={() => nav('/')}>
           <X className="size-[18px]" strokeWidth={2.2} />
         </RoundBtn>
       }
       footer={
-        next ? (
-          <Btn className="h-[58px] w-full text-[16.5px]" onClick={() => go(`/visita/${next.id}`, { dir: 1 })}>
-            <Navigation className="size-[18px] text-lime" /> Ir para {PET[next.petIds[0]].name}
-          </Btn>
-        ) : (
-          <Btn className="h-[58px] w-full text-[16.5px]" onClick={() => go('', { dir: -1 })}>
-            Voltar à rota
-          </Btn>
-        )
+        <Btn className="h-[58px] w-full text-[16.5px]" onClick={() => nav('/')}>
+          <House className="size-[18px] text-lime" /> Voltar para Hoje
+        </Btn>
       }
     >
       <div className="px-5 text-center">
@@ -202,35 +192,11 @@ export default function DoneScreen() {
 
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6, duration: 0.45, ease: EASE_OUT }}>
         <SendStatus pending={pending} tutorFirst={tutorFirst} className="mx-4 mt-6" />
-        <StatCards f={f} className="mx-4 mt-3" />
+        <ReportCard visitId={visit.id} tutorId={visit.tutorId} className="mx-4 mt-2.5" />
+        <StatCards f={f} className="mx-4 mt-2.5" />
         <ReminderChips f={f} className="mx-4 mt-2.5" />
         <PaymentCard f={f} tutorFirst={tutorFirst} className="mx-4 mt-2.5" />
-        {next && <NextStop visitId={next.id} />}
       </motion.div>
     </Screen>
-  )
-}
-
-export function NextStop({ visitId }: { visitId: string }) {
-  const go = useGo()
-  const v = visitById(visitId)!
-  const pet = PET[v.petIds[0]]
-  const leg = legOf(v)
-  return (
-    <>
-      <div className="px-6 pt-6 pb-3 text-[18px] font-bold tracking-[-0.02em] text-ink">Próxima parada</div>
-      <Pressable scale={0.985} onClick={() => go(`/visita/${v.id}`, { dir: 1 })} className="mx-4 flex w-[calc(100%-2rem)] items-center gap-3 rounded-[28px] bg-black p-3 pr-4 text-left text-white">
-        <PetAvatar pet={pet} size={56} className="rounded-[20px]" />
-        <div className="min-w-0 flex-1">
-          <div className="text-[16.5px] font-bold">{pet.name}</div>
-          <div className="truncate text-[13px] font-medium text-white/60">
-            <span className="num">{fmt.time(v.start)}</span> · {bairroOf(v).name} · {leg.min} min
-          </div>
-        </div>
-        <span className="flex size-11 items-center justify-center rounded-full bg-lime text-ink">
-          <ArrowUpRight className="size-5" strokeWidth={2.2} />
-        </span>
-      </Pressable>
-    </>
   )
 }

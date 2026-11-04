@@ -1,8 +1,8 @@
 // Visita no computador: paciente à esquerda; andamento, tutor e histórico à direita.
 import * as React from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { ArrowLeft, Cake, Check, ChevronRight, FileText, FlaskConical, Hand, HeartPulse, Lock, MapPin, PawPrint, Repeat, Scale, Stethoscope, Syringe, TriangleAlert } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Cake, Check, ChevronRight, FileText, FlaskConical, Hand, HeartPulse, Lock, MapPin, PawPrint, Repeat, Scale, Stethoscope, Syringe, TriangleAlert } from 'lucide-react'
 import { cn, kg } from '@/lib/utils'
 import { Badge, Card, IconCircle, PetAvatar } from '@/components/ui'
 import { EVENTS, VET, type EventKind, type Visit } from '@/data/mock'
@@ -10,8 +10,9 @@ import { ageLabel, fmt, relDays } from '@/data/time'
 import { dueState } from '@/lib/status'
 import { sexLabel, visitById, vName } from './data'
 import { Btn, EASE_OUT } from './kit'
-import { useGo } from './nav'
-import { PetHero, Tracker, useVisitFlow } from './VisitScreen'
+import { NavButtons, PetHero, Tracker, useVisitFlow } from './VisitScreen'
+import { ArrivalCard } from './ArrivalCard'
+import { VisitMenu } from './VisitMenu'
 
 /** Linha de título das subpáginas: voltar, título e ações */
 export function DeskTitleRow({ onBack, backLabel, title, sub, right }: { onBack: () => void; backLabel: string; title: React.ReactNode; sub?: React.ReactNode; right?: React.ReactNode }) {
@@ -32,11 +33,11 @@ export function DeskTitleRow({ onBack, backLabel, title, sub, right }: { onBack:
 export function DeskVisit() {
   const { id = '' } = useParams()
   const visit = visitById(id)
-  const go = useGo()
+  const nav = useNavigate()
   if (!visit)
     return (
       <>
-        <DeskTitleRow onBack={() => go('', { dir: -1 })} backLabel="Rota" title="Visita" />
+        <DeskTitleRow onBack={() => nav('/')} backLabel="Voltar" title="Visita" />
         <Card className="p-8 text-[15px] font-medium text-ink-3">Visita não encontrada.</Card>
       </>
     )
@@ -46,7 +47,8 @@ export function DeskVisit() {
 const EVENT_ICON: Partial<Record<EventKind, typeof Stethoscope>> = { consulta: Stethoscope, vacina: Syringe, exame: FlaskConical, retorno: Repeat }
 
 function DeskVisitDetail({ visit }: { visit: Visit }) {
-  const { go, pets, pet, tutor, tutorFirst, b, zone, status, st, extraWeight, extraEvents, finished, leg, last, pendingVaccines, onPrimary, stage, primaryLabel, limeCta, PrimaryIcon, contacts } = useVisitFlow(visit)
+  const nav = useNavigate()
+  const { pets, pet, tutor, tutorFirst, b, zone, status, st, extraWeight, extraEvents, finished, last, pendingVaccines, onPrimary, stage, primaryLabel, limeCta, PrimaryIcon, contacts, navApps, arrival, setArrival, startRecord, canArrival, arrivalStart } = useVisitFlow(visit)
   const history = React.useMemo(
     () => [...extraEvents.filter((e) => e.petId === pet.id), ...EVENTS.filter((e) => e.petId === pet.id)].filter((e) => e.id !== last?.id).sort((a, z) => +new Date(z.date) - +new Date(a.date)).slice(0, 4),
     [extraEvents, pet.id, last?.id],
@@ -55,8 +57,8 @@ function DeskVisitDetail({ visit }: { visit: Visit }) {
   return (
     <>
       <DeskTitleRow
-        onBack={() => go('', { dir: -1 })}
-        backLabel="Rota"
+        onBack={() => nav('/')}
+        backLabel="Voltar"
         title={`Visita de ${pets.map((p) => p.name).join(' e ')}`}
         sub={
           <>
@@ -64,9 +66,12 @@ function DeskVisitDetail({ visit }: { visit: Visit }) {
           </>
         }
         right={
-          <Badge tone={st.tone} dot className="h-8 px-3 text-[12.5px]">
-            {st.label}
-          </Badge>
+          <>
+            <Badge tone={st.tone} dot className="h-8 px-3 text-[12.5px]">
+              {st.label}
+            </Badge>
+            <VisitMenu petId={pet.id} />
+          </>
         }
       />
 
@@ -158,7 +163,7 @@ function DeskVisitDetail({ visit }: { visit: Visit }) {
             <div className="flex items-center justify-between pb-3">
               <h3 className="text-[17px] font-bold tracking-[-0.02em] text-ink">Andamento</h3>
               <span className="text-[13px] font-semibold text-ink-3">
-                {status === 'concluida' ? 'Concluída' : `${leg.km.toLocaleString('pt-BR')} km · ${leg.min} min`}
+                {status === 'concluida' ? 'Concluída' : <span className="num">{fmt.time(visit.start)}</span>}
               </span>
             </div>
             <Tracker stage={stage} />
@@ -170,6 +175,18 @@ function DeskVisitDetail({ visit }: { visit: Visit }) {
                 </Btn>
               </motion.div>
             </AnimatePresence>
+            {canArrival && (
+              <button onClick={() => setArrival(true)} className="group mt-2.5 flex w-full items-center gap-3 rounded-[20px] bg-black p-2 pr-2.5 text-left text-white transition-colors hover:bg-black-2">
+                <PetAvatar pet={pet} size={40} className="ring-2 ring-lime" />
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[14.5px] font-bold">Ver cartão de chegada</span>
+                  <span className="block truncate text-[12.5px] font-medium text-white/55">Manejo, acesso à casa e alertas</span>
+                </span>
+                <span className="flex size-9 items-center justify-center rounded-full bg-lime text-ink transition-transform group-hover:translate-x-0.5">
+                  <ArrowUpRight className="size-4" strokeWidth={2.2} />
+                </span>
+              </button>
+            )}
             {status === 'concluida' && finished && (
               <button onClick={onPrimary} className="mt-3 flex w-full items-center gap-3 rounded-[18px] bg-lime-soft px-4 py-3 text-left transition-colors hover:bg-lime/40">
                 <span className="flex size-8 items-center justify-center rounded-full bg-lime">
@@ -197,27 +214,21 @@ function DeskVisitDetail({ visit }: { visit: Visit }) {
                   {tutor.complement && <div className="font-medium text-ink-2">{tutor.complement}</div>}
                   <div className="mt-1 flex items-center gap-1.5 text-[13px] font-medium text-ink-3">
                     <span className="size-1.5 rounded-full" style={{ background: zone.hex }} />
-                    {b.name} · {leg.km.toLocaleString('pt-BR')} km
+                    {b.name}
                   </div>
                 </div>
               </div>
               {tutor.note && <div className="mt-3 rounded-[14px] bg-yellow-soft px-3 py-2 text-[13px] font-semibold text-yellow-ink">{tutor.note}</div>}
             </div>
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              {contacts.map((c, i) => (
-                <button
-                  key={c.label}
-                  onClick={c.onClick}
-                  className={cn(
-                    'inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-full px-3 text-[13.5px] font-semibold transition-[background,transform] active:scale-[.97]',
-                    i === 2 ? 'bg-black text-white hover:bg-black-2' : 'bg-muted text-ink hover:bg-muted-2',
-                  )}
-                >
-                  <c.icon className={cn('size-4 shrink-0', i === 2 && 'text-lime')} strokeWidth={2} />
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {contacts.map((c) => (
+                <button key={c.label} onClick={c.onClick} className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-full bg-muted px-3 text-[13.5px] font-semibold text-ink transition-[background,transform] hover:bg-muted-2 active:scale-[.97]">
+                  <c.icon className="size-4 shrink-0" strokeWidth={2} />
                   <span className="truncate">{c.label}</span>
                 </button>
               ))}
             </div>
+            <NavButtons apps={navApps} size="md" className="mt-2" />
           </Card>
 
           {last && (
@@ -263,6 +274,7 @@ function DeskVisitDetail({ visit }: { visit: Visit }) {
           )}
         </div>
       </div>
+      <ArrivalCard visit={visit} open={arrival} onOpenChange={setArrival} onStart={startRecord} startLabel={arrivalStart} />
     </>
   )
 }

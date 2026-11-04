@@ -1,13 +1,12 @@
-// Atendimento (rota /campo). Celular e tablet: app em tela cheia. Computador: dentro do painel (AppShell).
+// Atendimento (/campo/visita/:id). Celular e tablet: tela cheia. Computador: dentro do painel (AppShell).
 import * as React from 'react'
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
 import { AppShell } from '@/components/AppShell'
 import { useDemo } from '@/store'
 import { notify, useCampo } from './campoStore'
 import { EASE_IOS, PhoneCtx, PhoneToaster } from './kit'
 import { depthOf } from './nav'
-import RouteScreen from './RouteScreen'
 import VisitScreen from './VisitScreen'
 import RecordScreen from './RecordScreen'
 import DoneScreen from './DoneScreen'
@@ -83,11 +82,11 @@ function AppRoutes() {
         className="absolute inset-0 overflow-hidden bg-surface shadow-[-10px_0_30px_-12px_rgba(17,18,20,.28)]"
       >
         <Routes location={location}>
-          <Route index element={<RouteScreen />} />
+          <Route index element={<Navigate to="/" replace />} />
           <Route path="visita/:id" element={<VisitScreen />} />
           <Route path="visita/:id/atendimento" element={<RecordScreen />} />
           <Route path="visita/:id/concluido" element={<DoneScreen />} />
-          <Route path="*" element={<RouteScreen />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </motion.div>
     </AnimatePresence>

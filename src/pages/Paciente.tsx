@@ -8,6 +8,9 @@ import { PreventiveIndex } from '@/components/patient/PreventiveIndex'
 import { VaccineCard } from '@/components/patient/VaccineCard'
 import { WeightChart } from '@/components/patient/WeightChart'
 import { Timeline } from '@/components/patient/Timeline'
+import { PhotosSection } from '@/components/patient/Photos'
+import { DigitalCard } from '@/components/patient/DigitalCard'
+import { daysFromToday } from '@/data/time'
 import { ConditionsPanel, RemindersPanel, SiblingsPanel, SideColumn, TutorCard } from '@/components/patient/SidePanels'
 
 function NotFound({ id }: { id?: string }) {
@@ -52,13 +55,16 @@ export default function Paciente() {
   if (!pet || !model || !tutor) return <NotFound id={id} />
 
   const siblings = petsOfTutor(pet.tutorId).filter((p) => p.id !== pet.id)
+  const late = model.current.filter((d) => daysFromToday(d.nextDate) < 0).length
 
   return (
-    <div className="px-4 pb-6 md:px-6">
+    <div className="px-4 pb-28 md:px-6 lg:pb-6">
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="flex min-w-0 flex-col gap-4">
           <PatientHeader pet={pet} tutor={tutor} model={model} />
+          <DigitalCard pet={pet} tutor={tutor} late={late} className="xl:hidden" />
           <VaccineCard pet={pet} tutor={tutor} doses={model.doses} current={model.current} preventives={model.preventives} />
+          <PhotosSection pet={pet} />
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(300px,1fr)]">
             <WeightChart pet={pet} points={model.weights} currentKg={model.currentKg} fresh={model.weightIsFresh} />
             <PreventiveIndex index={model.index} />
@@ -66,7 +72,8 @@ export default function Paciente() {
           <Timeline items={model.timeline} petName={pet.name} />
         </div>
 
-        <aside className="min-w-0 xl:sticky xl:top-0 xl:self-start">
+        <aside className="flex min-w-0 flex-col gap-4">
+          <DigitalCard pet={pet} tutor={tutor} late={late} className="max-xl:hidden" />
           <SideColumn>
             <TutorCard tutor={tutor} pet={pet} />
             <SiblingsPanel siblings={siblings} tutorName={tutor.name} />

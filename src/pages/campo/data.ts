@@ -1,7 +1,8 @@
 // Dados e cálculos próprios do app de campo (celular do veterinário).
-import { BAIRRO, BASE, ZONE, type ZoneId } from '@/data/geo'
-import { EVENTS, NOW, PET, ROUTE_LARISSA, TUTOR, VACCINE, VISITS, type Pet, type Species, type Visit } from '@/data/mock'
-import { day, fmt } from '@/data/time'
+import { BAIRRO, ZONE } from '@/data/geo'
+import { EVENTS, NOW, PET, TUTOR, VACCINE, VISITS, type Pet, type Species, type Visit } from '@/data/mock'
+import { day, fmt, iso } from '@/data/time'
+import type { PetPhoto } from '@/store'
 
 /* Visitas do dia por veterinário */
 
@@ -16,54 +17,6 @@ export const petOf = (v: Visit) => PET[v.petIds[0]]
 export const tutorOf = (v: Visit) => TUTOR[v.tutorId]
 export const bairroOf = (v: Visit) => BAIRRO[TUTOR[v.tutorId].bairro]
 export const zoneOf = (v: Visit) => ZONE[bairroOf(v).zone]
-
-/** Zonas do dia, na ordem em que aparecem na rota (mais visitas primeiro) */
-export function zonesOfDay(visits: Visit[]): ZoneId[] {
-  const count = new Map<ZoneId, number>()
-  for (const v of visits) {
-    const z = bairroOf(v).zone
-    count.set(z, (count.get(z) ?? 0) + 1)
-  }
-  return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([z]) => z)
-}
-
-/* Distâncias (calibradas pela rota real da Dra. Larissa) */
-
-type P = { x: number; y: number }
-const dist = (a: P, b: P) => Math.hypot(a.x - b.x, a.y - b.y)
-
-function routeUnits(visits: Visit[]) {
-  let u = 0
-  let prev: P = BASE
-  for (const v of visits) {
-    const b = bairroOf(v)
-    u += dist(prev, b)
-    prev = b
-  }
-  return u + dist(prev, BASE)
-}
-
-const KM_PER_UNIT = ROUTE_LARISSA.kmOptimized / routeUnits(vetVisitsToday('larissa'))
-
-export function routeKm(vetId: string) {
-  if (vetId === 'larissa') return ROUTE_LARISSA.kmOptimized
-  return +(routeUnits(vetVisitsToday(vetId)) * KM_PER_UNIT).toFixed(1)
-}
-
-/** minutos de carro entre a parada anterior e esta (trânsito de Manaus ≈ 3,9 min/km) */
-export function legOf(visit: Visit) {
-  const list = vetVisitsToday(visit.vetId)
-  const i = list.findIndex((v) => v.id === visit.id)
-  const from: P = i > 0 ? bairroOf(list[i - 1]) : BASE
-  const km = dist(from, bairroOf(visit)) * KM_PER_UNIT
-  return { km: +km.toFixed(1), min: Math.max(4, Math.round(km * 3.9)) }
-}
-
-export function nextStopAfter(visit: Visit, status: Record<string, string>) {
-  const list = vetVisitsToday(visit.vetId)
-  const i = list.findIndex((v) => v.id === visit.id)
-  return list.slice(i + 1).find((v) => status[v.id] === 'agendada' || status[v.id] === 'a-caminho')
-}
 
 export const minutesSince = (iso: string, now?: Date) => Math.max(0, Math.round((+(now ?? simNow()) - +new Date(iso)) / 60000))
 
@@ -234,3 +187,97 @@ export function dateShort(d: Date | string) {
 
 /** "quarta-feira, 4 de novembro" → "Quarta-feira, 4 de novembro" */
 export const capFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+/* Acesso à casa (mock por tutor): o que o veterinário precisa saber antes de tocar a campainha */
+
+export interface HomeAccess {
+  gate?: string
+  intercom?: string
+  landmark: string
+  parking?: string
+  notes: string[]
+}
+
+export const ACCESS: Record<string, HomeAccess> = {
+  t1: { intercom: 'Ap. 1203 no interfone', gate: 'Portaria 24h, deixar documento', landmark: 'Torre B, em frente ao Parque dos Bilhares', parking: 'Vaga de visitante no subsolo', notes: ['Elevador de serviço para pets'] },
+  t2: { gate: 'Campainha no muro azul', landmark: 'Casa ao lado da farmácia Santo Remédio', parking: 'Na rua, em frente', notes: ['Seu Joaquim demora a abrir', 'Ligar para a filha Renata se não atender'] },
+  t3: { gate: 'Código do portão 4521#', intercom: 'Casa 41 no interfone', landmark: 'Segunda rua à direita depois da guarita', parking: 'Na frente da garagem', notes: ['Filhote foge pela porta, entrar rápido'] },
+  t4: { gate: 'Portão eletrônico, tocar e aguardar', landmark: 'Casa amarela com mangueira na calçada', parking: 'Na rua, lado da sombra', notes: ['Cachorro fica solto no quintal', 'Bob se agita com a campainha, avisar por mensagem'] },
+  t5: { gate: 'Portão verde, sem campainha', landmark: 'Esquina com a Rua Rio Branco', parking: 'Rua lateral', notes: ['Mandar mensagem ao chegar', 'Dois gatos soltos em casa'] },
+  t6: { intercom: 'Casa 2 no interfone', landmark: 'Vila de casas atrás da padaria Ramos', parking: 'Estacionar na praça', notes: ['Pipoca não usa coleira, só peitoral'] },
+  t7: { gate: 'Código do portão 0098', landmark: 'Prédio baixo de tijolinho', parking: 'Vaga 3, liberada', notes: ['Simba se esconde embaixo da cama'] },
+  t8: { gate: 'Portaria do condomínio, casa 7', intercom: 'Juliana libera pelo app', landmark: 'Entrada pela Av. do Turismo, segunda guarita', parking: 'Na garagem da casa', notes: ['Dois cães soltos no quintal'] },
+  t9: { gate: 'Portão de madeira, cadeado aberto', landmark: 'Km 4, placa Sítio Recanto', parking: 'Dentro do sítio', notes: ['Zeus fica preso no canil até o tutor chegar', 'Estrada de terra, ir devagar'] },
+  t10: { gate: 'Campainha à esquerda do portão', landmark: 'Casa com muro grafitado', parking: 'Na rua', notes: ['Kiara pula nas visitas, é dócil'] },
+  t11: { intercom: 'Bloco C, ap. 202', landmark: 'Conjunto em frente à escola estadual', parking: 'Vaga de visitante', notes: [] },
+  t12: { gate: 'Bater palma, campainha quebrada', landmark: 'Casa azul perto da UFAM', parking: 'Na rua', notes: ['Tom está fechado no quarto'] },
+  t13: { gate: 'Portão de grade, sempre aberto', landmark: 'Ao lado da igreja Nova Esperança', parking: 'Na rua', notes: ['Frida não sobe escada, atender no térreo'] },
+  t14: { gate: 'Código do portão 7310#', landmark: 'Depois do posto Autaz, primeira à direita', parking: 'Garagem coberta', notes: ['Seu Antônio prefere que toque a campainha duas vezes'] },
+  t15: { gate: 'Portão branco, casa 3', landmark: 'Quadra 40, perto do campinho', parking: 'Na rua', notes: ['Belinha foge, fechar o portão ao entrar'] },
+  t16: { intercom: 'Ap. 101 no interfone', landmark: 'Prédio ao lado do supermercado DB', parking: 'Estacionamento do mercado', notes: [] },
+  t17: { gate: 'Código do portão 2604', landmark: 'Rua sem saída, última casa', parking: 'Na frente', notes: ['Luna fica no quarto dos fundos'] },
+  t18: { intercom: 'Ap. 504, torre única', landmark: 'Em frente ao Hospital Dom Pedro', parking: 'Vaga rotativa na rua', notes: ['Bidu late muito, é manso'] },
+}
+
+export const accessOf = (tutorId: string): HomeAccess => ACCESS[tutorId] ?? { landmark: 'Sem referência cadastrada', notes: [] }
+
+/* O que fazer nesta visita (checklist do cartão de chegada) */
+
+export function visitTodo(visit: Visit, pet: Pet, lateVaccines: string[]): string[] {
+  const r = visit.reason.toLowerCase()
+  const out: string[] = []
+  const cardio = pet.conditions?.some((c) => /mitral|card/i.test(c))
+  if (visit.type === 'Vacinação') {
+    if (/v10/.test(r)) out.push('Aplicar V10')
+    if (/antirr|raiva/.test(r)) out.push('Aplicar antirrábica')
+    if (/gi[aá]rdia/.test(r)) out.push('Aplicar giárdia')
+    if (/gripe/.test(r)) out.push('Aplicar gripe canina')
+    if (/v4/.test(r)) out.push('Aplicar V4')
+    out.push('Conferir lote e validade')
+  }
+  if (cardio) out.push('Auscultar e comparar o sopro', 'Revisar dose do pimobendan', 'Perguntar sobre tosse e cansaço')
+  else if (visit.type === 'Retorno') out.push('Comparar com a última visita')
+  if (visit.type === 'Fluidoterapia') out.push('Fluido subcutâneo', 'Aferir pressão arterial')
+  if (visit.type === 'Curativo') out.push('Avaliar a ferida cirúrgica', 'Retirar os pontos', 'Foto da ferida')
+  if (visit.type === 'Coleta de exames') out.push('Coletar hemograma e bioquímico', 'Amostras na caixa térmica')
+  if (visit.type === 'Consulta' || visit.type === 'Check-up') out.push('Exame físico completo')
+  if (/vermífugo|vermifugo/.test(r)) out.push('Dar vermífugo')
+  if (/orelha|les[aã]o|coceira|pele/.test(r)) out.push('Foto da região afetada')
+  for (const v of lateVaccines) if (!out.some((x) => x.toLowerCase().includes(v.toLowerCase()))) out.push(`Oferecer ${v} atrasada`)
+  out.unshift('Pesar e aferir sinais vitais')
+  return [...new Set(out)].slice(0, 6)
+}
+
+/* Fotos: assuntos e fotos anteriores (mock) para comparar antes e depois */
+
+export const PHOTO_SUBJECTS = ['Orelha esquerda', 'Orelha direita', 'Pele / dorso', 'Ferida cirúrgica', 'Olhos', 'Boca', 'Patas']
+
+const zoomed = (petId: string, fx: number, fy: number, z: number) => `${PET[petId].photo.replace('w=480&h=480', 'w=720&h=720')}&crop=focalpoint&fp-x=${fx}&fp-y=${fy}&fp-z=${z}`
+
+/** Fotos de visitas anteriores (fazem parte da ficha) */
+export const PRIOR_PHOTOS: PetPhoto[] = [
+  { id: 'ph-seed-bob-1', petId: 'bob', date: iso(-23, '10:20'), src: zoomed('bob', 0.38, 0.32, 2.2), label: 'Antes da limpeza', subject: 'Orelha esquerda' },
+  { id: 'ph-seed-thor-1', petId: 'thor', date: iso(-60, '18:10'), src: zoomed('thor', 0.32, 0.3, 2.4), label: 'Otite, secreção', subject: 'Orelha esquerda' },
+  { id: 'ph-seed-fred-1', petId: 'fred', date: iso(-17, '15:00'), src: zoomed('fred', 0.5, 0.82, 2.2), label: 'Vermelhidão entre os dedos', subject: 'Patas' },
+  { id: 'ph-seed-mia-1', petId: 'mia', date: iso(-10, '13:40'), src: zoomed('mia', 0.5, 0.7, 2), label: 'Pós-cirúrgico', subject: 'Ferida cirúrgica' },
+]
+
+/** Assunto inicial da foto: o que já tem foto anterior, senão o que o motivo sugere */
+export function defaultSubject(visit: Visit, pet: Pet, photos: PetPhoto[]) {
+  const prior = photos.find((p) => p.petId === pet.id && p.visitId !== visit.id)
+  if (prior) return prior.subject
+  const r = visit.reason.toLowerCase()
+  if (/orelha|otite/.test(r)) return 'Orelha esquerda'
+  if (/pontos|castra|curativo/.test(r)) return 'Ferida cirúrgica'
+  if (/olho|col[ií]rio|catarata|schirmer/.test(r)) return 'Olhos'
+  if (/pata|coceira/.test(r)) return 'Patas'
+  return 'Pele / dorso'
+}
+
+/** Fotos do pet: do aparelho (store) e da ficha (anteriores), mais recentes primeiro */
+export function petPhotos(petId: string, stored: PetPhoto[]) {
+  return [...stored, ...PRIOR_PHOTOS].filter((p) => p.petId === petId).sort((a, b) => +new Date(b.date) - +new Date(a.date))
+}
+
+/** "12/10" */
+export const ddmm = (d: Date | string) => fmt.date(d).slice(0, 5)
