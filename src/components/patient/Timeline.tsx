@@ -63,7 +63,7 @@ function Entry({ item, index }: { item: TimelineItem; index: number }) {
       transition={{ duration: 0.28, delay: Math.min(index, 6) * 0.03, ease: [0.25, 1, 0.5, 1] }}
       className={cn('relative flex gap-3 rounded-[20px] py-3.5', item.isNew && '-mx-3 bg-lime-soft px-3')}
     >
-      <span className="relative mt-0.5 shrink-0">
+      <span className="relative mt-0.5 block size-[38px] shrink-0">
         <VetAvatar vetId={item.vetId} size={38} />
         <span className={cn('absolute -right-1 -bottom-1 inline-flex size-[18px] items-center justify-center rounded-full ring-2', item.isNew ? 'ring-lime-soft' : 'ring-card', k.cls)}>
           <Icon className="size-2.5" strokeWidth={2.4} />

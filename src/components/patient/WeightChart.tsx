@@ -149,7 +149,7 @@ export function WeightChart({ pet, points, currentKg, fresh }: { pet: Pet; point
         </Badge>
       </div>
 
-      <div className="mt-2 h-[220px] px-1 sm:h-[240px] sm:px-2">
+      <div className="mt-2 h-[220px] min-h-[220px] flex-1 px-1 sm:h-auto sm:min-h-[240px] sm:px-2">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={rows} margin={{ top: 16, right: 16, bottom: 0, left: -10 }}>
             <defs>
@@ -165,7 +165,7 @@ export function WeightChart({ pet, points, currentKg, fresh }: { pet: Pet; point
               fill="var(--color-green-soft)"
               fillOpacity={0.9}
               ifOverflow="extendDomain"
-              label={{ value: 'Faixa ideal', position: 'insideTopLeft', fill: 'var(--color-green)', fontSize: 11, fontWeight: 600, dx: 6, dy: 4 }}
+              label={{ value: 'Faixa ideal', position: 'insideBottomLeft', fill: 'var(--color-green)', fontSize: 11, fontWeight: 600, dx: 6, dy: -4 }}
             />
             <XAxis
               dataKey="t"
