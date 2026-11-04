@@ -157,7 +157,7 @@ export function AppShell() {
           </div>
         </header>
 
-        <main className="scroll-thin flex-1 overflow-y-auto pb-28 lg:pb-0">
+        <main className="scroll-thin flex-1 overflow-y-auto">
           <AnimatePresence mode="wait">
             <motion.div key={loc.pathname} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.22, ease: [0.25, 1, 0.5, 1] }}>
               <Outlet />
