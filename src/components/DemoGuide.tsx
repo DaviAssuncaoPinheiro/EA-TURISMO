@@ -24,6 +24,7 @@ export function DemoGuide() {
     try { localStorage.setItem('vd-guide-closed', '1') } catch {}
   }
   if (loc.pathname.startsWith('/campo')) return null
+  if (typeof window !== 'undefined' && window.innerWidth < 1024) return null
 
   const step = STEPS[Math.max(0, current)]
   const idx = Math.max(0, current)
@@ -32,7 +33,7 @@ export function DemoGuide() {
   return (
     <div className="fixed right-4 bottom-24 z-40 lg:right-6 lg:bottom-6">
       <AnimatePresence mode="wait">
-        {open ? (
+        {open && current >= 0 ? (
           <motion.div
             key="panel"
             initial={{ opacity: 0, y: 10, scale: 0.97 }}
@@ -48,7 +49,7 @@ export function DemoGuide() {
                 {STEPS.map((s, i) => (
                   <button key={s.to} aria-label={s.title} onClick={() => nav(s.to)} className={cn('h-1.5 rounded-full transition-all', i === idx ? 'w-4 bg-lime' : i < idx ? 'w-1.5 bg-white/60' : 'w-1.5 bg-white/20')} />
                 ))}
-                <button onClick={close} aria-label="Fechar roteiro" className="ml-1.5 rounded p-1 text-white/50 hover:bg-white/10 hover:text-paper"><X className="size-3.5" /></button>
+                <button onClick={close} aria-label="Fechar roteiro" className="ml-1.5 rounded p-1 text-white/50 hover:bg-white/10 hover:text-white"><X className="size-3.5" /></button>
               </div>
             </div>
             <div className="text-[14px] font-semibold">{step.title}</div>

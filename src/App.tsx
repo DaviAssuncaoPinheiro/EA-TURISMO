@@ -16,7 +16,7 @@ export default function App() {
   return (
     <TooltipProvider>
       <HashRouter>
-        <Suspense fallback={<div className="h-dvh bg-paper" />}>
+        <Suspense fallback={<div className="h-dvh bg-surface" />}>
         <Routes>
           <Route path="/campo/*" element={<Campo />} />
           <Route element={<AppShell />}>
@@ -33,7 +33,8 @@ export default function App() {
       <Toaster
         position="top-center"
         toastOptions={{
-          style: { background: 'var(--color-sage-950)', color: 'var(--color-paper)', border: 'none', borderRadius: 12, fontFamily: 'var(--font-sans)' },
+          classNames: { description: '!text-white/65' },
+          style: { background: 'var(--color-black)', color: '#fff', border: 'none', borderRadius: 18, fontFamily: 'var(--font-sans)' },
         }}
       />
     </TooltipProvider>
