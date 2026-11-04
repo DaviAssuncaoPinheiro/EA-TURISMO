@@ -24,7 +24,7 @@ export function DemoGuide() {
     try { localStorage.setItem('vd-guide-closed', '1') } catch {}
   }
   if (loc.pathname.startsWith('/campo')) return null
-  if (typeof window !== 'undefined' && window.innerWidth < 1024) return null
+  if (typeof window !== 'undefined' && window.innerWidth < 1280) return null
 
   const step = STEPS[Math.max(0, current)]
   const idx = Math.max(0, current)

@@ -247,7 +247,7 @@ function ZonePanel({ zone, onZone, plan, day }: { zone: ZoneId | null; onZone: (
         <h2 className="text-[17px] font-bold tracking-[-0.02em] text-ink">Zonas</h2>
         <p className="mt-0.5 text-[12.5px] font-medium text-ink-3">Visitas por dia da semana</p>
       </div>
-      <ul className="flex flex-col gap-2">
+      <ul className="grid grid-cols-1 items-start gap-2 md:grid-cols-2 lg:grid-cols-1">
         {ZONES.map((z) => {
           const sel = zone === z.id
           const pets = petsByZone(z.id)
@@ -255,7 +255,7 @@ function ZonePanel({ zone, onZone, plan, day }: { zone: ZoneId | null; onZone: (
           const days = DAYS.filter(({ d }) => coverage(plan, z.id, d).length)
           const off = offSchedule(plan, z.id)
           return (
-            <li key={z.id} className={cn('rounded-[20px] bg-card shadow-card transition-shadow', sel ? 'ring-2 ring-black' : 'hover:shadow-lift')}>
+            <li key={z.id} className={cn('rounded-[20px] bg-card shadow-card transition-shadow', sel && 'md:col-span-2 lg:col-span-1', sel ? 'ring-2 ring-black' : 'hover:shadow-lift')}>
               <button onClick={() => onZone(sel ? null : z.id)} className="block w-full p-4 text-left">
                 <span className="flex items-center gap-2.5">
                   <span className="size-2.5 shrink-0 rounded-full" style={{ background: z.hex }} />
@@ -317,7 +317,7 @@ function ZoneDetail({ z, plan, day }: { z: ZoneId; plan: Plan; day: number }) {
               <div className={cn('flex h-[54px] flex-col items-center justify-between rounded-[12px] py-1.5', gap ? 'bg-coral-soft' : 'bg-surface', d === day && 'ring-2 ring-black')}>
                 <span className={cn('text-[11px] font-semibold', d === day ? 'text-ink' : 'text-ink-3')}>{short}</span>
                 {vets.length ? (
-                  <span className="flex -space-x-1.5">
+                  <span className="hidden -space-x-1.5 md:flex">
                     {vets.map((v) => (
                       <VetAvatar key={v} vetId={v} size={20} className="ring-2 ring-surface" />
                     ))}
@@ -403,10 +403,10 @@ function CoverageTable({
           <ViewAll onClick={() => nav('/agenda')}>Agenda</ViewAll>
         </div>
         <div className="no-scrollbar overflow-x-auto">
-          <table className="w-full min-w-[640px] border-separate border-spacing-1 text-[12.5px]">
+          <table className="w-full min-w-[500px] border-separate border-spacing-1 text-[12.5px] md:min-w-[640px]">
             <thead>
               <tr>
-                <th className="w-[170px] px-3 text-left text-[12px] font-semibold text-ink-3">Zona</th>
+                <th className="sticky left-0 z-10 w-[112px] bg-card px-2 text-left text-[12px] font-semibold text-ink-3 md:w-[170px] md:px-3">Zona</th>
                 {DAYS.map(({ d, short }) => (
                   <th key={d} className="font-normal">
                     <button onClick={() => onDay(d)} className={cn('h-8 w-full rounded-full text-[12px] font-semibold transition-colors', d === day ? 'bg-black text-white' : 'text-ink-3 hover:bg-muted hover:text-ink')}>
@@ -414,7 +414,7 @@ function CoverageTable({
                     </button>
                   </th>
                 ))}
-                <th className="w-[96px] px-3 text-right text-[12px] font-semibold text-ink-3">Fora</th>
+                <th className="w-[56px] px-1 text-right md:w-[96px] md:px-3 text-[12px] font-semibold text-ink-3">Fora</th>
               </tr>
             </thead>
             <tbody>
@@ -423,10 +423,10 @@ function CoverageTable({
                 const sel = zone === z.id
                 return (
                   <tr key={z.id} onClick={() => onZone(sel ? null : z.id)} className="group cursor-pointer">
-                    <td className={cn('rounded-[12px] px-3 transition-colors', sel ? 'bg-muted' : 'group-hover:bg-surface')}>
+                    <td className={cn('sticky left-0 z-10 rounded-[12px] px-2 transition-colors md:px-3', sel ? 'bg-muted' : 'bg-card group-hover:bg-surface')}>
                       <span className="flex items-center gap-2">
-                        <span className="size-2.5 rounded-full" style={{ background: z.hex }} />
-                        <span className="font-semibold text-ink">{z.name}</span>
+                        <span className="size-2.5 shrink-0 rounded-full" style={{ background: z.hex }} />
+                        <span className="text-[12px] leading-tight font-semibold text-ink md:text-[12.5px]">{z.name}</span>
                       </span>
                     </td>
                     {DAYS.map(({ d }) => {
@@ -438,11 +438,11 @@ function CoverageTable({
                         <td key={d}>
                           <motion.div
                             layout
-                            className={cn('flex h-11 items-center justify-between gap-1 rounded-[12px] px-2.5', gap && 'border-[1.5px] border-dashed border-coral/60', d === day && !gap && 'ring-2 ring-black/80 ring-inset')}
+                            className={cn('flex h-11 items-center justify-center gap-1 rounded-[12px] px-1 md:justify-between md:px-2.5', gap && 'border-[1.5px] border-dashed border-coral/60', d === day && !gap && 'ring-2 ring-black/80 ring-inset')}
                             style={{ background: gap ? 'var(--color-coral-soft)' : heatColor(t) }}
                           >
                             <span className={cn('num text-[14px] font-bold', gap ? 'text-coral' : heatIsDark(t) ? 'text-white' : 'text-ink')}>{n}</span>
-                            <span className="flex -space-x-1.5">
+                            <span className="hidden -space-x-1.5 md:flex">
                               <AnimatePresence initial={false}>
                                 {vets.map((v) => (
                                   <motion.span key={v} initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0, opacity: 0 }} transition={{ duration: 0.3, ease: EASE }}>
@@ -455,7 +455,7 @@ function CoverageTable({
                         </td>
                       )
                     })}
-                    <td className="px-3 text-right">
+                    <td className="px-1 text-right md:px-3">
                       <span className={cn('num text-[14px] font-bold', off ? 'text-coral' : 'text-ink-4')}>{off}</span>
                     </td>
                   </tr>

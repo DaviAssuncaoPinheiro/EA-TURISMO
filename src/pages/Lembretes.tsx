@@ -81,7 +81,7 @@ export default function Lembretes() {
   const filtersActive = kind !== 'todos' || vet !== 'todos' || zone !== 'todas'
 
   return (
-    <div className="w-full px-4 pt-2 pb-28 md:px-6 md:pt-4 md:pb-8">
+    <div className="mx-auto w-full max-w-[1600px] px-4 pt-2 pb-28 md:px-6 md:pt-4 md:pb-8">
       <PageHeader
         title="Lembretes"
         description="Vacinas e retornos enviados por WhatsApp"
@@ -147,7 +147,7 @@ export default function Lembretes() {
             <Empty icon={<Inbox size={24} strokeWidth={1.8} />} title="Nenhum lembrete">Tente outro filtro.</Empty>
           </Card>
         ) : effective === 'quadro' ? (
-          <div className="mt-4 grid grid-cols-4 items-start gap-3">
+          <div className="mt-4 grid grid-cols-2 items-start gap-3 xl:grid-cols-4">
             {GROUPS.map((g) => (
               <div key={g.key} className="min-w-0 rounded-[28px] bg-muted p-2">
                 <div className="flex items-center gap-2 px-3 pt-2.5 pb-3">

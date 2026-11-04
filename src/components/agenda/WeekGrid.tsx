@@ -64,8 +64,7 @@ export function VisitBlock({ v, onOpen, fresh, past }: { v: AVisit; onOpen: () =
   )
 }
 
-const LEFT = 150
-const COL = 'minmax(172px,1fr)'
+const COL_MIN = 150
 
 export function WeekGrid({
   days,
@@ -80,11 +79,11 @@ export function WeekGrid({
   freshId: string | null
   onOpenDay: (off: number) => void
 }) {
-  const template = `${LEFT}px repeat(${days.length}, ${COL})`
+  const template = `var(--wk-left) repeat(${days.length}, minmax(${COL_MIN}px,1fr))`
   const todayIdx = days.indexOf(0)
   return (
     <div className="no-scrollbar overflow-x-auto rounded-[28px] bg-surface p-2">
-      <div className="relative min-w-[1190px]">
+      <div className="relative [--wk-left:112px] lg:[--wk-left:132px]" style={{ minWidth: `calc(var(--wk-left) + ${days.length * (COL_MIN + 6)}px)` }}>
         <div className="grid gap-1.5" style={{ gridTemplateColumns: template }}>
           {/* cabeçalho */}
           <div className="sticky left-0 z-20 flex items-end rounded-[16px] bg-surface px-3 pb-1 text-[12.5px] font-semibold text-ink-3">Equipe</div>
