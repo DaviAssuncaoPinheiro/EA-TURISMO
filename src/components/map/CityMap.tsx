@@ -325,7 +325,7 @@ function CityMapInner({
   // rótulo da zona desvia de pins (tenta o lugar original, depois acima/abaixo)
   const zoneLabelPos: Record<string, Pt> = {}
   const zoneLabelRects: Rect[] = ZONES.map((z) => {
-    const w = Math.max(z.name.length * zoneFont * 0.6, heat ? px(78) : 0)
+    const w = Math.max((compact ? z.short : z.name).length * zoneFont * 0.6, heat ? px(78) : 0)
     const extra = heat ? px(overlay ? 54 : 30) : 0
     const at = (dy: number): Rect => ({ x0: z.label[0] - w / 2, y0: z.label[1] + dy - zoneFont, x1: z.label[0] + w / 2, y1: z.label[1] + dy + zoneFont * 0.4 + extra })
     const obst = [...pinRects, baseRect, ...(vetRect ? [vetRect] : [])]
@@ -395,7 +395,7 @@ function CityMapInner({
               strokeLinejoin="round"
               paintOrder="stroke"
             >
-              {z.name}
+              {compact ? z.short : z.name}
             </text>
             {heat && hv != null && (
               <text x={pos.x} y={pos.y + px(compact ? 20 : 26)} textAnchor="middle" fill={dark ? '#fff' : 'var(--color-ink)'}>
