@@ -145,7 +145,7 @@ export function AppShell() {
             <span className="font-display text-[15px] font-semibold">{CLINIC.name}</span>
           </div>
           <div className="hidden items-center gap-2 text-[13px] text-ink-3 lg:flex">
-            <span className="capitalize">{fmt.long(TODAY)}</span>
+            <span className="first-letter:uppercase">{fmt.long(TODAY)}</span>
             <span className="text-ink-4">·</span>
             <span className="inline-flex items-center gap-1.5">
               <span className="relative flex size-2">
