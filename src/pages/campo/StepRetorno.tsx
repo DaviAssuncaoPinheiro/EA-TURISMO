@@ -9,7 +9,7 @@ import { day, fmt } from '@/data/time'
 import { Btn, Chip, EASE_OUT, Pressable, Sheet, Toggle } from './kit'
 import { capFirst, dateShort } from './data'
 import { daysLabel, suggestReminders, type Suggestion } from './finalize'
-import { Block, StepIntro, type StepProps } from './stepKit'
+import { Block, StepFrame, StepIntro, SubHead, useIsDesk, type StepProps } from './stepKit'
 
 const KIND_ICON: Record<ReminderKind, typeof Syringe> = { vacina: Syringe, retorno: Repeat, exame: FlaskConical, 'vermífugo': Pill, antipulgas: Pill }
 const DAY_OPTIONS = [7, 15, 21, 30, 45, 60, 90, 120, 180, 365]
@@ -27,7 +27,7 @@ function suggestedDay(vetId: string, bairroId: string, days: number) {
   return day(days)
 }
 
-export function StepRetorno({ visit, pet, draft, patch }: StepProps) {
+export function StepRetorno({ visit, pet, draft, patch, layout }: StepProps) {
   const sugg = React.useMemo(() => suggestReminders(visit, pet, draft), [visit, pet, draft])
   const [preview, setPreview] = React.useState<string | null>(null)
   const [editing, setEditing] = React.useState<Suggestion | null>(null)
@@ -54,11 +54,14 @@ export function StepRetorno({ visit, pet, draft, patch }: StepProps) {
   }, [shown, visit.vetId, tutor, pet.name, vet.short])
 
   return (
-    <div className="pb-2">
-      <StepIntro eyebrow="Etapa 5 de 5" title="Retorno">
-        Lembretes sugeridos a partir desta visita
-      </StepIntro>
-
+    <StepFrame
+      layout={layout}
+      intro={
+        <StepIntro eyebrow="Etapa 5 de 5" title="Retorno">
+          Lembretes sugeridos a partir desta visita
+        </StepIntro>
+      }
+      left={
       <Block title={`Para ${pet.name}`} hint={`${active.length} de ${sugg.length} ativos, por WhatsApp`} bodyClassName="px-2 pb-2">
         <div className="flex flex-col gap-1">
           {sugg.map((s, i) => {
@@ -95,16 +98,20 @@ export function StepRetorno({ visit, pet, draft, patch }: StepProps) {
           })}
         </div>
       </Block>
-
-      {shown && (
+      }
+      right={
+        shown ? (
         <>
-          <div className="flex items-center justify-between px-6 pt-6 pb-3">
-            <h3 className="text-[18px] font-bold tracking-[-0.02em] text-ink">Mensagem</h3>
-            <span className="text-[12.5px] font-semibold text-ink-3">
-              Envio {dateShort(day(Math.max(1, shown.days - (shown.days >= 30 ? 7 : 2))))}, 09:00
-            </span>
-          </div>
-          <div className="mx-4 overflow-hidden rounded-[28px] bg-muted-2">
+          <SubHead
+            aside={
+              <span className="text-[12.5px] font-semibold text-ink-3">
+                Envio {dateShort(day(Math.max(1, shown.days - (shown.days >= 30 ? 7 : 2))))}, 09:00
+              </span>
+            }
+          >
+            Mensagem
+          </SubHead>
+          <ChatCard>
             <div className="flex items-center gap-2.5 bg-black px-4 py-3 text-white">
               <LogoMark size={34} tone="lime" />
               <div className="leading-tight">
@@ -136,10 +143,11 @@ export function StepRetorno({ visit, pet, draft, patch }: StepProps) {
                 ))}
               </div>
             </div>
-          </div>
+          </ChatCard>
         </>
-      )}
-
+        ) : undefined
+      }
+      extra={
       <DaysSheet
         s={editing}
         onClose={() => setEditing(null)}
@@ -149,8 +157,14 @@ export function StepRetorno({ visit, pet, draft, patch }: StepProps) {
           setEditing(null)
         }}
       />
-    </div>
+      }
+    />
   )
+}
+
+function ChatCard({ children }: { children: React.ReactNode }) {
+  const desk = useIsDesk()
+  return <div className={cn('overflow-hidden bg-muted-2', desk ? 'rounded-[24px]' : 'mx-4 rounded-[28px]')}>{children}</div>
 }
 
 function DaysSheet({ s, onClose, onPick }: { s: Suggestion | null; onClose: () => void; onPick: (d: number) => void }) {

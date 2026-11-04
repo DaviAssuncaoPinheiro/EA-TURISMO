@@ -31,29 +31,33 @@ export function OfflineToggle({ dark }: { dark?: boolean }) {
 
 type Tab = 'rota' | 'feitas'
 
-export default function RouteScreen() {
-  const vetId = useVetId()
-  const vet = VET[vetId]
+/** Visitas do dia do veterinário e o que está em destaque (mesmo cálculo no celular e no computador). */
+export function useRouteData(vetId: string) {
   const go = useGo()
-  const nav = useNavigate()
   const status = useDemo((s) => s.visitStatus)
   const startedAt = useCampo((s) => s.startedAt)
   const visits = React.useMemo(() => vetVisitsToday(vetId), [vetId])
   const zones = React.useMemo(() => zonesOfDay(visits), [visits])
-  const [tab, setTab] = React.useState<Tab>('rota')
-  const [profile, setProfile] = React.useState(false)
   const done = visits.filter((v) => status[v.id] === 'concluida').length
   const km = routeKm(vetId)
-
   const featured = visits.find((v) => status[v.id] === 'em-atendimento') ?? visits.find((v) => status[v.id] === 'a-caminho') ?? visits.find((v) => status[v.id] === 'agendada')
   const upcoming = visits.filter((v) => v.id !== featured?.id && status[v.id] !== 'concluida' && status[v.id] !== 'cancelada')
   const finished = visits.filter((v) => status[v.id] === 'concluida')
   const remaining = visits.length - done
-
   const openRecord = (v: Visit) => {
     useCampo.getState().ensureDraft(v)
     go(`/visita/${v.id}/atendimento`, { dir: 1 })
   }
+  return { go, status, startedAt, visits, zones, done, km, featured, upcoming, finished, remaining, openRecord }
+}
+
+export default function RouteScreen() {
+  const vetId = useVetId()
+  const vet = VET[vetId]
+  const nav = useNavigate()
+  const { go, status, startedAt, visits, zones, done, km, featured, upcoming, finished, remaining, openRecord } = useRouteData(vetId)
+  const [tab, setTab] = React.useState<Tab>('rota')
+  const [profile, setProfile] = React.useState(false)
 
   return (
     <div className="absolute inset-0 bg-[linear-gradient(to_bottom,var(--color-black)_50%,var(--color-surface)_50%)]">

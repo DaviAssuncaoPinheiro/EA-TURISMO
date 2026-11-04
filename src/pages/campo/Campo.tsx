@@ -1,17 +1,17 @@
-// App do veterinário (rota /campo). Desktop: celular em moldura e painel lateral. Celular: tela cheia.
+// Atendimento (rota /campo). Celular e tablet: app em tela cheia. Computador: dentro do painel (AppShell).
 import * as React from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
+import { AppShell } from '@/components/AppShell'
 import { useDemo } from '@/store'
 import { notify, useCampo } from './campoStore'
 import { EASE_IOS, PhoneCtx, PhoneToaster } from './kit'
 import { depthOf } from './nav'
-import { PHONE, PhoneFrame } from './PhoneFrame'
-import { SidePanel } from './SidePanel'
 import RouteScreen from './RouteScreen'
 import VisitScreen from './VisitScreen'
 import RecordScreen from './RecordScreen'
 import DoneScreen from './DoneScreen'
+import { DeskCampo } from './DeskCampo'
 
 function useMedia(q: string) {
   const get = () => (typeof window !== 'undefined' ? window.matchMedia(q).matches : false)
@@ -24,17 +24,6 @@ function useMedia(q: string) {
     return () => mq.removeEventListener('change', f)
   }, [q])
   return m
-}
-
-function usePhoneScale() {
-  const [s, setS] = React.useState(1)
-  React.useEffect(() => {
-    const f = () => setS(Math.min(1, (window.innerHeight - 36) / (PHONE.h + PHONE.bezel * 2)))
-    f()
-    window.addEventListener('resize', f)
-    return () => window.removeEventListener('resize', f)
-  }, [])
-  return s
 }
 
 /** Fila offline: ao perder o sinal acumula registros; ao voltar, sincroniza com animação. */
@@ -107,53 +96,40 @@ function AppRoutes() {
 
 export default function Campo() {
   const desktop = useMedia('(min-width: 1024px)')
-  const offline = useDemo((s) => s.offline)
-  const location = useLocation()
-  const darkTop = depthOf(location.pathname) === 0
-  const scale = usePhoneScale()
   const [root, setRoot] = React.useState<HTMLDivElement | null>(null)
   useSyncEngine()
 
   React.useEffect(() => {
     const t = document.title
-    document.title = 'App do veterinário · Vet Domicílio'
+    document.title = 'Atendimento · Vet Domicílio'
     return () => {
       document.title = t
     }
   }, [])
 
-  const app = (
-    <PhoneCtx.Provider value={{ framed: desktop, root }}>
-      <AppRoutes />
-      <PhoneToaster />
-    </PhoneCtx.Provider>
-  )
-
-  if (!desktop) {
+  if (desktop) {
     return (
-      <div
-        ref={setRoot}
-        className="fixed inset-0 overflow-hidden bg-surface"
-        style={{ transform: 'translateZ(0)', ['--sat' as string]: 'max(env(safe-area-inset-top), 4px)', ['--sab' as string]: 'env(safe-area-inset-bottom, 0px)' }}
-      >
-        {app}
-      </div>
+      <PhoneCtx.Provider value={{ desktop: true, root: null }}>
+        <AppShell>
+          <DeskCampo />
+        </AppShell>
+        <PhoneToaster placement="page" />
+      </PhoneCtx.Provider>
     )
   }
 
-  const fw = PHONE.w + PHONE.bezel * 2
-  const fh = PHONE.h + PHONE.bezel * 2
+  // Celular em tela cheia; no tablet o app fica centralizado com largura de celular grande.
   return (
-    <div className="relative flex min-h-dvh items-center justify-center gap-[clamp(40px,6vw,104px)] overflow-clip bg-canvas px-10 py-[18px]">
-      <div className="relative">
-        <SidePanel height={fh * scale} />
-      </div>
-      <div className="relative shrink-0" style={{ width: fw * scale, height: fh * scale }}>
-        <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>
-          <PhoneFrame ref={setRoot} offline={offline} dark={darkTop}>
-            {app}
-          </PhoneFrame>
-        </div>
+    <div className="fixed inset-0 overflow-hidden bg-canvas">
+      <div
+        ref={setRoot}
+        className="relative mx-auto h-full w-full max-w-[520px] overflow-hidden bg-surface min-[521px]:shadow-[0_0_0_1px_rgba(17,18,20,.04),0_30px_80px_-30px_rgba(17,18,20,.25)]"
+        style={{ transform: 'translateZ(0)', ['--sat' as string]: 'max(env(safe-area-inset-top), 4px)', ['--sab' as string]: 'env(safe-area-inset-bottom, 0px)' }}
+      >
+        <PhoneCtx.Provider value={{ desktop: false, root }}>
+          <AppRoutes />
+          <PhoneToaster />
+        </PhoneCtx.Provider>
       </div>
     </div>
   )

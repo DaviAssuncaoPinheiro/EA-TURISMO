@@ -7,9 +7,9 @@ import { CLINIC, TUTOR, VET } from '@/data/mock'
 import { ageLabel, fmt, TODAY } from '@/data/time'
 import { MED, MEDS, type MedDef, type MedEntry } from './data'
 import { Btn, Chip, EASE_OUT, Pressable, Sheet } from './kit'
-import { Block, StepIntro, type StepProps } from './stepKit'
+import { Block, StepFrame, StepIntro, SubHead, useIsDesk, type StepProps } from './stepKit'
 
-export function StepPrescricao({ visit, pet, draft, patch }: StepProps) {
+export function StepPrescricao({ visit, pet, draft, patch, layout }: StepProps) {
   const [picking, setPicking] = React.useState(false)
   const [editing, setEditing] = React.useState<MedEntry | null>(null)
   const [isNew, setIsNew] = React.useState(false)
@@ -29,11 +29,14 @@ export function StepPrescricao({ visit, pet, draft, patch }: StepProps) {
   }
 
   return (
-    <div className="pb-2">
-      <StepIntro eyebrow="Etapa 4 de 5" title="Prescrição">
-        Dose, frequência e duração em toques
-      </StepIntro>
-
+    <StepFrame
+      layout={layout}
+      intro={
+        <StepIntro eyebrow="Etapa 4 de 5" title="Prescrição">
+          Dose, frequência e duração em toques
+        </StepIntro>
+      }
+      left={
       <Block title="Medicamentos" hint={draft.meds.length ? `${draft.meds.length} na receita` : 'Nenhum ainda'} bodyClassName="px-2 pb-2">
         <div className="flex flex-col gap-1">
           <AnimatePresence initial={false}>
@@ -80,16 +83,20 @@ export function StepPrescricao({ visit, pet, draft, patch }: StepProps) {
           </Btn>
         </div>
       </Block>
-
-      {draft.meds.length > 0 && (
+      }
+      right={
+        draft.meds.length > 0 ? (
         <>
-          <div className="flex items-center justify-between px-6 pt-6 pb-3">
-            <h3 className="text-[18px] font-bold tracking-[-0.02em] text-ink">Receita</h3>
-            <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-card px-3 text-[12.5px] font-bold text-ink shadow-pill">
-              <FileText className="size-3.5" strokeWidth={2.2} /> PDF para o tutor
-            </span>
-          </div>
-          <div className="mx-4 rounded-[28px] bg-card p-5 shadow-card">
+          <SubHead
+            aside={
+              <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-card px-3 text-[12.5px] font-bold text-ink shadow-pill">
+                <FileText className="size-3.5" strokeWidth={2.2} /> PDF para o tutor
+              </span>
+            }
+          >
+            Receita
+          </SubHead>
+          <RxCard>
             <div className="flex items-center gap-3">
               <LogoMark size={40} />
               <div className="min-w-0 leading-tight">
@@ -136,14 +143,23 @@ export function StepPrescricao({ visit, pet, draft, patch }: StepProps) {
                 <div className="text-[12px] font-medium text-ink-3">{VET[visit.vetId].crmv}</div>
               </div>
             </div>
-          </div>
+          </RxCard>
         </>
-      )}
-
-      <MedPicker open={picking} onOpenChange={setPicking} species={pet.species} onPick={pick} />
-      <MedEditor entry={editing} isNew={isNew} onClose={() => setEditing(null)} onSave={save} onRemove={remove} />
-    </div>
+        ) : undefined
+      }
+      extra={
+        <>
+          <MedPicker open={picking} onOpenChange={setPicking} species={pet.species} onPick={pick} />
+          <MedEditor entry={editing} isNew={isNew} onClose={() => setEditing(null)} onSave={save} onRemove={remove} />
+        </>
+      }
+    />
   )
+}
+
+function RxCard({ children }: { children: React.ReactNode }) {
+  const desk = useIsDesk()
+  return <div className={cn('bg-card p-5 shadow-card', desk ? 'rounded-[24px]' : 'mx-4 rounded-[28px]')}>{children}</div>
 }
 
 function MedPicker({ open, onOpenChange, species, onPick }: { open: boolean; onOpenChange: (o: boolean) => void; species: 'cão' | 'gato'; onPick: (m: MedDef) => void }) {

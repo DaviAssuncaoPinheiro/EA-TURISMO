@@ -4,7 +4,7 @@ import { AudioLines, Mic, Square } from 'lucide-react'
 import { cn, firstName } from '@/lib/utils'
 import { SYMPTOMS, dictationFor, tutorOf } from './data'
 import { Chip, EASE_OUT, Pressable } from './kit'
-import { Block, StepIntro, TextArea, type StepProps } from './stepKit'
+import { Block, StepFrame, StepIntro, TextArea, type StepProps } from './stepKit'
 
 function Waveform() {
   return (
@@ -21,7 +21,7 @@ function Waveform() {
   )
 }
 
-export function StepAnamnese({ visit, pet, draft, patch }: StepProps) {
+export function StepAnamnese({ visit, pet, draft, patch, layout }: StepProps) {
   const [dictating, setDictating] = React.useState(false)
   const [detected, setDetected] = React.useState<string[]>([])
   const timer = React.useRef<number | null>(null)
@@ -73,11 +73,15 @@ export function StepAnamnese({ visit, pet, draft, patch }: StepProps) {
     })
 
   return (
-    <div className="pb-2">
-      <StepIntro eyebrow="Etapa 1 de 5" title="Anamnese">
-        Relato de {firstName(tutor.name)}
-      </StepIntro>
-
+    <StepFrame
+      layout={layout}
+      intro={
+        <StepIntro eyebrow="Etapa 1 de 5" title="Anamnese">
+          Relato de {firstName(tutor.name)}
+        </StepIntro>
+      }
+      left={
+        <>
       <Block title="Queixa principal" hint="Do pedido de agendamento">
         <TextArea value={draft.complaint} onChange={(e) => patch({ complaint: e.target.value })} rows={2} />
       </Block>
@@ -99,7 +103,9 @@ export function StepAnamnese({ visit, pet, draft, patch }: StepProps) {
           {dictating && <Waveform />}
         </Pressable>
       </Block>
-
+        </>
+      }
+      right={
       <Block title="Sintomas">
         <AnimatePresence>
           {detected.length > 0 && (
@@ -121,6 +127,7 @@ export function StepAnamnese({ visit, pet, draft, patch }: StepProps) {
           ))}
         </div>
       </Block>
-    </div>
+      }
+    />
   )
 }

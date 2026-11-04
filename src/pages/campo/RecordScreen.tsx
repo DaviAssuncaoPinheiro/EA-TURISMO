@@ -30,7 +30,7 @@ export default function RecordScreen() {
   return <Record visit={visit} draft={draft} />
 }
 
-function Elapsed({ visit }: { visit: Visit }) {
+export function Elapsed({ visit }: { visit: Visit }) {
   const started = useCampo((s) => s.startedAt[visit.id])
   const [, tick] = React.useState(0)
   React.useEffect(() => {
@@ -40,10 +40,12 @@ function Elapsed({ visit }: { visit: Visit }) {
   return <span className="num">{minutesSince(started ?? visit.start)} min</span>
 }
 
-function Record({ visit, draft }: { visit: Visit; draft: Draft }) {
+export const STEP_COMPONENTS = [StepAnamnese, StepExame, StepVacinas, StepPrescricao, StepRetorno]
+
+/** Etapa atual, navegação entre etapas e finalização (mesmo fluxo no celular e no computador). */
+export function useRecordFlow(visit: Visit, draft: Draft) {
   const go = useGo()
   const pet = PET[visit.petIds[0]]
-  const offline = useDemo((s) => s.offline)
   const patchStore = useCampo((s) => s.patch)
   const patch = React.useCallback((p: Partial<Draft> | ((d: Draft) => Partial<Draft>)) => patchStore(visit.id, p), [patchStore, visit.id])
   const step = draft.step
@@ -71,8 +73,14 @@ function Record({ visit, draft }: { visit: Visit; draft: Draft }) {
     }, 650)
   }
 
-  const StepComp = [StepAnamnese, StepExame, StepVacinas, StepPrescricao, StepRetorno][step]
+  const StepComp = STEP_COMPONENTS[step]
   const last = step === STEPS.length - 1
+  return { go, pet, patch, step, dir, saving, setStep, finish, StepComp, last }
+}
+
+function Record({ visit, draft }: { visit: Visit; draft: Draft }) {
+  const offline = useDemo((s) => s.offline)
+  const { go, pet, patch, step, dir, saving, setStep, finish, StepComp, last } = useRecordFlow(visit, draft)
 
   return (
     <Screen

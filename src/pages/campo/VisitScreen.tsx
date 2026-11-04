@@ -31,7 +31,7 @@ export default function VisitScreen() {
 }
 
 /** Foto grande do pet, com inicial em círculo quando a imagem não carrega */
-function PetHero({ pet }: { pet: Pet }) {
+export function PetHero({ pet }: { pet: Pet }) {
   const [failed, setFailed] = React.useState(false)
   const cat = pet.species === 'gato'
   return (
@@ -49,7 +49,8 @@ function PetHero({ pet }: { pet: Pet }) {
   )
 }
 
-function VisitDetail({ visit }: { visit: Visit }) {
+/** Estado e ações da visita (mesmo fluxo no celular e no computador). */
+export function useVisitFlow(visit: Visit) {
   const go = useGo()
   const pets = visit.petIds.map((p) => PET[p])
   const pet = pets[0]
@@ -112,6 +113,18 @@ function VisitDetail({ visit }: { visit: Visit }) {
             ? 'Ver resumo'
             : 'Atendimento concluído'
   const limeCta = (status === 'a-caminho' && arrived) || status === 'em-atendimento'
+  const PrimaryIcon = status === 'concluida' ? Check : status === 'agendada' ? Navigation : status === 'a-caminho' && !arrived ? MapPin : Stethoscope
+  const contacts = [
+    { icon: Phone, label: 'Ligar', onClick: () => action(`Ligando para ${tutorFirst}`, tutor.phone) },
+    { icon: MessageCircle, label: 'WhatsApp', onClick: () => action('Abrindo conversa', `${tutor.name}, ${tutor.phone}`) },
+    { icon: Navigation, label: 'Rota', onClick: () => action('Abrindo o mapa', `${tutor.address}, ${b.name}. ${leg.km.toLocaleString('pt-BR')} km, ${leg.min} min.`) },
+  ]
+
+  return { go, pets, pet, tutor, tutorFirst, b, zone, vet, status, st, extraWeight, extraEvents, arrived, finished, leg, last, pendingVaccines, onPrimary, stage, primaryLabel, limeCta, PrimaryIcon, contacts }
+}
+
+function VisitDetail({ visit }: { visit: Visit }) {
+  const { go, pets, pet, tutor, tutorFirst, b, zone, status, st, extraWeight, arrived, finished, leg, last, pendingVaccines, onPrimary, stage, primaryLabel, limeCta, contacts } = useVisitFlow(visit)
 
   return (
     <Screen
@@ -268,11 +281,7 @@ function VisitDetail({ visit }: { visit: Visit }) {
           {tutor.note && <div className="mt-3 rounded-[14px] bg-yellow-soft px-3 py-2 text-[13px] font-semibold text-yellow-ink">{tutor.note}</div>}
         </div>
         <div className="mt-4 grid grid-cols-3">
-          {[
-            { icon: Phone, label: 'Ligar', tone: 'muted' as const, onClick: () => action(`Ligando para ${tutorFirst}`, tutor.phone) },
-            { icon: MessageCircle, label: 'WhatsApp', tone: 'muted' as const, onClick: () => action('Abrindo conversa', `${tutor.name}, ${tutor.phone}`) },
-            { icon: Navigation, label: 'Rota', tone: 'black' as const, onClick: () => action('Abrindo o mapa', `${tutor.address}, ${b.name}. ${leg.km.toLocaleString('pt-BR')} km, ${leg.min} min.`) },
-          ].map((a) => (
+          {contacts.map((c, i) => ({ ...c, tone: i === 2 ? ('black' as const) : ('muted' as const) })).map((a) => (
             <div key={a.label} className="flex flex-col items-center gap-1.5">
               <RoundBtn label={a.label} tone={a.tone} size={56} onClick={a.onClick}>
                 <a.icon className={cn('size-5', a.tone === 'black' && 'text-lime')} strokeWidth={2} />
@@ -296,11 +305,11 @@ function VisitDetail({ visit }: { visit: Visit }) {
   )
 }
 
-function Tracker({ stage }: { stage: number }) {
+export function Tracker({ stage, className }: { stage: number; className?: string }) {
   const steps = ['A caminho', 'Chegada', 'Atendimento']
   if (stage >= 3) return null
   return (
-    <div className="mb-3 flex gap-1.5">
+    <div className={cn('mb-3 flex gap-1.5', className)}>
       {steps.map((s, i) => (
         <span
           key={s}

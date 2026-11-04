@@ -11,7 +11,8 @@ import { useCampo, type Notice } from './campoStore'
 
 /* Contexto do aparelho */
 
-export const PhoneCtx = React.createContext<{ framed: boolean; root: HTMLElement | null }>({ framed: false, root: null })
+/** desktop: o atendimento está dentro do painel (AppShell), sem tela de celular */
+export const PhoneCtx = React.createContext<{ desktop: boolean; root: HTMLElement | null }>({ desktop: false, root: null })
 export const usePhone = () => React.useContext(PhoneCtx)
 
 export const EASE_IOS = [0.32, 0.72, 0, 1] as const
@@ -249,17 +250,22 @@ export function Sheet({
   footer?: React.ReactNode
   dark?: boolean
 }) {
-  const { root } = usePhone()
+  const { root, desktop } = usePhone()
   return (
-    <Drawer.Root open={open} onOpenChange={onOpenChange} container={root} repositionInputs={false}>
+    <Drawer.Root open={open} onOpenChange={onOpenChange} container={root} repositionInputs={false} direction={desktop ? 'right' : 'bottom'}>
       <Drawer.Portal container={root}>
-        <Drawer.Overlay className="fixed inset-0 z-[80] bg-black/40" />
+        <Drawer.Overlay className={cn('fixed inset-0 z-[80]', desktop ? 'bg-black/25 backdrop-blur-[2px]' : 'bg-black/40')} />
         <Drawer.Content
           aria-describedby={undefined}
-          className={cn('fixed inset-x-0 bottom-0 z-[90] flex max-h-[90%] flex-col rounded-t-[32px] outline-none', dark ? 'bg-black text-white' : 'bg-card')}
+          style={desktop ? ({ ['--sab' as string]: '0px' } as React.CSSProperties) : undefined}
+          className={cn(
+            'fixed z-[90] flex flex-col outline-none',
+            desktop ? 'inset-y-3 right-3 w-[440px] max-w-[calc(100vw-24px)] rounded-[28px] shadow-float' : 'inset-x-0 bottom-0 max-h-[90%] rounded-t-[32px]',
+            dark ? 'bg-black text-white' : 'bg-card',
+          )}
         >
-          <div className={cn('mx-auto mt-2.5 mb-1 h-[5px] w-10 shrink-0 rounded-full', dark ? 'bg-white/20' : 'bg-muted-2')} />
-          <div className="px-5 pt-2 pb-4">
+          {!desktop && <div className={cn('mx-auto mt-2.5 mb-1 h-[5px] w-10 shrink-0 rounded-full', dark ? 'bg-white/20' : 'bg-muted-2')} />}
+          <div className={cn('px-5 pb-4', desktop ? 'pt-6' : 'pt-2')}>
             <Drawer.Title className={cn('text-[20px] font-bold tracking-[-0.02em]', dark ? 'text-white' : 'text-ink')}>{title}</Drawer.Title>
             {description && <Drawer.Description className={cn('mt-0.5 text-[14px] font-medium', dark ? 'text-white/55' : 'text-ink-3')}>{description}</Drawer.Description>}
           </div>
@@ -412,10 +418,17 @@ function NoticeItem({ n }: { n: Notice }) {
   )
 }
 
-export function PhoneToaster() {
+/** Avisos: no celular como banner do sistema; no computador no canto superior da página. */
+export function PhoneToaster({ placement = 'phone' }: { placement?: 'phone' | 'page' }) {
   const notices = useCampo((s) => s.notices)
   return (
-    <div className="pointer-events-none absolute inset-x-0 z-[120] flex flex-col gap-2 px-2.5" style={{ top: 'calc(var(--sat) - 4px)' }}>
+    <div
+      className={cn(
+        'pointer-events-none z-[120] flex flex-col gap-2',
+        placement === 'phone' ? 'absolute inset-x-0 px-2.5' : 'fixed top-4 right-4 w-[min(380px,calc(100vw-32px))]',
+      )}
+      style={placement === 'phone' ? { top: 'calc(var(--sat) - 4px)' } : undefined}
+    >
       <AnimatePresence initial={false}>
         {notices.map((n) => (
           <NoticeItem key={n.id} n={n} />
@@ -427,7 +440,7 @@ export function PhoneToaster() {
 
 /* Faixa de offline e sincronização */
 
-export function ConnectivityBanner({ dark }: { dark?: boolean }) {
+export function ConnectivityBanner({ dark, flush }: { dark?: boolean; flush?: boolean }) {
   const offline = useDemo((s) => s.offline)
   const pending = useCampo((s) => s.pending)
   const syncing = useCampo((s) => s.syncing)
@@ -436,7 +449,7 @@ export function ConnectivityBanner({ dark }: { dark?: boolean }) {
     <AnimatePresence initial={false}>
       {show && (
         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: EASE_OUT }} className="overflow-hidden">
-          <div className={cn('pb-2', !dark && 'px-4')}>
+          <div className={cn(flush ? 'pb-4' : 'pb-2', !dark && !flush && 'px-4')}>
             <div className={cn('relative flex h-10 items-center gap-2 overflow-hidden rounded-full px-4 text-[13.5px] font-semibold', syncing ? 'bg-lime text-ink' : dark ? 'bg-white/10 text-white' : 'bg-black text-white')}>
               {syncing ? (
                 <>

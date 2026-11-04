@@ -8,14 +8,14 @@ import { fmt, relDays } from '@/data/time'
 import { useDemo } from '@/store'
 import { expiryFor, lotFor, VACCINE_LAB, vName } from './data'
 import { Btn, EASE_OUT, Pressable, Sheet, Toggle } from './kit'
-import { Block, StepIntro, type StepProps } from './stepKit'
+import { Block, StepFrame, StepIntro, type StepProps } from './stepKit'
 import { vaccineRows, type VaccineRow } from './vaccines'
 
-export function StepVacinas({ pet, draft, patch }: StepProps) {
+export function StepVacinas({ pet, draft, patch, layout }: StepProps) {
   const extra = useDemo((s) => s.extraDoses)
   const rows = React.useMemo(() => vaccineRows(pet, extra), [pet, extra])
   const [scanning, setScanning] = React.useState<string | null>(null)
-  const [showOk, setShowOk] = React.useState(false)
+  const [showOk, setShowOk] = React.useState(layout === 'desktop')
 
   const setPlan = (vid: string, apply: boolean) => {
     patch((d) => ({ vaccines: { ...d.vaccines, [vid]: { ...d.vaccines[vid], apply } } }))
@@ -23,13 +23,7 @@ export function StepVacinas({ pet, draft, patch }: StepProps) {
   }
   const appliedCount = Object.values(draft.vaccines).filter((p) => p.apply).length
 
-  return (
-    <div className="pb-2">
-      <StepIntro eyebrow="Etapa 3 de 5" title="Vacinas">
-        {rows.due.length ? `${rows.due.length} ${rows.due.length === 1 ? 'pendente' : 'pendentes'} para ${pet.name}` : `Carteira de ${pet.name} em dia`}
-      </StepIntro>
-
-      {rows.due.length > 0 && (
+  const pendentes = rows.due.length > 0 && (
         <Block title="Pendentes" bodyClassName="px-2 pb-2">
           <div className="flex flex-col gap-1">
             {rows.due.map((r) => (
@@ -37,9 +31,8 @@ export function StepVacinas({ pet, draft, patch }: StepProps) {
             ))}
           </div>
         </Block>
-      )}
-
-      {rows.ok.length > 0 && (
+      )
+  const emDia = rows.ok.length > 0 && (
         <Block bodyClassName="px-2 py-2">
           <Pressable scale={0.99} onClick={() => setShowOk((o) => !o)} className="flex h-12 w-full items-center justify-between px-3 text-left">
             <span className="flex items-center gap-2 text-[17px] font-bold tracking-[-0.02em] text-ink">
@@ -61,14 +54,40 @@ export function StepVacinas({ pet, draft, patch }: StepProps) {
             )}
           </AnimatePresence>
         </Block>
-      )}
-
-      {appliedCount > 0 && (
+      )
+  const count = appliedCount > 0 && (
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-6 pt-3 text-center text-[13.5px] font-medium text-ink-3">
           {appliedCount} {appliedCount === 1 ? 'vacina vai' : 'vacinas vão'} para a carteira digital
         </motion.p>
-      )}
+      )
 
+  return (
+    <StepFrame
+      layout={layout}
+      intro={
+        <StepIntro eyebrow="Etapa 3 de 5" title="Vacinas">
+          {rows.due.length ? `${rows.due.length} ${rows.due.length === 1 ? 'pendente' : 'pendentes'} para ${pet.name}` : `Carteira de ${pet.name} em dia`}
+        </StepIntro>
+      }
+      left={
+        pendentes ? (
+          pendentes
+        ) : (
+          <>
+            {emDia}
+            {count}
+          </>
+        )
+      }
+      right={
+        pendentes ? (
+          <>
+            {emDia}
+            {count}
+          </>
+        ) : undefined
+      }
+      extra={
       <ScanSheet
         vaccineId={scanning}
         petId={pet.id}
@@ -78,7 +97,8 @@ export function StepVacinas({ pet, draft, patch }: StepProps) {
           setScanning(null)
         }}
       />
-    </div>
+      }
+    />
   )
 }
 

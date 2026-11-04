@@ -6,16 +6,17 @@ import { HIDRATACAO, MUCOSAS, REF, TPC, FINDINGS, type Region } from './data'
 import type { Finding } from './campoStore'
 import { BcsPicker, BodyMap } from './BodyMap'
 import { Btn, Chip, EASE_OUT, NumberStepper, Pressable, Sheet } from './kit'
-import { Block, StepIntro, TextArea, type StepProps } from './stepKit'
+import { Block, StepFrame, StepIntro, TextArea, useIsDesk, type StepProps } from './stepKit'
 
 const tone = (v: number, [lo, hi]: [number, number]) => (v < lo || v > hi ? 'late' : undefined)
 const ref = (r: [number, number], unit: string, dec = 0) => `Ref. ${r[0].toLocaleString('pt-BR', { minimumFractionDigits: dec })} a ${r[1].toLocaleString('pt-BR', { minimumFractionDigits: dec })} ${unit}`
 
 function ChipRow<T extends string>({ label, options, value, onChange }: { label: string; options: T[]; value: T; onChange: (v: T) => void }) {
+  const desk = useIsDesk()
   return (
     <div className="pt-3 first:pt-0">
       <div className="mb-2 text-[13px] font-semibold text-ink-3">{label}</div>
-      <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5" data-noswipe>
+      <div className={cn('flex gap-2', desk ? 'flex-wrap' : 'no-scrollbar -mx-5 overflow-x-auto px-5')} data-noswipe>
         {options.map((o) => (
           <Chip key={o} size="sm" on={value === o} onClick={() => onChange(o)}>
             {o}
@@ -26,7 +27,7 @@ function ChipRow<T extends string>({ label, options, value, onChange }: { label:
   )
 }
 
-export function StepExame({ pet, draft, patch }: StepProps) {
+export function StepExame({ pet, draft, patch, layout }: StepProps) {
   const r = REF[pet.species]
   const delta = +(draft.weight - draft.prevWeight).toFixed(1)
   const [lo, hi] = pet.idealKg
@@ -49,11 +50,15 @@ export function StepExame({ pet, draft, patch }: StepProps) {
   }
 
   return (
-    <div className="pb-2">
-      <StepIntro eyebrow="Etapa 2 de 5" title="Exame físico">
-        Segure + ou − para ajustar rápido
-      </StepIntro>
-
+    <StepFrame
+      layout={layout}
+      intro={
+        <StepIntro eyebrow="Etapa 2 de 5" title="Exame físico">
+          Segure + ou − para ajustar rápido
+        </StepIntro>
+      }
+      left={
+        <>
       <Block bodyClassName="py-0">
         <NumberStepper
           label="Peso"
@@ -102,7 +107,10 @@ export function StepExame({ pet, draft, patch }: StepProps) {
         <ChipRow label="Hidratação" options={HIDRATACAO} value={draft.hidratacao} onChange={(v) => patch({ hidratacao: v })} />
         <ChipRow label="TPC" options={TPC} value={draft.tpc} onChange={(v) => patch({ tpc: v })} />
       </Block>
-
+        </>
+      }
+      right={
+        <>
       <Block title="Escore corporal" hint={`Último: ${pet.bcs}/9`}>
         <BcsPicker value={draft.bcs} onChange={(n) => patch({ bcs: n })} />
       </Block>
@@ -129,9 +137,10 @@ export function StepExame({ pet, draft, patch }: StepProps) {
           </ul>
         )}
       </Block>
-
-      <FindingSheet cardio={!!pet.conditions?.some((c) => /mitral|card/i.test(c))} finding={editing} onClose={() => setEditing(null)} onSave={saveFinding} onRemove={removeFinding} />
-    </div>
+        </>
+      }
+      extra={<FindingSheet cardio={!!pet.conditions?.some((c) => /mitral|card/i.test(c))} finding={editing} onClose={() => setEditing(null)} onSave={saveFinding} onRemove={removeFinding} />}
+    />
   )
 }
 
