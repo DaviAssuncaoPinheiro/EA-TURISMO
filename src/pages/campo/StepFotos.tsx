@@ -6,7 +6,7 @@ import { compressImage, newId } from '@/lib/photos'
 import { useDemo, type PetPhoto } from '@/store'
 import { notify, queueIfOffline } from './campoStore'
 import { ddmm, defaultSubject, petPhotos, PHOTO_SUBJECTS } from './data'
-import { Chip, EASE_OUT, Pressable, usePhone } from './kit'
+import { Chip, EASE_OUT, Pressable, SafeImg, usePhone } from './kit'
 import { Block, StepFrame, StepIntro, type StepProps } from './stepKit'
 
 export function StepFotos({ visit, pet, layout }: StepProps) {
@@ -97,7 +97,7 @@ export function StepFotos({ visit, pet, layout }: StepProps) {
                 <AnimatePresence initial={false}>
                   {current.map((p) => (
                     <motion.li key={p.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.22, ease: EASE_OUT }} className="relative aspect-square overflow-hidden rounded-[18px] bg-muted">
-                      <img src={p.src} alt={p.label} className="size-full object-cover" />
+                      <SafeImg src={p.src} alt={p.label} className="size-full object-cover" />
                       <span className="absolute inset-x-1.5 bottom-1.5 truncate rounded-full bg-white/80 px-2 py-1 text-[11px] font-bold text-ink backdrop-blur-md">{p.subject}</span>
                       <button onClick={() => removePhoto(p.id)} aria-label="Remover foto" className="absolute top-1.5 right-1.5 flex size-7 items-center justify-center rounded-full bg-black/70 text-white backdrop-blur-md hover:bg-black">
                         <X className="size-3.5" strokeWidth={2.6} />
@@ -118,7 +118,7 @@ export function StepFotos({ visit, pet, layout }: StepProps) {
 function Shot({ photo, tag, dark }: { photo: PetPhoto; tag: string; dark?: boolean }) {
   return (
     <div className="relative aspect-[3/4] overflow-hidden rounded-[20px] bg-muted">
-      <img src={photo.src} alt={photo.label} className="size-full object-cover" />
+      <SafeImg src={photo.src} alt={photo.label} className="size-full object-cover" />
       <span className={cn('absolute top-2 left-2 inline-flex h-7 items-center rounded-full px-2.5 text-[12px] font-bold', dark ? 'bg-black text-white' : 'bg-lime text-ink')}>{tag}</span>
       <span className="absolute inset-x-2 bottom-2 truncate rounded-full bg-white/80 px-2.5 py-1 text-[11.5px] font-semibold text-ink backdrop-blur-md">{photo.label}</span>
     </div>

@@ -111,7 +111,7 @@ export default function Hoje() {
           <p className="mt-1.5 text-[14px] font-medium text-ink-3">{dateTxt}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="primary" onClick={() => nav('/agenda?novo=1')}>
+          <Button variant="primary" className="md:hidden" onClick={() => nav('/agenda?novo=1')}>
             <Plus className="size-4" strokeWidth={2.2} /> Nova visita
           </Button>
           <IconButton aria-label="Abrir agenda" onClick={() => nav('/agenda')}>

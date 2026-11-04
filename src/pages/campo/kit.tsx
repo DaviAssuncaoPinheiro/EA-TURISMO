@@ -3,7 +3,7 @@ import * as React from 'react'
 import { AnimatePresence, motion, useScroll, useTransform, type HTMLMotionProps } from 'motion/react'
 import { Drawer } from 'vaul'
 import * as SwitchPrimitive from '@radix-ui/react-switch'
-import { ArrowLeft, Check, CloudOff, MessageCircle, Minus, Plus, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Check, CloudOff, MessageCircle, Minus, PawPrint, Plus, RefreshCw } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { LogoMark } from '@/components/AppShell'
 import { useDemo } from '@/store'
@@ -472,4 +472,18 @@ export function ConnectivityBanner({ dark, flush }: { dark?: boolean; flush?: bo
       )}
     </AnimatePresence>
   )
+}
+
+/* Imagem com reserva: se a foto não carregar, mostra um fundo neutro em vez do texto alternativo */
+
+export function SafeImg({ src, alt, className, style, draggable }: { src: string; alt: string; className?: string; style?: React.CSSProperties; draggable?: boolean }) {
+  const [failed, setFailed] = React.useState(false)
+  React.useEffect(() => setFailed(false), [src])
+  if (failed)
+    return (
+      <span role="img" aria-label={alt} className={cn('flex items-center justify-center bg-muted-2 text-ink-4', className)} style={style}>
+        <PawPrint className="size-6" strokeWidth={1.8} />
+      </span>
+    )
+  return <img src={src} alt={alt} className={className} style={style} draggable={draggable} onError={() => setFailed(true)} />
 }

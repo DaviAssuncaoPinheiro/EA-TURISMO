@@ -30,7 +30,7 @@ export function DemoGuide() {
   const next = STEPS[idx + 1]
 
   return (
-    <div className="fixed right-4 bottom-24 z-40 lg:right-6 lg:bottom-6">
+    <div className={cn('fixed right-4 bottom-24 z-40 lg:right-6', loc.pathname.startsWith('/campo') ? 'lg:bottom-28' : 'lg:bottom-6')}>
       <AnimatePresence mode="wait">
         {open && current >= 0 ? (
           <motion.div

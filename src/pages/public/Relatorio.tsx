@@ -11,6 +11,7 @@ import { CLINIC, PET, TUTOR, VET, VISITS, weightHistory, type Pet } from '@/data
 import { daysFromToday, fmt, relDays } from '@/data/time'
 import { useDemo, type PetPhoto, type VisitReport } from '@/store'
 import { medHint, previousWeight, reportPhotos, resolveReport, timesFor } from '../campo/report'
+import { SafeImg } from '../campo/kit'
 
 const EASE = [0.16, 1, 0.3, 1] as const
 const longDate = (d: string | Date) => fmt.long(d).split(', ').pop() ?? fmt.date(d)
@@ -61,8 +62,8 @@ function CompareSlider({ before, after }: { before: PetPhoto; after: PetPhoto })
   const [pos, setPos] = React.useState(50)
   return (
     <div className="relative aspect-[4/3] select-none overflow-hidden rounded-[22px] bg-muted">
-      <img src={after.src} alt={`${after.subject}, agora`} className="absolute inset-0 size-full object-cover" draggable={false} />
-      <img src={before.src} alt={`${before.subject}, antes`} className="absolute inset-0 size-full object-cover" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} draggable={false} />
+      <SafeImg src={after.src} alt={`${after.subject}, agora`} className="absolute inset-0 size-full object-cover" draggable={false} />
+      <SafeImg src={before.src} alt={`${before.subject}, antes`} className="absolute inset-0 size-full object-cover" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }} draggable={false} />
       <span className="pointer-events-none absolute top-3 left-3 inline-flex h-8 items-center rounded-full bg-black px-3 text-[12.5px] font-bold text-white">Antes · {ddmm(before.date)}</span>
       <span className="pointer-events-none absolute top-3 right-3 inline-flex h-8 items-center rounded-full bg-lime px-3 text-[12.5px] font-bold text-ink">Agora</span>
       <span className="pointer-events-none absolute inset-y-0 w-[3px] -translate-x-1/2 bg-white shadow-[0_0_12px_rgba(0,0,0,.35)]" style={{ left: `${pos}%` }}>
@@ -117,7 +118,9 @@ export default function Relatorio() {
       document.title = t
     }
   }, [report])
-  React.useEffect(() => window.scrollTo({ top: 0 }), [visitId])
+  React.useEffect(() => {
+    window.scrollTo({ top: 0 })
+  }, [visitId])
 
   return (
     <div className="min-h-dvh bg-surface text-ink">
@@ -402,7 +405,7 @@ function ReportBody({ report: r, stored }: { report: VisitReport; stored: PetPho
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {rest.map((p) => (
                   <figure key={p.id} className="relative aspect-square overflow-hidden rounded-[20px] bg-muted">
-                    <img src={p.src} alt={p.label} className="size-full object-cover" />
+                    <SafeImg src={p.src} alt={p.label} className="size-full object-cover" />
                     <figcaption className="absolute inset-x-2 bottom-2 truncate rounded-full bg-white/80 px-2.5 py-1 text-[12px] font-semibold text-ink backdrop-blur-md">{p.label}</figcaption>
                   </figure>
                 ))}

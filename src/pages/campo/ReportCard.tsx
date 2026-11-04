@@ -9,7 +9,7 @@ import { PET, TUTOR } from '@/data/mock'
 import { useDemo } from '@/store'
 import { notify } from './campoStore'
 import { dateShort } from './data'
-import { EASE_OUT, Pressable } from './kit'
+import { EASE_OUT, Pressable, SafeImg } from './kit'
 import { reportLink, reportPhotos, resolveReport, tutorPhoneDigits } from './report'
 
 export function ReportCard({ visitId, tutorId, className, delay = 0.75 }: { visitId: string; tutorId: string; className?: string; delay?: number }) {
@@ -78,7 +78,7 @@ export function ReportCard({ visitId, tutorId, className, delay = 0.75 }: { visi
         {photos.length > 0 && (
           <div className="mt-2 flex gap-1.5">
             {photos.slice(0, 4).map((p) => (
-              <img key={p.id} src={p.src} alt={p.subject} className="size-11 rounded-[12px] object-cover" />
+              <SafeImg key={p.id} src={p.src} alt={p.subject} className="size-11 rounded-[12px] object-cover" />
             ))}
             {photos.length > 4 && <span className="flex size-11 items-center justify-center rounded-[12px] bg-card text-[12px] font-bold">+{photos.length - 4}</span>}
           </div>

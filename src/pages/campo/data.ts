@@ -243,7 +243,7 @@ export function visitTodo(visit: Visit, pet: Pet, lateVaccines: string[]): strin
   if (visit.type === 'Consulta' || visit.type === 'Check-up') out.push('Exame físico completo')
   if (/vermífugo|vermifugo/.test(r)) out.push('Dar vermífugo')
   if (/orelha|les[aã]o|coceira|pele/.test(r)) out.push('Foto da região afetada')
-  for (const v of lateVaccines) if (!out.some((x) => x.toLowerCase().includes(v.toLowerCase()))) out.push(`Oferecer ${v} atrasada`)
+  for (const v of lateVaccines) if (!out.some((x) => x.toLowerCase().includes(v.toLowerCase()))) out.push(`Oferecer ${v.toLowerCase()}, atrasada`)
   out.unshift('Pesar e aferir sinais vitais')
   return [...new Set(out)].slice(0, 6)
 }
