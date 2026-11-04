@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui'
 import { VACCINE, VET } from '@/data/mock'
 import { fmt, relDays } from '@/data/time'
 import { useDemo } from '@/store'
-import { expiryFor, lotFor, VACCINE_LAB } from './data'
+import { expiryFor, lotFor, VACCINE_LAB, vName } from './data'
 import { Btn, EASE_OUT, Pressable, Sheet, Toggle } from './kit'
 import { Block, StepIntro, type StepProps } from './stepKit'
 import { vaccineRows, type VaccineRow } from './vaccines'
@@ -32,7 +32,7 @@ export function StepVacinas({ pet, draft, patch }: StepProps) {
       </StepIntro>
 
       {rows.due.length > 0 && (
-        <Block title="Vencendo ou atrasadas" className="pb-0">
+        <Block title="Vencendo ou atrasadas" bodyClassName="pb-0">
           <div className="-mx-4 divide-y divide-line">
             {rows.due.map((r) => (
               <VaccineItem key={r.vaccineId} row={r} plan={draft.vaccines[r.vaccineId]} onToggle={(v) => setPlan(r.vaccineId, v)} onScan={() => setScanning(r.vaccineId)} />
@@ -42,8 +42,8 @@ export function StepVacinas({ pet, draft, patch }: StepProps) {
       )}
 
       {rows.ok.length > 0 && (
-        <Block className="pb-0">
-          <Pressable scale={0.99} onClick={() => setShowOk((o) => !o)} className="-mt-1 flex h-11 w-full items-center justify-between text-left">
+        <Block bodyClassName="py-1">
+          <Pressable scale={0.99} onClick={() => setShowOk((o) => !o)} className="flex h-12 w-full items-center justify-between text-left">
             <span className="text-[16px] font-semibold text-ink">
               Em dia <span className="font-normal text-ink-3">· {rows.ok.length}</span>
             </span>
@@ -60,7 +60,6 @@ export function StepVacinas({ pet, draft, patch }: StepProps) {
               </motion.div>
             )}
           </AnimatePresence>
-          {!showOk && <div className="h-3" />}
         </Block>
       )}
 
@@ -94,7 +93,7 @@ function VaccineItem({ row, plan, onToggle, onScan, anticipate }: { row: Vaccine
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[16px] font-semibold text-ink">{v.name}</span>
+            <span className="text-[16px] font-semibold text-ink">{vName(row.vaccineId)}</span>
             {row.state && row.state.key !== 'ok' && <Badge tone={row.state.tone}>{row.state.label}</Badge>}
           </div>
           <div className="mt-0.5 text-[13.5px] text-ink-3">
@@ -109,7 +108,7 @@ function VaccineItem({ row, plan, onToggle, onScan, anticipate }: { row: Vaccine
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <Toggle checked={on} onChange={onToggle} label={`Aplicar ${v.name}`} />
+          <Toggle checked={on} onChange={onToggle} label={`Aplicar ${vName(row.vaccineId)}`} />
           <span className="text-[11.5px] font-medium text-ink-3">{anticipate ? 'Antecipar' : 'Aplicar agora'}</span>
         </div>
       </div>
@@ -176,7 +175,7 @@ function ScanSheet({ vaccineId, petId, onClose, onDone }: { vaccineId: string | 
       open={!!vaccineId}
       onOpenChange={(o) => !o && onClose()}
       title="Ler etiqueta do lote"
-      description={`${v.name} · ${meta.lab} ${meta.product}`}
+      description={`${vName(vid)} · ${meta.lab} ${meta.product}`}
       footer={
         <Btn tone={phase === 'done' ? 'accent' : 'dark'} className="w-full border border-white/10" disabled={phase !== 'done'} onClick={() => onDone(vid, lot, `${meta.lab} · ${meta.product}`, expiry)}>
           {phase === 'done' ? (
@@ -201,7 +200,7 @@ function ScanSheet({ vaccineId, petId, onClose, onDone }: { vaccineId: string | 
             <span className="text-[13px] font-bold tracking-wide uppercase">{meta.product}</span>
             <span className="text-[10px] font-semibold text-ink-3">{meta.lab}</span>
           </div>
-          <div className="mt-0.5 text-[10.5px] text-ink-2">{v.name} · uso veterinário · 1 dose</div>
+          <div className="mt-0.5 text-[10.5px] text-ink-2">{vName(vid)} · uso veterinário · 1 dose</div>
           <div className="mt-2 flex items-end justify-between gap-2">
             <div className="font-mono text-[10.5px] leading-tight">
               <div>

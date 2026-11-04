@@ -41,7 +41,7 @@ export function StatusBar({ offline }: { offline: boolean }) {
       <span className="num pt-0.5 text-[16.5px] font-semibold tracking-[-0.01em]">10:40</span>
       <span className="flex items-center gap-[6px] pt-0.5">
         <SignalBars off={offline} />
-        {offline ? <span className="text-[12px] font-semibold">Sem serviço</span> : <WifiGlyph />}
+        {!offline && <WifiGlyph />}
         <Battery />
       </span>
     </div>

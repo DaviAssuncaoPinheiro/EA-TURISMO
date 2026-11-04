@@ -8,7 +8,7 @@ export function MiniMap({ visits, status, activeId, height = 150 }: { visits: Vi
   const pts = visits.map((v) => ({ v, b: bairroOf(v) }))
   const xs = [BASE.x, ...pts.map((p) => p.b.x)]
   const ys = [BASE.y, ...pts.map((p) => p.b.y)]
-  const pad = 46
+  const pad = 34
   let x0 = Math.min(...xs) - pad
   let x1 = Math.max(...xs) + pad
   let y0 = Math.min(...ys) - pad
@@ -57,7 +57,7 @@ export function MiniMap({ visits, status, activeId, height = 150 }: { visits: Vi
         return (
           <g key={p.v.id}>
             {active && (
-              <motion.circle cx={p.b.x} cy={p.b.y} r={r} fill="var(--color-terra-500)" initial={{ opacity: 0.5, scale: 1 }} animate={{ opacity: 0, scale: 2.2 }} transition={{ repeat: Infinity, duration: 1.8, ease: 'easeOut' }} style={{ transformOrigin: `${p.b.x}px ${p.b.y}px`, transformBox: 'view-box' }} />
+              <motion.circle cx={p.b.x} cy={p.b.y} fill="var(--color-terra-500)" initial={{ opacity: 0.5, r }} animate={{ opacity: 0, r: r * 2.3 }} transition={{ repeat: Infinity, duration: 1.8, ease: 'easeOut' }} />
             )}
             <circle cx={p.b.x} cy={p.b.y} r={r} fill={active ? 'var(--color-terra-600)' : done ? 'var(--color-sage-700)' : 'var(--color-card)'} stroke={active || done ? 'var(--color-card)' : 'var(--color-ink-2)'} strokeWidth={unit * 1.6} />
             <text x={p.b.x} y={p.b.y} dy="0.36em" textAnchor="middle" fontSize={unit * (active ? 11 : 10)} fontWeight={700} fontFamily="var(--font-sans)" fill={active || done ? 'var(--color-paper)' : 'var(--color-ink)'}>

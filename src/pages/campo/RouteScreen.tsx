@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+import { ChevronLeft as ChevronLeftIcon } from 'lucide-react'
 // Tela 1 · "Minha rota hoje"
 import * as React from 'react'
 import { motion } from 'motion/react'
@@ -10,7 +12,8 @@ import { fmt, TODAY } from '@/data/time'
 import { VISIT_STATUS } from '@/lib/status'
 import { useDemo } from '@/store'
 import { useCampo } from './campoStore'
-import { bairroOf, legOf, minutesSince, petOf, routeKm, tutorOf, vetVisitsToday, zonesOfDay } from './data'
+import { LogoMark } from '@/components/AppShell'
+import { bairroOf, capFirst, legOf, minutesSince, petOf, routeKm, tutorOf, vetVisitsToday, zonesOfDay } from './data'
 import { ConnectivityBanner, EASE_OUT, IconBtn, Pressable, Screen, SectionLabel } from './kit'
 import { MiniMap } from './MiniMap'
 import { useGo, useVetId } from './nav'
@@ -52,7 +55,13 @@ export default function RouteScreen() {
   return (
     <Screen
       title="Minha rota hoje"
-      eyebrow={<span className="capitalize">{fmt.long(TODAY)}</span>}
+      eyebrow={capFirst(fmt.long(TODAY))}
+      left={
+        <Link to="/" aria-label="Voltar ao painel da clínica" className="ml-1.5 inline-flex items-center gap-0.5 rounded-lg p-1 active:scale-95">
+          <ChevronLeftIcon className="size-4 text-ink-3" />
+          <LogoMark size={30} />
+        </Link>
+      }
       large={`${greeting()}, ${firstName(vet.name)}`}
       right={
         <>
@@ -90,7 +99,7 @@ export default function RouteScreen() {
           ))}
         </div>
         <div className="relative">
-          <MiniMap visits={visits} status={status} activeId={featured && status[featured.id] !== 'agendada' ? featured.id : undefined} height={148} />
+          <MiniMap visits={visits} status={status} activeId={featured && status[featured.id] !== 'agendada' ? featured.id : undefined} height={184} />
           <div className="absolute inset-x-0 bottom-0 flex items-center justify-between bg-gradient-to-t from-river/70 to-transparent px-3 pt-6 pb-2 text-[12px] font-medium text-paper">
             <span>Saída 07:40 · Base Adrianópolis</span>
             <span className="num">

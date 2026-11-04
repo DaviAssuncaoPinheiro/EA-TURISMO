@@ -5,11 +5,11 @@ import { motion } from 'motion/react'
 import { Banknote, Bell, Check, ChevronRight, CloudOff, CreditCard, FileText, MessageCircle, Navigation, QrCode, Scale, Syringe, X } from 'lucide-react'
 import { brl, cn, firstName, kg } from '@/lib/utils'
 import { PetAvatar } from '@/components/ui'
-import { PET, VACCINE } from '@/data/mock'
+import { PET } from '@/data/mock'
 import { fmt } from '@/data/time'
 import { useDemo } from '@/store'
 import { notify, useCampo } from './campoStore'
-import { bairroOf, legOf, nextStopAfter, tutorOf, visitById } from './data'
+import { bairroOf, dateShort, legOf, nextStopAfter, tutorOf, visitById, vName } from './data'
 import { Btn, Chip, EASE_OUT, IconBtn, Pressable, Screen } from './kit'
 import { useGo } from './nav'
 
@@ -52,7 +52,7 @@ export default function DoneScreen() {
 
   const items = [
     { icon: Scale, label: 'Peso registrado', value: `${kg(f.weight)}${delta ? ` (${delta > 0 ? '+' : '−'}${Math.abs(delta).toLocaleString('pt-BR')} kg)` : ''}` },
-    ...f.doses.map((d) => ({ icon: Syringe, label: VACCINE[d.vaccineId].name, value: `lote ${d.lot}`, mono: true })),
+    ...f.doses.map((d) => ({ icon: Syringe, label: vName(d.vaccineId), value: d.lot, mono: true })),
     ...(f.meds.length ? [{ icon: FileText, label: 'Receita', value: `${f.meds.length} ${f.meds.length === 1 ? 'medicamento' : 'medicamentos'}` }] : []),
     { icon: Bell, label: 'Lembretes programados', value: `${f.reminders.length}` },
   ]
@@ -117,7 +117,7 @@ export default function DoneScreen() {
             <div className="flex flex-wrap gap-1.5 border-t border-line px-4 py-3">
               {f.reminders.map((r) => (
                 <span key={r.title} className="rounded-full bg-paper-2 px-2.5 py-1 text-[12.5px] text-ink-2">
-                  {r.title} · {fmt.short(r.dueDate)}
+                  {r.title} · {dateShort(r.dueDate)}
                 </span>
               ))}
             </div>
@@ -136,14 +136,14 @@ export default function DoneScreen() {
             <span className="num font-display text-[30px] leading-none font-semibold text-ink">{brl(total)}</span>
           </div>
           <div className="mt-4 mb-2 text-[13.5px] font-medium text-ink-3">Forma de pagamento</div>
-          <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4">
+          <div className="grid grid-cols-2 gap-2">
             {[
               { k: 'Pix', icon: QrCode },
               { k: 'Crédito', icon: CreditCard },
               { k: 'Débito', icon: CreditCard },
               { k: 'Dinheiro', icon: Banknote },
             ].map((p) => (
-              <Chip key={p.k} on={pay === p.k} onClick={() => !paid && setPay(p.k)}>
+              <Chip key={p.k} className="justify-center" on={pay === p.k} onClick={() => !paid && setPay(p.k)}>
                 {pay !== p.k && <p.icon className="size-4" />}
                 {p.k}
               </Chip>

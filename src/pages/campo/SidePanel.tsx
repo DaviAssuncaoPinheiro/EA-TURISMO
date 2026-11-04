@@ -93,7 +93,7 @@ function useCopy(): { copy: Copy; stage: number } {
   }
 }
 
-export function SidePanel() {
+export function SidePanel({ height }: { height: number }) {
   const { copy, stage } = useCopy()
   const vetId = useVetId()
   const nav = useNavigate()
@@ -104,7 +104,7 @@ export function SidePanel() {
   const stages = ['Rota do dia', 'Visita', 'Atendimento', 'Concluído']
 
   return (
-    <aside className="flex w-[400px] shrink-0 flex-col gap-8">
+    <aside className="flex w-[400px] shrink-0 flex-col gap-7 py-2" style={{ height }}>
       <div className="flex items-center justify-between">
         <Link to="/" className="group inline-flex h-9 items-center gap-1.5 rounded-md pr-3 pl-2 text-[13.5px] font-medium text-ink-2 transition-colors hover:bg-paper-2 hover:text-ink">
           <ArrowLeft className="size-4 transition-transform group-hover:-translate-x-0.5" /> Voltar ao painel
@@ -115,15 +115,15 @@ export function SidePanel() {
         </div>
       </div>
 
-      <div>
-        <ol className="mb-5 flex items-center gap-2">
+      <div className="min-h-0 flex-1">
+        <ol className="mb-5 flex items-center gap-1.5">
           {stages.map((s, i) => (
             <li key={s} className="flex items-center gap-2">
-              <span className={cn('flex h-6 items-center gap-1 rounded-full px-2 text-[11.5px] font-semibold transition-colors', i < stage ? 'bg-sage-100 text-sage-800' : i === stage ? 'bg-sage-900 text-paper' : 'bg-paper-2 text-ink-4')}>
+              <span className={cn('flex h-6 items-center gap-1 rounded-full px-2 text-[11.5px] font-semibold whitespace-nowrap transition-colors', i < stage ? 'bg-sage-100 text-sage-800' : i === stage ? 'bg-sage-900 text-paper' : 'bg-paper-2 text-ink-4')}>
                 {i < stage && <Check className="size-3" strokeWidth={3} />}
                 {s}
               </span>
-              {i < stages.length - 1 && <span className="h-px w-3 bg-line-2" />}
+              {i < stages.length - 1 && <span className="h-px w-2.5 bg-line-2" />}
             </li>
           ))}
         </ol>

@@ -34,7 +34,7 @@ export function StepPrescricao({ visit, pet, draft, patch }: StepProps) {
         Escolha o medicamento e toque na dose, frequência e duração. A receita é montada sozinha.
       </StepIntro>
 
-      <Block title="Medicamentos" hint={draft.meds.length ? `${draft.meds.length} na receita` : 'Nenhum medicamento ainda'} className="pb-0">
+      <Block title="Medicamentos" hint={draft.meds.length ? `${draft.meds.length} na receita` : 'Nenhum medicamento ainda'} bodyClassName="pb-0">
         <div className="-mx-4 divide-y divide-line">
           <AnimatePresence initial={false}>
             {draft.meds.map((m) => {
@@ -89,9 +89,8 @@ export function StepPrescricao({ visit, pet, draft, patch }: StepProps) {
               <LogoMark size={30} />
               <div className="leading-tight">
                 <div className="font-display text-[16px] font-semibold text-ink">{CLINIC.name}</div>
-                <div className="text-[11.5px] text-ink-3">
-                  Atendimento domiciliar · {CLINIC.city} · {CLINIC.whatsapp}
-                </div>
+                <div className="text-[11.5px] text-ink-3">Atendimento domiciliar · {CLINIC.city}</div>
+                <div className="num text-[11.5px] text-ink-3">WhatsApp {CLINIC.whatsapp}</div>
               </div>
             </div>
             <div className="pt-3 text-center font-mono text-[10.5px] tracking-[0.14em] text-ink-3 uppercase">Receituário · uso veterinário</div>

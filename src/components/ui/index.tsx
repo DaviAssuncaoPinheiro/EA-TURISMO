@@ -90,7 +90,7 @@ export function PetAvatar({ pet, size = 40, ring, className }: { pet: Pet; size?
       className={cn('relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full', speciesTint[pet.species], ring && 'ring-2 ring-card', className)}
       style={{ width: size, height: size }}
     >
-      {!failed ? (
+      {pet.photo && !failed ? (
         <img src={pet.photo} alt={pet.name} loading="lazy" onError={() => setFailed(true)} className="size-full object-cover" />
       ) : (
         <span className="font-display font-semibold" style={{ fontSize: size * 0.42 }}>

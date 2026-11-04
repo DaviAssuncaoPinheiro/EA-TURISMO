@@ -102,6 +102,7 @@ export function Screen({
   large,
   eyebrow,
   back,
+  left,
   right,
   children,
   footer,
@@ -114,6 +115,7 @@ export function Screen({
   large?: React.ReactNode
   eyebrow?: React.ReactNode
   back?: { label: string; onClick: () => void }
+  left?: React.ReactNode
   right?: React.ReactNode
   children: React.ReactNode
   footer?: React.ReactNode
@@ -149,6 +151,7 @@ export function Screen({
         <motion.div style={{ opacity: barBg }} className="pointer-events-none absolute inset-0 border-b border-line/80 bg-paper/85 backdrop-blur-xl backdrop-saturate-150" />
         <div className="relative flex h-12 items-center px-2">
           <div className="flex min-w-[88px] items-center">
+            {left}
             {back && (
               <Pressable onClick={back.onClick} className="flex h-11 items-center gap-0.5 rounded-lg pr-2 pl-1 text-[16px] font-medium text-sage-700">
                 <ChevronLeft className="size-[26px]" strokeWidth={2.1} />

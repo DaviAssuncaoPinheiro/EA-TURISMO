@@ -131,7 +131,7 @@ export function BodyMap({ species, findings, onAdd, onOpen }: { species: Species
               className="cursor-pointer"
               onClick={() => onOpen(f)}
             >
-              <motion.circle cx={f.x} cy={f.y} r={13} fill="var(--color-terra-500)" initial={{ opacity: 0.45, scale: 1 }} animate={{ opacity: 0, scale: 2.1 }} transition={{ duration: 1.3, repeat: 2, ease: 'easeOut' }} style={{ transformOrigin: `${f.x}px ${f.y}px`, transformBox: 'view-box' }} />
+              <motion.circle cx={f.x} cy={f.y} fill="var(--color-terra-500)" initial={{ opacity: 0.45, r: 12 }} animate={{ opacity: 0, r: 28 }} transition={{ duration: 1.3, repeat: 2, ease: 'easeOut' }} />
               <circle cx={f.x} cy={f.y} r={12} fill="var(--color-terra-600)" stroke="var(--color-card)" strokeWidth={2.5} />
               <text x={f.x} y={f.y} dy="0.36em" textAnchor="middle" fontSize="12.5" fontWeight={700} fill="#fff" fontFamily="var(--font-sans)">
                 {f.n}

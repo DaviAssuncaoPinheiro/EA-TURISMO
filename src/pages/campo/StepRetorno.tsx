@@ -6,6 +6,7 @@ import { CLINIC, TEMPLATES, TUTOR, VET, WEEK_PLAN, type ReminderKind } from '@/d
 import { BAIRRO, ZONE } from '@/data/geo'
 import { day, fmt } from '@/data/time'
 import { Btn, Chip, EASE_OUT, Pressable, Sheet, Toggle } from './kit'
+import { dateShort } from './data'
 import { daysLabel, suggestReminders, type Suggestion } from './finalize'
 import { Block, StepIntro, type StepProps } from './stepKit'
 
@@ -42,12 +43,12 @@ export function StepRetorno({ visit, pet, draft, patch }: StepProps) {
     return fill(TEMPLATES[shown.kind], {
       tutor: firstName(tutor.name),
       clinica: CLINIC.name,
-      item: shown.title,
+      item: shown.item ?? shown.title,
       pet: pet.name,
-      data: fmt.short(day(shown.days)),
+      data: dateShort(day(shown.days)),
       vet: vet.short,
       bairro: BAIRRO[tutor.bairro].name,
-      diaSugerido: `${fmt.weekday(sd)}, ${fmt.short(sd)}`,
+      diaSugerido: `${fmt.weekday(sd)}, ${dateShort(sd)}`,
     })
   }, [shown, visit.vetId, tutor, pet.name, vet.short])
 
@@ -64,7 +65,7 @@ export function StepRetorno({ visit, pet, draft, patch }: StepProps) {
           </span>
         }
         hint={`${active.length} de ${sugg.length} ativos · enviados por WhatsApp`}
-        className="pb-0"
+        bodyClassName="pb-0"
       >
         <div className="-mx-4 divide-y divide-line">
           {sugg.map((s, i) => {
@@ -87,7 +88,7 @@ export function StepRetorno({ visit, pet, draft, patch }: StepProps) {
                   <Toggle checked={s.on} onChange={(v) => edit(s.key, { on: v })} label={s.title} />
                   <Pressable onClick={() => setEditing(s)} className="flex h-8 items-center gap-1 rounded-full bg-paper-2 px-2.5 text-[13px] font-medium text-ink-2">
                     <CalendarClock className="size-3.5" />
-                    {fmt.short(day(s.days))}
+                    {dateShort(day(s.days))}
                   </Pressable>
                 </div>
               </motion.div>
@@ -101,7 +102,7 @@ export function StepRetorno({ visit, pet, draft, patch }: StepProps) {
         <>
           <div className="flex items-end justify-between px-5 pt-6 pb-2">
             <div className="text-[13px] font-semibold tracking-[0.01em] text-ink-3 uppercase">Como {firstName(tutor.name)} vai receber</div>
-            <div className="text-[12.5px] text-ink-3">{fmt.short(day(Math.max(1, shown.days - (shown.days >= 30 ? 7 : 2))))}, 09:00</div>
+            <div className="text-[12.5px] text-ink-3">{dateShort(day(Math.max(1, shown.days - (shown.days >= 30 ? 7 : 2))))}, 09:00</div>
           </div>
           <div className="mx-4 overflow-hidden rounded-[20px] border border-line bg-[#e9e3d4]">
             <div className="flex items-center gap-2.5 bg-sage-900 px-3.5 py-2.5 text-paper">

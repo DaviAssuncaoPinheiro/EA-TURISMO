@@ -54,7 +54,7 @@ export function StepExame({ pet, draft, patch }: StepProps) {
         Toque em − e + ou segure para ajustar rápido. Valores fora da referência ficam em vermelho.
       </StepIntro>
 
-      <Block className="pb-0">
+      <Block bodyClassName="py-0">
         <NumberStepper
           label="Peso"
           icon={<Scale className="size-3.5" />}
@@ -89,7 +89,7 @@ export function StepExame({ pet, draft, patch }: StepProps) {
         />
       </Block>
 
-      <Block className="pb-0">
+      <Block bodyClassName="py-0">
         <div className="divide-y divide-line">
           <NumberStepper label="Temperatura" icon={<Thermometer className="size-3.5" />} value={draft.temp} onChange={(n) => patch({ temp: n })} step={0.1} min={34} max={42} decimals={1} unit="°C" hint={ref(r.temp, '°C', 1)} tone={tone(draft.temp, r.temp)} />
           <NumberStepper label="Frequência cardíaca" icon={<HeartPulse className="size-3.5" />} value={draft.fc} onChange={(n) => patch({ fc: n })} step={2} min={20} max={300} unit="bpm" hint={ref(r.fc, 'bpm')} tone={tone(draft.fc, r.fc)} />

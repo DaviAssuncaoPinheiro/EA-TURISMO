@@ -12,7 +12,7 @@ export interface StepProps {
 
 /* ───────── Blocos reutilizados pelas etapas ───────── */
 
-export function Block({ title, hint, children, className, action }: { title?: React.ReactNode; hint?: React.ReactNode; children: React.ReactNode; className?: string; action?: React.ReactNode }) {
+export function Block({ title, hint, children, className, bodyClassName, action }: { title?: React.ReactNode; hint?: React.ReactNode; children: React.ReactNode; className?: string; bodyClassName?: string; action?: React.ReactNode }) {
   return (
     <section className={cn('mx-4 mt-4 rounded-[20px] border border-line bg-card shadow-card', className)}>
       {(title || action) && (
@@ -24,7 +24,7 @@ export function Block({ title, hint, children, className, action }: { title?: Re
           {action}
         </div>
       )}
-      <div className="px-4 pt-2 pb-4">{children}</div>
+      <div className={cn('px-4 pt-2 pb-4', bodyClassName)}>{children}</div>
     </section>
   )
 }

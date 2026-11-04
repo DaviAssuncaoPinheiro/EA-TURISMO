@@ -125,7 +125,11 @@ function buildBase(): AVisit[] {
       let guard = 0
       while (need > 0 && guard++ < 40) {
         const zone = plan[Math.floor(r() * plan.length)] ?? petZone(have[0].petIds[0])
-        const pool = PETS.filter((p) => petZone(p.id) === zone)
+        const weekStart = off - ((dowOf(off) + 6) % 7)
+        const usedThisWeek = new Set(out.filter((v) => v.off >= weekStart && v.off < weekStart + 7).flatMap((v) => v.petIds))
+        const zonePool = PETS.filter((p) => petZone(p.id) === zone)
+        const fresh = zonePool.filter((p) => !usedThisWeek.has(p.id))
+        const pool = fresh.length ? fresh : zonePool
         const pet = pool.length ? pool[Math.floor(r() * pool.length)] : PETS[Math.floor(r() * PETS.length)]
         const t = TYPES[Math.floor(r() * TYPES.length)]
         const zb = BAIRROS.filter((b) => b.zone === zone)

@@ -1,7 +1,7 @@
 // Dados e cálculos próprios do app de campo (celular do veterinário).
 import { BAIRRO, BASE, ZONE, type ZoneId } from '@/data/geo'
 import { EVENTS, NOW, PET, ROUTE_LARISSA, TUTOR, VACCINE, VISITS, type Pet, type Species, type Visit } from '@/data/mock'
-import { day } from '@/data/time'
+import { day, fmt } from '@/data/time'
 
 /* ───────── Visitas do dia por veterinário ───────── */
 
@@ -221,3 +221,16 @@ export function durationDays(dur: string) {
 
 const LOADED_AT = Date.now()
 export const simNow = () => new Date(+NOW + (Date.now() - LOADED_AT))
+
+/** Nome da vacina sem o parêntese explicativo: "Gripe canina (tosse dos canis)" → "Gripe canina" */
+export const vName = (vaccineId: string) => VACCINE[vaccineId].name.replace(/\s*\(.*\)\s*/, '')
+
+/** "04 de dez" ou, se for em outro ano, "04 de nov de 2027" */
+export function dateShort(d: Date | string) {
+  const x = new Date(d)
+  const base = fmt.short(x)
+  return x.getFullYear() !== day(0).getFullYear() ? `${base} de ${x.getFullYear()}` : base
+}
+
+/** "quarta-feira, 4 de novembro" → "Quarta-feira, 4 de novembro" */
+export const capFirst = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)

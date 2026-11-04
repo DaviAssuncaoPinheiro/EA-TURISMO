@@ -5,13 +5,13 @@ import { AnimatePresence, motion } from 'motion/react'
 import { Check, ChevronRight, Clock, Hand, HeartPulse, Lock, MapPin, MessageCircle, Navigation, Phone, Stethoscope, Syringe, TriangleExclamationPoint } from 'lucide-react'
 import { cn, firstName, kg } from '@/lib/utils'
 import { Badge, PetAvatar } from '@/components/ui'
-import { PET, VACCINE, VET, type Visit } from '@/data/mock'
+import { PET, VET, type Visit } from '@/data/mock'
 import { ZONE } from '@/data/geo'
 import { ageLabel, fmt, relDays } from '@/data/time'
 import { dueState, VISIT_STATUS } from '@/lib/status'
 import { useDemo } from '@/store'
 import { notify, queueIfOffline, useCampo } from './campoStore'
-import { bairroOf, lastConsult, legOf, sexLabel, simNow, tutorOf, visitById } from './data'
+import { bairroOf, lastConsult, legOf, simNow, tutorOf, visitById, vName } from './data'
 import { latestDoses } from './vaccines'
 import { Btn, ConnectivityBanner, EASE_OUT, Pressable, Screen, SectionLabel } from './kit'
 import { OfflineToggle } from './RouteScreen'
@@ -136,7 +136,7 @@ function VisitDetail({ visit }: { visit: Visit }) {
           {[
             { l: 'Idade', v: ageLabel(pet.birth) },
             { l: 'Peso', v: kg(extraWeight ?? pet.weightKg) },
-            { l: 'Sexo', v: sexLabel(pet) },
+            { l: pet.sex === 'M' ? 'Macho' : 'Fêmea', v: pet.neutered ? (pet.sex === 'M' ? 'Castrado' : 'Castrada') : 'Inteiro(a)' },
           ].map((x) => (
             <div key={x.l} className="rounded-[14px] border border-line bg-card px-3 py-2.5">
               <div className="text-[12.5px] text-ink-3">{x.l}</div>
@@ -180,7 +180,7 @@ function VisitDetail({ visit }: { visit: Visit }) {
               <div className="min-w-0 flex-1 text-[14.5px] text-ink">
                 {pendingVaccines.map((d) => (
                   <div key={d.vaccineId}>
-                    <span className="font-semibold">{VACCINE[d.vaccineId].name}</span> <span className="text-late">· {dueState(d.nextDate).label.toLowerCase()}</span>
+                    <span className="font-semibold">{vName(d.vaccineId)}</span> <span className="text-late">· {dueState(d.nextDate).label.toLowerCase()}</span>
                   </div>
                 ))}
               </div>

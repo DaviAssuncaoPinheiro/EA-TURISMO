@@ -142,11 +142,11 @@ export default function Campo() {
   const fw = PHONE.w + PHONE.bezel * 2
   const fh = PHONE.h + PHONE.bezel * 2
   return (
-    <div className="relative flex min-h-dvh items-center justify-center gap-[clamp(40px,7vw,120px)] overflow-hidden bg-paper px-10 py-[18px]">
+    <div className="relative flex min-h-dvh items-center justify-center gap-[clamp(40px,7vw,120px)] overflow-clip bg-paper px-10 py-[18px]">
       <div className="paper-grain pointer-events-none absolute inset-0 opacity-70" />
-      <div className="pointer-events-none absolute -right-40 -bottom-56 size-[720px] rounded-full bg-sage-100/50 blur-3xl" />
+      <div className="pointer-events-none absolute right-0 bottom-0 size-[620px] translate-x-1/3 translate-y-1/3 rounded-full bg-sage-100/50 blur-3xl" />
       <div className="relative">
-        <SidePanel />
+        <SidePanel height={fh * scale} />
       </div>
       <div className="relative shrink-0" style={{ width: fw * scale, height: fh * scale }}>
         <div style={{ transform: `scale(${scale})`, transformOrigin: 'top left' }}>

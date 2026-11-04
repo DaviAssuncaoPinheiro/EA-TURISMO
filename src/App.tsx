@@ -2,18 +2,21 @@ import { HashRouter, Route, Routes } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import { AppShell } from './components/AppShell'
 import { TooltipProvider } from './components/ui'
+import { lazy, Suspense } from 'react'
 import Hoje from './pages/Hoje'
-import Agenda from './pages/Agenda'
-import Regioes from './pages/Regioes'
-import Pacientes from './pages/Pacientes'
-import Paciente from './pages/Paciente'
-import Lembretes from './pages/Lembretes'
-import Campo from './pages/campo/Campo'
+
+const Agenda = lazy(() => import('./pages/Agenda'))
+const Regioes = lazy(() => import('./pages/Regioes'))
+const Pacientes = lazy(() => import('./pages/Pacientes'))
+const Paciente = lazy(() => import('./pages/Paciente'))
+const Lembretes = lazy(() => import('./pages/Lembretes'))
+const Campo = lazy(() => import('./pages/campo/Campo'))
 
 export default function App() {
   return (
     <TooltipProvider>
       <HashRouter>
+        <Suspense fallback={<div className="h-dvh bg-paper" />}>
         <Routes>
           <Route path="/campo/*" element={<Campo />} />
           <Route element={<AppShell />}>
@@ -25,6 +28,7 @@ export default function App() {
             <Route path="lembretes" element={<Lembretes />} />
           </Route>
         </Routes>
+        </Suspense>
       </HashRouter>
       <Toaster
         position="top-center"

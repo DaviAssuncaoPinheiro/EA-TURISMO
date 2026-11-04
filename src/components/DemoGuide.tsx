@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'motion/react'
-import { Check, Compass, X } from 'lucide-react'
+import { ArrowRight, Check, Compass, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const STEPS = [
@@ -14,7 +14,7 @@ const STEPS = [
 
 export function DemoGuide() {
   const [open, setOpen] = React.useState(() => {
-    try { return localStorage.getItem('vd-guide-closed') !== '1' } catch { return true }
+    try { return localStorage.getItem('vd-guide-closed') !== '1' && window.innerWidth >= 1024 } catch { return window.innerWidth >= 1024 }
   })
   const loc = useLocation()
   const nav = useNavigate()
@@ -24,6 +24,10 @@ export function DemoGuide() {
     try { localStorage.setItem('vd-guide-closed', '1') } catch {}
   }
   if (loc.pathname.startsWith('/campo')) return null
+
+  const step = STEPS[Math.max(0, current)]
+  const idx = Math.max(0, current)
+  const next = STEPS[idx + 1]
 
   return (
     <div className="fixed right-4 bottom-20 z-40 lg:right-6 lg:bottom-6">
@@ -35,32 +39,31 @@ export function DemoGuide() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.97 }}
             transition={{ duration: 0.2 }}
-            className="w-[300px] rounded-xl border border-sage-800 bg-sage-900 p-4 text-paper shadow-float"
+            className="w-[min(300px,calc(100vw-2rem))] rounded-xl border border-sage-800 bg-sage-900 p-3.5 text-paper shadow-float"
           >
-            <div className="mb-3 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-[12px] font-medium tracking-wide text-sage-200 uppercase">
-                <Compass className="size-3.5" /> Roteiro da demonstração
+            <div className="mb-2 flex items-center gap-2">
+              <Compass className="size-3.5 text-sage-300" />
+              <span className="text-[11px] font-medium tracking-wide text-sage-300 uppercase">Roteiro · {idx + 1} de {STEPS.length}</span>
+              <div className="ml-auto flex items-center gap-1">
+                {STEPS.map((s, i) => (
+                  <button key={s.to} aria-label={s.title} onClick={() => nav(s.to)} className={cn('h-1.5 rounded-full transition-all', i === idx ? 'w-4 bg-terra-500' : i < idx ? 'w-1.5 bg-sage-500' : 'w-1.5 bg-white/20')} />
+                ))}
+                <button onClick={close} aria-label="Fechar roteiro" className="ml-1.5 rounded p-1 text-sage-300 hover:bg-white/10 hover:text-paper"><X className="size-3.5" /></button>
               </div>
-              <button onClick={close} className="rounded p-1 text-sage-300 hover:bg-white/10 hover:text-paper"><X className="size-3.5" /></button>
             </div>
-            <ol className="flex flex-col gap-1">
-              {STEPS.map((s, i) => (
-                <li key={s.to}>
-                  <button
-                    onClick={() => nav(s.to)}
-                    className={cn('flex w-full gap-2.5 rounded-md p-2 text-left transition-colors', i === current ? 'bg-white/10' : 'hover:bg-white/5')}
-                  >
-                    <span className={cn('mt-px flex size-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold', i < current ? 'bg-sage-500 text-white' : i === current ? 'bg-terra-500 text-white' : 'bg-white/10 text-sage-200')}>
-                      {i < current ? <Check className="size-3" /> : i + 1}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block text-[13px] font-medium">{s.title}</span>
-                      {i === current && <span className="mt-0.5 block text-[12px] leading-snug text-sage-200">{s.text}</span>}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ol>
+            <div className="text-[14px] font-semibold">{step.title}</div>
+            <p className="mt-1 text-[12.5px] leading-snug text-sage-200">{step.text}</p>
+            <div className="mt-3 flex items-center justify-end gap-2">
+              {next ? (
+                <button onClick={() => nav(next.to)} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-paper px-3 text-[12.5px] font-semibold text-sage-900 hover:bg-white">
+                  Próximo: {next.title} <ArrowRight className="size-3.5" />
+                </button>
+              ) : (
+                <button onClick={close} className="inline-flex h-8 items-center gap-1.5 rounded-md bg-paper px-3 text-[12.5px] font-semibold text-sage-900 hover:bg-white">
+                  <Check className="size-3.5" /> Concluir
+                </button>
+              )}
+            </div>
           </motion.div>
         ) : (
           <motion.button

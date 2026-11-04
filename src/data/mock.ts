@@ -476,3 +476,65 @@ export const HEATMAP: Record<ZoneId, number[]> = {
   norte: [1, 9, 10, 6, 11, 1],
   leste: [12, 2, 13, 9, 3, 0],
 }
+
+/* ───────────────────────── Carteira ampliada (pacientes sem foto) ─────────────────────────
+   Dá volume realista à base (40+ pacientes) e evita repetir os mesmos pets na agenda. */
+
+const EXTRA: [string, Species, string, 'M' | 'F', number, number, string, string, string][] = [
+  // id, espécie, raça, sexo, idade (anos), peso, nome do tutor, telefone, bairro
+  ['luke', 'cão', 'SRD', 'M', 5, 18.2, 'Alessandra Costa', '(92) 99231-5507', 'compensa'],
+  ['pandora', 'gato', 'SRD', 'F', 2, 3.7, 'Henrique Lobo', '(92) 98114-2290', 'lirio-do-vale'],
+  ['max', 'cão', 'Border Collie', 'M', 4, 19.6, 'Vanessa Rocha', '(92) 99405-6612', 'ponta-negra'],
+  ['lola', 'cão', 'Maltês', 'F', 9, 3.1, 'Dona Raimunda Brito', '(92) 98270-1145', 'taruma'],
+  ['toddy', 'cão', 'Pinscher', 'M', 11, 3.4, 'Marcos Aurélio Lima', '(92) 99388-0763', 'planalto'],
+  ['princesa', 'cão', 'Shih Tzu', 'F', 6, 5.8, 'Kátia Fernandes', '(92) 98533-9021', 'redencao'],
+  ['mingau', 'gato', 'Angorá', 'M', 7, 5.2, 'Felipe Andrade', '(92) 99612-4478', 'alvorada'],
+  ['scooby', 'cão', 'Rottweiler', 'M', 3, 41.0, 'Roberto Siqueira', '(92) 98701-3356', 'dom-pedro'],
+  ['jade', 'gato', 'SRD', 'F', 1, 3.2, 'Luana Matos', '(92) 99147-8820', 'sao-raimundo'],
+  ['marley', 'cão', 'Labrador', 'M', 8, 33.5, 'Sérgio Bentes', '(92) 98866-2014', 'centro'],
+  ['chico', 'cão', 'SRD', 'M', 6, 11.3, 'Telma Souza', '(92) 99520-6639', 'cachoeirinha'],
+  ['frajola', 'gato', 'SRD', 'M', 9, 4.9, 'Aline Pimentel', '(92) 98345-7782', 'petropolis'],
+  ['duquesa', 'cão', 'Golden Retriever', 'F', 10, 28.4, 'Carlos Eduardo Pinho', '(92) 99054-1190', 'flores'],
+  ['nala', 'gato', 'Maine Coon', 'F', 4, 6.0, 'Débora Queiroz', '(92) 98490-3365', 'parque-10'],
+  ['tobias', 'cão', 'Schnauzer', 'M', 7, 8.7, 'Rafaela Vasconcelos', '(92) 99701-5528', 'adrianopolis'],
+  ['sushi', 'gato', 'Persa', 'M', 5, 4.4, 'Bruno Takahashi', '(92) 98822-6690', 'vieiralves'],
+  ['dora', 'cão', 'Pug', 'F', 6, 8.1, 'Priscila Araújo', '(92) 99263-4417', 'chapada'],
+  ['apolo', 'cão', 'Husky Siberiano', 'M', 3, 23.9, 'Mateus Corrêa', '(92) 98157-9043', 'monte-oliveiras'],
+  ['lua', 'gato', 'SRD', 'F', 2, 3.5, 'Jéssica Moraes', '(92) 99486-2271', 'santa-etelvina'],
+  ['biscoito', 'cão', 'Dachshund', 'M', 4, 7.6, 'Wagner Freitas', '(92) 98633-0158', 'novo-aleixo'],
+  ['cacau', 'cão', 'Poodle', 'F', 8, 5.9, 'Lúcia Helena Bastos', '(92) 99377-8806', 'jorge-teixeira'],
+  ['pretinha', 'gato', 'SRD', 'F', 10, 3.9, 'Francisco das Chagas', '(92) 98014-6623', 'tancredo-neves'],
+  ['bolt', 'cão', 'SRD', 'M', 2, 15.4, 'Natália Guedes', '(92) 99843-1172', 'coroado'],
+  ['estrela', 'cão', 'Lhasa Apso', 'F', 12, 6.3, 'Seu Manoel Ribeiro', '(92) 98552-4409', 'zumbi'],
+]
+
+EXTRA.forEach(([id, species, breed, sex, years, weight, tutorName, phone, bairro], i) => {
+  const tutorId = `tx${i + 1}`
+  TUTORS.push({ id: tutorId, name: tutorName, phone, address: `Rua ${['das Flores', 'Paraíba', 'Maceió', 'Rio Mar', 'Teresina', 'Duque de Caxias'][i % 6]}, ${120 + i * 37}`, bairro })
+  TUTOR[tutorId] = TUTORS[TUTORS.length - 1]
+  const pet: Pet = {
+    id,
+    name: id === 'lua' ? 'Lua' : id[0].toUpperCase() + id.slice(1),
+    species,
+    breed,
+    sex,
+    neutered: i % 4 !== 0,
+    birth: iso(-Math.round(years * 365) - i * 9),
+    coat: species === 'gato' ? ['Cinza', 'Branca', 'Preta', 'Rajada'][i % 4] : ['Caramelo', 'Preta', 'Branca', 'Marrom'][i % 4],
+    weightKg: weight,
+    idealKg: [+(weight * 0.9).toFixed(1), +(weight * 1.08).toFixed(1)],
+    bcs: 5,
+    tutorId,
+    photo: '',
+  }
+  PETS.push(pet)
+  PET[id] = pet
+  // Vacinação: maioria em dia, alguns vencendo
+  const last = -((i * 47) % 330) - 10
+  const vacs = species === 'cão' ? ['v10', 'raiva'] : ['v4', 'raiva']
+  vacs.forEach((vid) => DOSES.push(dose(id, vid, last, VETS[i % 3].id)))
+  PREVENTIVE_DOSES.push(
+    { petId: id, preventiveId: 'vermifugo', date: iso(-((i * 13) % 80)), nextDate: iso(-((i * 13) % 80) + 90) },
+    { petId: id, preventiveId: 'nexgard', date: iso(-((i * 7) % 28)), nextDate: iso(-((i * 7) % 28) + 30) },
+  )
+})

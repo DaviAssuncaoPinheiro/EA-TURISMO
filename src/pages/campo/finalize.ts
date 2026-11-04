@@ -4,7 +4,7 @@ import { daysFromToday, fmt, iso, TODAY } from '@/data/time'
 import { kg } from '@/lib/utils'
 import { useDemo } from '@/store'
 import { queueIfOffline, useCampo, type Draft, type FinishedVisit } from './campoStore'
-import { durationDays, MED, minutesSince, simNow, VACCINE_LAB } from './data'
+import { durationDays, MED, minutesSince, simNow, VACCINE_LAB, vName } from './data'
 import { vaccineRows } from './vaccines'
 
 export interface Suggestion {
@@ -14,6 +14,8 @@ export interface Suggestion {
   days: number
   why: string
   on: boolean
+  /** como o item aparece na mensagem ao tutor */
+  item?: string
 }
 
 export function daysLabel(days: number) {
@@ -29,13 +31,13 @@ export function suggestReminders(visit: Visit, pet: Pet, d: Draft): Suggestion[]
   const applied = Object.entries(d.vaccines).filter(([, p]) => p.apply)
   for (const [vid] of applied) {
     const v = VACCINE[vid]
-    if (isPuppy(pet) && ['v10', 'v4', 'v5'].includes(vid)) out.push({ key: `vac-${vid}`, kind: 'vacina', title: `Próxima dose ${v.short}`, days: 21, why: 'Protocolo de filhote · intervalo de 21 dias', on: true })
-    else out.push({ key: `vac-${vid}`, kind: 'vacina', title: `Reforço ${v.short === 'Gripe' ? 'Gripe canina' : v.short}`, days: v.boosterDays, why: 'Aplicada hoje · reforço anual', on: true })
+    if (isPuppy(pet) && ['v10', 'v4', 'v5'].includes(vid)) out.push({ key: `vac-${vid}`, kind: 'vacina', title: `Próxima dose ${v.short}`, item: `${vName(vid)} (próxima dose)`, days: 21, why: 'Protocolo de filhote · intervalo de 21 dias', on: true })
+    else out.push({ key: `vac-${vid}`, kind: 'vacina', title: `Reforço ${vName(vid)}`, item: vName(vid), days: v.boosterDays, why: 'Aplicada hoje · reforço anual', on: true })
   }
   const extra = useDemo.getState().extraDoses
   for (const r of vaccineRows(pet, extra).due) {
     if (d.vaccines[r.vaccineId]?.apply) continue
-    out.push({ key: `pend-${r.vaccineId}`, kind: 'vacina', title: `${VACCINE[r.vaccineId].name} pendente`, days: Math.max(7, daysFromToday(r.last!.nextDate)), why: 'Não foi aplicada nesta visita', on: true })
+    out.push({ key: `pend-${r.vaccineId}`, kind: 'vacina', title: `${vName(r.vaccineId)} pendente`, item: vName(r.vaccineId), days: Math.max(7, daysFromToday(r.last!.nextDate)), why: 'Não foi aplicada nesta visita', on: true })
   }
   const cardio = d.meds.some((m) => MED[m.medId]?.group === 'Cardiologia') || pet.conditions?.some((c) => /mitral|card/i.test(c))
   if (cardio) {
@@ -70,16 +72,16 @@ export function buildSummary(visit: Visit, pet: Pet, d: Draft, sugg: Suggestion[
   parts.push(`Peso ${kg(d.weight)} (${dTxt}). T ${d.temp.toLocaleString('pt-BR')} °C · FC ${d.fc} bpm · FR ${d.fr} mpm. Mucosas ${d.mucosa.toLowerCase()}, TPC ${d.tpc}, hidratação ${d.hidratacao.toLowerCase()}, ECC ${d.bcs}/9.`)
   if (d.findings.length) parts.push(`Achados: ${d.findings.map((f) => `${f.region.toLowerCase()} — ${[...f.tags, f.note].filter(Boolean).join(', ').toLowerCase() || 'ver nota'}`).join('; ')}.`)
   const applied = Object.entries(d.vaccines).filter(([, p]) => p.apply)
-  if (applied.length) parts.push(`Vacina: ${applied.map(([vid, p]) => `${VACCINE[vid].name}${p.lot ? ` (lote ${p.lot})` : ''}`).join(', ')}.`)
+  if (applied.length) parts.push(`Vacina: ${applied.map(([vid, p]) => `${vName(vid)}${p.lot ? ` (lote ${p.lot})` : ''}`).join(', ')}.`)
   if (d.meds.length) parts.push(`Prescrição: ${d.meds.map((m) => `${MED[m.medId].name} ${MED[m.medId].conc}, ${m.dose.toLowerCase()} ${m.freq.toLowerCase()}${m.keep ? ' (mantido)' : ''}, ${m.dur.toLowerCase()}`).join('; ')}.`)
-  const ret = sugg.filter((s) => s.on && s.kind !== 'vacina').sort((a, b) => a.days - b.days)[0]
-  if (ret) parts.push(`${ret.title} em ${daysLabel(ret.days)}.`)
+  const plan = sugg.filter((s) => s.on && s.kind !== 'vacina').sort((a, b) => (a.key === 'ret-cardio' ? -1 : b.key === 'ret-cardio' ? 1 : a.days - b.days))
+  if (plan.length) parts.push(`Plano: ${plan.map((s) => `${s.title.charAt(0).toLowerCase()}${s.title.slice(1)} em ${daysLabel(s.days)}`).join('; ')}.`)
   return parts.join(' ')
 }
 
 export function priceLines(visit: Visit, d: Draft) {
   const lines = [{ label: visit.type === 'Retorno' ? eventTitle(visit) : visit.type, value: visit.price }]
-  for (const [vid, p] of Object.entries(d.vaccines)) if (p.apply) lines.push({ label: `Vacina ${VACCINE[vid].name}`, value: VACCINE_LAB[vid].price })
+  for (const [vid, p] of Object.entries(d.vaccines)) if (p.apply) lines.push({ label: `Vacina ${vName(vid)}`, value: VACCINE_LAB[vid].price })
   return lines
 }
 
