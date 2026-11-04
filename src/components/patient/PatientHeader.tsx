@@ -50,8 +50,8 @@ export function PatientHeader({ pet, tutor, model }: { pet: Pet; tutor: Tutor; m
       </Link>
 
       <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex min-w-0 gap-4 sm:gap-5">
-          <motion.div initial={{ scale: 0.94, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} className="relative shrink-0 self-start">
+        <div className="grid min-w-0 flex-1 grid-cols-[88px_minmax(0,1fr)] gap-x-4 sm:grid-cols-[100px_minmax(0,1fr)] sm:gap-x-5">
+          <motion.div initial={{ scale: 0.94, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} className="relative self-start sm:row-span-2">
             <PetAvatar pet={pet} size={100} className="ring-4 ring-card shadow-lift max-sm:size-[88px]!" />
             {vn?.status === 'em-atendimento' && (
               <span className="absolute right-0.5 bottom-1 flex size-5 items-center justify-center rounded-full border-[3px] border-paper bg-terra-500">
@@ -60,8 +60,8 @@ export function PatientHeader({ pet, tutor, model }: { pet: Pet; tutor: Tutor; m
             )}
           </motion.div>
 
-          <div className="min-w-0 flex-1 pt-0.5">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <div className="min-w-0 self-center sm:self-auto sm:pt-0.5">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
               <h1 className="font-display text-[38px] leading-[1] font-medium tracking-[-0.025em] text-ink sm:text-[46px]">{pet.name}</h1>
               {vn && vn.status === 'em-atendimento' && (
                 <span className="inline-flex h-7 items-center gap-2 rounded-full bg-terra-100 pr-2.5 pl-1 text-[12px] font-medium text-terra-700">
@@ -81,8 +81,10 @@ export function PatientHeader({ pet, tutor, model }: { pet: Pet; tutor: Tutor; m
                 </span>
               )}
             </div>
+          </div>
 
-            <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[14px] text-ink-2">
+          <div className="col-span-2 mt-4 min-w-0 sm:col-span-1 sm:col-start-2 sm:mt-2">
+            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[14px] text-ink-2">
               {[f.species, pet.breed, f.sex, f.neutered, ageLabel(pet.birth), `pelagem ${pet.coat.toLowerCase()}`].map((x, i) => (
                 <span key={i} className="inline-flex items-center gap-1.5">
                   {i > 0 && <span className="text-ink-4">·</span>}

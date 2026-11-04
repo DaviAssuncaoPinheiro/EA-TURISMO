@@ -166,7 +166,7 @@ function buildIndex(pet: Pet, current: DoseView[], preventives: PreventiveView[]
     if (!p) return { id: kind, label, detail: 'Sem registro', value: 0, weight: 15, tone: 'late' }
     const n = daysFromToday(p.nextDate)
     const value = n < 0 ? clamp01(0.5 + n / 60) : n <= 7 ? 0.85 : 1
-    const product = p.def.name.replace(/\s*\(.*\)/, '')
+    const product = p.def.name.match(/\((.*)\)/)?.[1] ?? p.def.name
     if (n < 0) issues.push(`o ${kind} venceu há ${-n} dias`)
     return {
       id: kind,

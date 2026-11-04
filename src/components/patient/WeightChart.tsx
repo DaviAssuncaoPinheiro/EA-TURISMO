@@ -98,8 +98,11 @@ export function WeightChart({ pet, points, currentKg, fresh }: { pet: Pet; point
   const min = Math.min(lo, ...kgs)
   const max = Math.max(hi, ...kgs)
   const pad = Math.max(0.3, (max - min) * 0.18)
-  const step = max - min > 8 ? 2 : max - min > 3 ? 1 : 0.5
+  const span = max - min + 2 * pad
+  const step = [0.2, 0.5, 1, 2, 5, 10].find((s) => span / s <= 5) ?? 10
   const domain: [number, number] = [Math.floor((min - pad) / step) * step, Math.ceil((max + pad) / step) * step]
+  const yTicks: number[] = []
+  for (let v = domain[0]; v <= domain[1] + 1e-9; v += step) yTicks.push(+v.toFixed(2))
 
   const first = rows.find((r) => new Date(r.date) >= new Date(Date.now() - 365 * 86400000)) ?? rows[0]
   const yearDelta = currentKg - first.kg
@@ -194,7 +197,7 @@ export function WeightChart({ pet, points, currentKg, fresh }: { pet: Pet; point
             />
             <YAxis
               domain={domain}
-              tickCount={5}
+              ticks={yTicks}
               tickFormatter={(v: number) => nf(v, step < 1 ? 1 : 0)}
               tick={{ fontSize: 11, fill: 'var(--color-ink-3)' }}
               tickLine={false}

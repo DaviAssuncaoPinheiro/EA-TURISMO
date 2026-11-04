@@ -116,7 +116,7 @@ function VaccineSlot({ dose, index }: { dose: DoseView; index: number }) {
 
       <div className="relative min-h-[104px] pt-1">
         <Sticker dose={dose} />
-        <CrmvStamp vetId={dose.vetId} seed={dose.id} date={stampDate(dose.date)} size={78} className="absolute -right-1 bottom-[-10px]" />
+        <CrmvStamp vetId={dose.vetId} seed={dose.id} date={stampDate(dose.date)} size={74} className="absolute -right-1.5 bottom-[-12px]" />
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-x-3 border-t border-[#e3d7bd] pt-2.5">
@@ -128,7 +128,9 @@ function VaccineSlot({ dose, index }: { dose: DoseView; index: number }) {
         <div>
           <div className="font-mono text-[9.5px] tracking-[0.1em] text-[#8c7a58] uppercase">Próxima dose</div>
           <div className={cn('num mt-0.5 font-display text-[15px] leading-tight italic', nx.key === 'late' ? 'text-late' : 'text-ink')}>{fmt.date(dose.nextDate)}</div>
-          <Badge tone={nx.tone} dot className="mt-1 h-[20px] text-[10.5px]">
+        </div>
+        <div className="col-span-2 mt-2">
+          <Badge tone={nx.tone} dot className="h-[20px] text-[10.5px]">
             {nx.text}
           </Badge>
         </div>
@@ -153,7 +155,7 @@ function CardFrame({ children, className }: { children: React.ReactNode; classNa
     <div className={cn('paper-grain relative h-full overflow-hidden rounded-[14px] bg-[#f6efdd] p-2 shadow-[0_1px_0_rgba(60,45,20,.06),0_18px_40px_-22px_rgba(60,45,20,.45)] ring-1 ring-[#e2d5b8]', className)}>
       <div className="@container h-full rounded-[9px] border border-[#d9caa8] p-4 sm:p-5">
         <div className="pointer-events-none absolute inset-3.5 rounded-[7px] border border-[#e6dbc2]" aria-hidden />
-        <div className="relative">{children}</div>
+        <div className="relative flex h-full flex-col">{children}</div>
       </div>
     </div>
   )
@@ -183,7 +185,7 @@ function Front({ pet, current, preventives }: { pet: Pet; current: DoseView[]; p
     <CardFrame>
       <CardHead pet={pet} side={pet.name} />
 
-      <div className="mt-4 grid grid-cols-1 gap-x-5 gap-y-2.5 @md:grid-cols-2 @[640px]:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-x-5 gap-y-2.5 @md:grid-cols-2 @xl:grid-cols-3">
         <FormLine label="Espécie" value={`${f.species === 'Cão' ? 'Canina' : 'Felina'} · ${pet.breed}`} />
         <FormLine label="Nasc." value={fmt.date(pet.birth)} />
         <FormLine label="Sexo" value={`${f.sex} · ${f.neutered.toLowerCase()}`} />
@@ -196,7 +198,7 @@ function Front({ pet, current, preventives }: { pet: Pet; current: DoseView[]; p
         <span className="h-px flex-1 bg-[#dccfb2]" />
       </div>
       {current.length ? (
-        <div className="grid grid-cols-1 gap-3 @md:grid-cols-2 @[640px]:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 @md:grid-cols-2 @xl:grid-cols-3">
           {current.map((d, i) => (
             <VaccineSlot key={d.id} dose={d} index={i} />
           ))}
@@ -214,24 +216,19 @@ function Front({ pet, current, preventives }: { pet: Pet; current: DoseView[]; p
           const nx = nextLabel(p.nextDate)
           const [name, extra] = p.def.name.split(' (')
           return (
-            <div key={p.preventiveId} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2.5">
-              <span className="flex min-w-0 flex-1 items-center gap-2.5">
-                <span className="flex size-7 shrink-0 items-center justify-center rounded-full border border-[#d6c9ac] text-[#7a6a4b]">
-                  {p.def.kind === 'vermífugo' ? <ShieldCheck className="size-3.5" strokeWidth={1.8} /> : <Bug className="size-3.5" strokeWidth={1.8} />}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-[13px] font-medium text-ink">
-                    {name}
-                    {extra && <span className="font-normal text-ink-3"> · {extra.replace(')', '')}</span>}
-                  </span>
-                  <span className="block text-[11.5px] text-ink-3">
-                    {p.def.kind === 'vermífugo' ? 'Vermífugo' : 'Antipulgas e carrapatos'} · a cada {p.def.everyDays} dias
-                  </span>
+            <div key={p.preventiveId} className="grid grid-cols-[28px_minmax(0,1fr)] items-center gap-x-2.5 gap-y-1.5 py-2.5 @lg:grid-cols-[28px_minmax(0,1fr)_auto]">
+              <span className="flex size-7 items-center justify-center rounded-full border border-[#d6c9ac] text-[#7a6a4b]">
+                {p.def.kind === 'vermífugo' ? <ShieldCheck className="size-3.5" strokeWidth={1.8} /> : <Bug className="size-3.5" strokeWidth={1.8} />}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-[13px] font-medium text-ink">{name}</span>
+                <span className="block truncate text-[11.5px] text-ink-3">
+                  {extra ? extra.replace(')', '') : 'Antipulgas e carrapatos'} · a cada {p.def.everyDays} dias
                 </span>
               </span>
-              <span className="num font-display text-[13.5px] text-ink-2 italic">{fmt.date(p.date)}</span>
-              <span className="flex items-center gap-2">
-                <span className="text-[11.5px] text-ink-3">próx.</span>
+              <span className="col-start-2 flex flex-wrap items-center gap-x-2 gap-y-1 @lg:col-start-3 @lg:justify-end">
+                <span className="num font-display text-[13.5px] text-ink-2 italic">{fmt.date(p.date)}</span>
+                <span className="text-[11.5px] text-ink-4">→</span>
                 <span className="num font-display text-[13.5px] text-ink italic">{fmt.date(p.nextDate)}</span>
                 <Badge tone={nx.tone} dot className="h-[20px] text-[10.5px]">
                   {nx.text}
@@ -246,6 +243,8 @@ function Front({ pet, current, preventives }: { pet: Pet; current: DoseView[]; p
 }
 
 function Back({ pet, doses, preventives }: { pet: Pet; doses: DoseView[]; preventives: PreventiveView[] }) {
+  const signer = doses[0] ? vetOf(doses[0].vetId) : null
+  const notes = [...(pet.alerts ?? []).map((a) => `${a}.`), pet.temperament, 'Sem reações vacinais registradas até o momento.'].filter(Boolean).join(' ')
   return (
     <CardFrame>
       <CardHead pet={pet} side="Histórico de aplicações" />
@@ -336,9 +335,30 @@ function Back({ pet, doses, preventives }: { pet: Pet; doses: DoseView[]; preven
         ))}
       </ul>
 
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-2 font-mono text-[9.5px] tracking-[0.1em] text-[#8c7a58] uppercase">
-        <span>Documento emitido por Vet Domicílio · Manaus/AM</span>
-        <span className="num">{doses.length + preventives.length} registros</span>
+      <div className="mt-6 flex min-h-[120px] flex-1 flex-col">
+        <div className="mb-1 flex items-center gap-3">
+          <span className="font-mono text-[10px] tracking-[0.14em] text-[#7a6a4b] uppercase">Observações</span>
+          <span className="h-px flex-1 bg-[#dccfb2]" />
+        </div>
+        <div className="flex-1 bg-[repeating-linear-gradient(to_bottom,transparent_0,transparent_27px,#e0d3b6_27px,#e0d3b6_28px)]">
+          <p className="font-display text-[14.5px] leading-[28px] text-[#34487a] italic">{notes}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
+        <div className="font-mono text-[9.5px] tracking-[0.1em] text-[#8c7a58] uppercase">
+          <div>Documento emitido por Vet Domicílio · Manaus/AM</div>
+          <div className="num mt-0.5">{doses.length + preventives.length} registros</div>
+        </div>
+        {signer && (
+          <div className="relative flex items-end gap-2">
+            <div className="text-right">
+              <div className="w-40 border-b border-[#bfae88] pb-0.5 font-display text-[15px] text-[#34487a] italic">{signer.short}</div>
+              <div className="mt-1 font-mono text-[9.5px] tracking-[0.1em] text-[#8c7a58] uppercase">Assinatura e carimbo</div>
+            </div>
+            <CrmvStamp vetId={signer.id} seed={`sign-${pet.id}`} size={64} className="-mb-1" />
+          </div>
+        )}
       </div>
     </CardFrame>
   )

@@ -187,7 +187,7 @@ export function ConditionsPanel({ conditions, alerts }: { conditions: string[]; 
       ) : (
         <ul className="px-5 pb-4">
           {conditions.map((c, i) => {
-            const serious = alerts.some((a) => a.toLowerCase().includes(c.toLowerCase().split(' ')[0]))
+            const serious = alerts.length > 0 && i === 0
             return (
               <li key={c} className={cn('flex items-center gap-3 py-2.5', i > 0 && 'border-t border-line')}>
                 <span className={cn('size-2 shrink-0 rounded-full', serious ? 'bg-late' : 'bg-warn')} />

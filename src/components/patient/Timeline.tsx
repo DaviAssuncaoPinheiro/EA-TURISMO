@@ -168,7 +168,7 @@ export function Timeline({ items, petName }: { items: TimelineItem[]; petName: s
                 <span className="h-px flex-1 bg-line" />
               </div>
               <ul>
-                <AnimatePresence initial={false} mode="popLayout">
+                <AnimatePresence initial={false}>
                   {g.items.map((it, i) => (
                     <Entry key={it.id} item={it} last={i === g.items.length - 1} />
                   ))}
