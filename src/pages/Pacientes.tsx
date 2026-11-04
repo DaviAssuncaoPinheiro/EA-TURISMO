@@ -1,8 +1,8 @@
 import * as React from 'react'
-import { Search, SearchX, X } from 'lucide-react'
+import { CalendarClock, PawPrint, Scale, Search, SearchX, Syringe, X } from 'lucide-react'
 import { PatientCards, PatientTable, type Sort, type SortKey } from '@/components/patients/PatientViews'
 import { buildRows, vacRank, type PatientRow } from '@/components/patients/model'
-import { Empty, PageHeader, Segmented } from '@/components/ui'
+import { Chip, Empty, IconCircle, Segmented } from '@/components/ui'
 import { ZONES, type ZoneId } from '@/data/geo'
 import { VET } from '@/data/mock'
 import { cn } from '@/lib/utils'
@@ -65,32 +65,35 @@ export default function Pacientes() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-[1320px] px-4 py-6 md:px-8 md:py-8">
-      <PageHeader eyebrow="Cadastro" title="Pacientes" description={`${rows.length} pets de ${new Set(rows.map((r) => r.pet.tutorId)).size} famílias atendidas em domicílio.`} />
+    <div className="mx-auto w-full max-w-[1400px] px-4 pt-2 pb-28 md:px-6 md:pb-8">
+      <div className="mb-4 flex items-center gap-3">
+        <h1 className="text-[28px] leading-[1.1] font-bold tracking-[-0.03em] text-ink md:text-[32px]">Pacientes</h1>
+        <span className="inline-flex h-8 items-center rounded-full bg-card px-3 text-[13px] font-bold text-ink-2 shadow-pill num">{rows.length}</span>
+      </div>
 
-      <div className="mb-4 grid grid-cols-2 divide-x divide-line overflow-hidden rounded-xl border border-line bg-card shadow-card md:grid-cols-4 [&>*:nth-child(n+3)]:max-md:border-t [&>*:nth-child(n+3)]:max-md:border-line">
-        <Stat label="Vacina atrasada" value={late} sub={late === 1 ? 'paciente' : 'pacientes'} tone="late" onClick={() => setVac(vac === 'late' ? 'todas' : 'late')} active={vac === 'late'} />
-        <Stat label="Vencem em 30 dias" value={soon} sub="pacientes" tone="warn" onClick={() => setVac(vac === 'soon' ? 'todas' : 'soon')} active={vac === 'soon'} />
-        <Stat label="Espécies" value={`${dogs} · ${cats}`} sub="cães · gatos" />
-        <Stat label="Acima do peso ideal" value={heavy} sub={heavy === 1 ? 'paciente' : 'pacientes'} />
+      <div className="mb-4 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        <Stat icon={<Syringe size={18} strokeWidth={1.9} />} tone="coral" label="Vacina atrasada" value={late} onClick={() => setVac(vac === 'late' ? 'todas' : 'late')} active={vac === 'late'} />
+        <Stat icon={<CalendarClock size={18} strokeWidth={1.9} />} tone="yellow" label="Vencem em 30 dias" value={soon} onClick={() => setVac(vac === 'soon' ? 'todas' : 'soon')} active={vac === 'soon'} />
+        <Stat icon={<PawPrint size={18} strokeWidth={1.9} />} tone="blue" label="Cães e gatos" value={`${dogs} e ${cats}`} />
+        <Stat icon={<Scale size={18} strokeWidth={1.9} />} tone="violet" label="Acima do peso" value={heavy} />
       </div>
 
       <div className="mb-4 space-y-3">
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="relative min-w-0 flex-1 basis-64 md:max-w-[420px]">
-            <Search size={16} strokeWidth={1.8} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-3" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar por pet, raça, tutor ou bairro"
-              className="h-10 w-full rounded-lg border border-line-2 bg-card pr-9 pl-9 text-[14px] text-ink shadow-card outline-none placeholder:text-ink-4 focus:border-sage-600"
-            />
-            {q && (
-              <button onClick={() => setQ('')} aria-label="Limpar busca" className="absolute top-1/2 right-1.5 -translate-y-1/2 rounded p-1.5 text-ink-3 hover:bg-paper-2">
-                <X size={14} strokeWidth={1.8} />
-              </button>
-            )}
-          </div>
+        <div className="relative">
+          <Search size={19} strokeWidth={2} className="pointer-events-none absolute top-1/2 left-5 -translate-y-1/2 text-ink-3" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar por pet, raça, tutor ou bairro"
+            className="h-14 w-full rounded-full bg-card pr-12 pl-12 text-[15px] font-medium text-ink shadow-pill outline-none placeholder:text-ink-3 focus:ring-2 focus:ring-black"
+          />
+          {q && (
+            <button onClick={() => setQ('')} aria-label="Limpar busca" className="absolute top-1/2 right-3 flex size-8 -translate-y-1/2 items-center justify-center rounded-full bg-muted text-ink-2 hover:bg-muted-2">
+              <X size={14} strokeWidth={2.2} />
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <Segmented<Species>
             value={species}
             onChange={setSpecies}
@@ -101,49 +104,48 @@ export default function Pacientes() {
               { value: 'gato', label: 'Gatos' },
             ]}
           />
-          <div className="no-scrollbar max-w-full overflow-x-auto">
-            <Segmented<Vac>
-              value={vac}
-              onChange={setVac}
-              size="md"
-              options={[
-                { value: 'todas', label: 'Todas' },
-                { value: 'ok', label: 'Em dia' },
-                { value: 'soon', label: 'Vence em 30d' },
-                { value: 'late', label: 'Atrasada' },
-              ]}
-            />
+          <div className="no-scrollbar -mx-4 flex min-w-0 items-center gap-1.5 overflow-x-auto px-4 md:mx-0 md:px-0">
+            {(
+              [
+                ['todas', 'Todas'],
+                ['ok', 'Em dia'],
+                ['soon', 'Vence em 30 dias'],
+                ['late', 'Atrasada'],
+              ] as [Vac, string][]
+            ).map(([k, label]) => (
+              <Chip key={k} active={vac === k} onClick={() => setVac(k)} className="shrink-0">
+                {label}
+              </Chip>
+            ))}
           </div>
         </div>
         <div className="no-scrollbar -mx-4 flex items-center gap-1.5 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0">
-          <span className="eyebrow mr-1 shrink-0">Zona</span>
-          <ZoneToggle active={zone === 'todas'} onClick={() => setZone('todas')}>
-            Todas
-          </ZoneToggle>
+          <Chip active={zone === 'todas'} onClick={() => setZone('todas')} className="shrink-0">
+            Todas as zonas
+          </Chip>
           {ZONES.map((z) => (
-            <ZoneToggle key={z.id} active={zone === z.id} onClick={() => setZone(zone === z.id ? 'todas' : z.id)}>
-              <span className="size-2 rounded-full" style={{ background: z.hex }} />
+            <Chip key={z.id} active={zone === z.id} onClick={() => setZone(zone === z.id ? 'todas' : z.id)} color={z.hex} className="shrink-0">
               {z.short}
-            </ZoneToggle>
+            </Chip>
           ))}
         </div>
       </div>
 
-      <div className="mb-2 flex items-center justify-between text-[12.5px] text-ink-3">
+      <div className="mb-2 flex items-center justify-between px-1 text-[12.5px] font-medium text-ink-3">
         <span className="num">
           {filtered.length} de {rows.length} pacientes
         </span>
         {filtering && (
-          <button onClick={clear} className="font-medium text-ink-2 underline-offset-2 hover:underline">
+          <button onClick={clear} className="font-semibold text-ink-2 underline-offset-2 hover:underline">
             Limpar filtros
           </button>
         )}
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-line-2 bg-card">
-          <Empty icon={<SearchX size={26} strokeWidth={1.5} />} title="Nenhum paciente encontrado">
-            Revise a busca ou limpe os filtros para ver todos os pets cadastrados.
+        <div className="rounded-[28px] bg-card shadow-card">
+          <Empty icon={<SearchX size={24} strokeWidth={1.7} />} title="Nenhum paciente encontrado">
+            Revise a busca ou limpe os filtros.
           </Empty>
         </div>
       ) : (
@@ -156,23 +158,15 @@ export default function Pacientes() {
   )
 }
 
-function Stat({ label, value, sub, tone, onClick, active }: { label: string; value: number | string; sub: string; tone?: 'late' | 'warn'; onClick?: () => void; active?: boolean }) {
+function Stat({ icon, tone, label, value, onClick, active }: { icon: React.ReactNode; tone: 'coral' | 'yellow' | 'blue' | 'violet'; label: string; value: number | string; onClick?: () => void; active?: boolean }) {
   const Tag = onClick ? 'button' : 'div'
   return (
-    <Tag onClick={onClick} className={cn('px-4 py-3 text-left transition-colors', onClick && 'hover:bg-card-2', active && 'bg-card-2')}>
-      <div className="eyebrow">{label}</div>
-      <div className="mt-1 flex items-baseline gap-1.5">
-        <span className={cn('font-display text-[28px] leading-none font-medium num', tone === 'late' ? 'text-late' : tone === 'warn' ? 'text-warn' : 'text-ink')}>{value}</span>
-        <span className="text-[12px] text-ink-3">{sub}</span>
-      </div>
+    <Tag onClick={onClick} className={cn('rounded-[22px] bg-card p-4 text-left shadow-card transition-[box-shadow,transform]', onClick && 'hover:shadow-lift active:scale-[.98]', active && 'ring-2 ring-black')}>
+      <IconCircle size={36} tone={tone}>
+        {icon}
+      </IconCircle>
+      <div className="mt-3 text-[12.5px] font-medium text-ink-3">{label}</div>
+      <div className="mt-0.5 text-[28px] leading-none font-bold tracking-[-0.02em] text-ink num">{value}</div>
     </Tag>
-  )
-}
-
-function ZoneToggle({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button onClick={onClick} className={cn('inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[12.5px] font-medium transition-colors', active ? 'border-sage-800 bg-sage-800 text-paper' : 'border-line-2 bg-card text-ink-2 hover:bg-paper-2')}>
-      {children}
-    </button>
   )
 }

@@ -1,9 +1,9 @@
 import * as React from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { AnimatePresence, motion } from 'motion/react'
-import { CalendarPlus, Check, MapPin, Search, Sparkles, X } from 'lucide-react'
-import { Badge, Button, PetAvatar, Segmented, VetAvatar } from '@/components/ui'
-import { BAIRRO, BAIRROS, ZONE, ZONES } from '@/data/geo'
+import { CalendarDays, Check, MapPin, Search, X } from 'lucide-react'
+import { Badge, Button, IconButton, IconCircle, PetAvatar, Segmented, VetAvatar } from '@/components/ui'
+import { BAIRRO, BAIRROS, ZONES } from '@/data/geo'
 import { PET, PETS, TUTOR, VET, type VisitType } from '@/data/mock'
 import { cn } from '@/lib/utils'
 import { dayLabel, hhmm, km1, suggest, type AVisit, type Suggestion } from './model'
@@ -78,7 +78,7 @@ export function ScheduleDialog({ open, onOpenChange, all, onConfirm }: { open: b
         tutorId: pet.tutorId,
         bairro,
         type,
-        reason: reason.trim() || `${type} · encaixe pela agenda`,
+        reason: reason.trim() || `${type}, encaixe pela agenda`,
         status: 'agendada',
         fixed: false,
         origin: 'encaixe',
@@ -87,13 +87,14 @@ export function ScheduleDialog({ open, onOpenChange, all, onConfirm }: { open: b
     )
   }
 
+  const input = 'h-11 w-full rounded-full bg-muted pr-4 pl-11 text-[14px] font-medium text-ink outline-none placeholder:text-ink-3 focus:bg-card focus:ring-2 focus:ring-black'
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <AnimatePresence>
         {open && (
           <Dialog.Portal forceMount>
             <Dialog.Overlay asChild forceMount>
-              <motion.div className="fixed inset-0 z-50 bg-sage-950/45 backdrop-blur-[2px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} />
+              <motion.div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-[2px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} />
             </Dialog.Overlay>
             <Dialog.Content asChild forceMount aria-describedby={undefined}>
               <motion.div
@@ -101,53 +102,46 @@ export function ScheduleDialog({ open, onOpenChange, all, onConfirm }: { open: b
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 16 }}
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="fixed inset-x-0 bottom-0 z-50 flex max-h-[94dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-line bg-card shadow-float outline-none md:inset-0 md:m-auto md:h-fit md:max-h-[88dvh] md:max-w-[940px] md:rounded-2xl"
+                className="fixed inset-x-0 bottom-0 z-50 flex max-h-[94dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-card shadow-float outline-none md:inset-0 md:m-auto md:h-fit md:max-h-[88dvh] md:max-w-[940px] md:rounded-[28px]"
               >
-                <div className="flex items-start justify-between gap-4 border-b border-line px-5 py-4 md:px-6">
-                  <div>
-                    <Dialog.Title className="font-display text-[22px] leading-tight font-medium text-ink">Encaixar novo pedido</Dialog.Title>
-                    <p className="mt-1 text-[13px] text-ink-2">Escolha o bairro e veja quando a equipe já estará por perto.</p>
-                  </div>
-                  <Dialog.Close className="-mr-2 rounded-md p-2 text-ink-3 hover:bg-paper-2 hover:text-ink" aria-label="Fechar">
-                    <X size={18} strokeWidth={1.8} />
+                <div className="flex items-center justify-between gap-4 px-5 pt-5 pb-3 md:px-7 md:pt-6">
+                  <Dialog.Title className="text-[24px] leading-tight font-bold tracking-[-0.025em] text-ink">Encaixar visita</Dialog.Title>
+                  <Dialog.Close asChild>
+                    <IconButton tone="muted" size={40} aria-label="Fechar">
+                      <X size={17} strokeWidth={2} />
+                    </IconButton>
                   </Dialog.Close>
                 </div>
 
-                <div className="scroll-thin grid min-h-0 flex-1 overflow-y-auto md:grid-cols-[360px_1fr]">
+                <div className="scroll-thin grid min-h-0 flex-1 gap-3 overflow-y-auto px-3 pb-3 md:grid-cols-[360px_1fr] md:px-4">
                   {/* formulário */}
-                  <div className="space-y-5 border-line p-5 md:border-r md:p-6">
+                  <div className="space-y-5 p-2 md:p-3">
                     <Field label="Paciente">
                       {pet ? (
-                        <div className="flex items-center gap-3 rounded-lg border border-line-2 bg-card-2 p-2.5">
-                          <PetAvatar pet={pet} size={36} />
+                        <div className="flex items-center gap-3 rounded-full bg-muted p-1.5 pr-3">
+                          <PetAvatar pet={pet} size={38} />
                           <div className="min-w-0 flex-1 leading-tight">
-                            <div className="text-[13.5px] font-semibold text-ink">{pet.name}</div>
+                            <div className="text-[13.5px] font-bold text-ink">{pet.name}</div>
                             <div className="truncate text-[12px] text-ink-3">
                               {pet.breed} · {TUTOR[pet.tutorId].name}
                             </div>
                           </div>
-                          <button onClick={() => setPetId(null)} className="rounded-md px-2 py-1 text-[12px] font-medium text-ink-2 hover:bg-paper-2">
+                          <button onClick={() => setPetId(null)} className="rounded-full bg-card px-3 py-1.5 text-[12px] font-semibold text-ink shadow-pill hover:bg-surface">
                             Trocar
                           </button>
                         </div>
                       ) : (
                         <div className="relative">
-                          <Search size={15} strokeWidth={1.8} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-3" />
-                          <input
-                            value={q}
-                            onChange={(e) => setQ(e.target.value)}
-                            onFocus={() => setFocus(true)}
-                            placeholder="Buscar por pet ou tutor"
-                            className="h-10 w-full rounded-lg border border-line-2 bg-card pr-3 pl-9 text-[14px] text-ink outline-none placeholder:text-ink-4 focus:border-sage-600"
-                          />
+                          <Search size={16} strokeWidth={2} className="pointer-events-none absolute top-[14px] left-4 text-ink-3" />
+                          <input value={q} onChange={(e) => setQ(e.target.value)} onFocus={() => setFocus(true)} placeholder="Buscar por pet ou tutor" className={input} />
                           {(focus || q) && (
-                            <div className="mt-1.5 overflow-hidden rounded-lg border border-line bg-card shadow-lift">
+                            <div className="mt-2 overflow-hidden rounded-[20px] bg-card p-1.5 shadow-float">
                               {results.length === 0 && <div className="px-3 py-3 text-[13px] text-ink-3">Nenhum paciente com esse nome.</div>}
                               {results.map((p) => (
-                                <button key={p.id} onClick={() => pick(p.id)} className="flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-paper-2/70">
-                                  <PetAvatar pet={p} size={28} />
+                                <button key={p.id} onClick={() => pick(p.id)} className="flex w-full items-center gap-2.5 rounded-full px-2 py-1.5 text-left hover:bg-surface">
+                                  <PetAvatar pet={p} size={32} />
                                   <span className="min-w-0 flex-1 leading-tight">
-                                    <span className="block text-[13px] font-medium text-ink">{p.name}</span>
+                                    <span className="block text-[13px] font-bold text-ink">{p.name}</span>
                                     <span className="block truncate text-[11.5px] text-ink-3">
                                       {TUTOR[p.tutorId].name} · {BAIRRO[TUTOR[p.tutorId].bairro].name}
                                     </span>
@@ -160,14 +154,10 @@ export function ScheduleDialog({ open, onOpenChange, all, onConfirm }: { open: b
                       )}
                     </Field>
 
-                    <Field label="Bairro do atendimento">
+                    <Field label="Bairro">
                       <div className="relative">
-                        <MapPin size={15} strokeWidth={1.8} className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-ink-3" />
-                        <select
-                          value={bairro}
-                          onChange={(e) => setBairro(e.target.value)}
-                          className="h-10 w-full appearance-none rounded-lg border border-line-2 bg-card pr-3 pl-9 text-[14px] text-ink outline-none focus:border-sage-600"
-                        >
+                        <MapPin size={16} strokeWidth={2} className="pointer-events-none absolute top-[14px] left-4 text-ink-3" />
+                        <select value={bairro} onChange={(e) => setBairro(e.target.value)} className={cn(input, 'appearance-none')}>
                           <option value="">Selecione o bairro</option>
                           {ZONES.map((z) => (
                             <optgroup key={z.id} label={z.name}>
@@ -188,19 +178,14 @@ export function ScheduleDialog({ open, onOpenChange, all, onConfirm }: { open: b
                           <button
                             key={t.type}
                             onClick={() => setType(t.type)}
-                            className={cn('h-8 rounded-full border px-3 text-[12.5px] font-medium transition-colors', type === t.type ? 'border-sage-800 bg-sage-800 text-paper' : 'border-line-2 bg-card text-ink-2 hover:bg-paper-2')}
+                            className={cn('h-9 rounded-full px-3.5 text-[12.5px] font-semibold transition-colors', type === t.type ? 'bg-black text-white' : 'bg-muted text-ink-2 hover:bg-muted-2')}
                           >
                             {t.type}
                           </button>
                         ))}
                       </div>
-                      <input
-                        value={reason}
-                        onChange={(e) => setReason(e.target.value)}
-                        placeholder="Detalhe rápido (opcional)"
-                        className="h-10 w-full rounded-lg border border-line-2 bg-card px-3 text-[14px] text-ink outline-none placeholder:text-ink-4 focus:border-sage-600"
-                      />
-                      <div className="mt-1.5 text-[11.5px] text-ink-3">Duração estimada: {dur} min</div>
+                      <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Detalhe rápido (opcional)" className={cn(input, 'pl-4')} />
+                      <div className="mt-1.5 pl-1 text-[12px] text-ink-3">Duração estimada: {dur} min</div>
                     </Field>
 
                     <Field label="Urgência">
@@ -219,16 +204,15 @@ export function ScheduleDialog({ open, onOpenChange, all, onConfirm }: { open: b
                   </div>
 
                   {/* sugestões */}
-                  <div className="bg-card-2/60 p-5 md:p-6">
-                    <div className="mb-3 flex items-center gap-2">
-                      <Sparkles size={15} strokeWidth={1.8} className="text-terra-600" />
-                      <h3 className="text-[14px] font-semibold text-ink">Melhores horários na rota</h3>
-                    </div>
+                  <div className="rounded-[24px] bg-surface p-4 md:p-5">
+                    <h3 className="mb-3 text-[16px] font-bold tracking-[-0.01em] text-ink">Horários sugeridos</h3>
                     {!bairro ? (
-                      <div className="rounded-lg border border-dashed border-line-2 px-5 py-10 text-center">
-                        <MapPin size={22} strokeWidth={1.6} className="mx-auto mb-2 text-ink-4" />
-                        <div className="text-[13.5px] font-medium text-ink">Escolha um paciente ou bairro</div>
-                        <p className="mx-auto mt-1 max-w-[260px] text-[12.5px] text-ink-3">Ranqueamos pelos dias em que algum veterinário já estará na região, para não gastar quilômetro à toa.</p>
+                      <div className="flex flex-col items-center rounded-[20px] bg-card px-5 py-10 text-center shadow-card">
+                        <IconCircle size={48} className="mb-3">
+                          <MapPin size={20} strokeWidth={1.9} />
+                        </IconCircle>
+                        <div className="text-[14px] font-bold text-ink">Escolha um paciente</div>
+                        <p className="mt-1 max-w-[240px] text-[12.5px] text-ink-3">Os horários aparecem aqui, ordenados pela rota.</p>
                       </div>
                     ) : (
                       <ul className="space-y-2">
@@ -243,22 +227,21 @@ export function ScheduleDialog({ open, onOpenChange, all, onConfirm }: { open: b
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-3 border-t border-line bg-card px-5 py-3.5 pb-[max(0.875rem,env(safe-area-inset-bottom))] md:px-6">
-                  <div className="hidden min-w-0 truncate text-[12.5px] text-ink-3 sm:block">
+                <div className="flex items-center justify-between gap-3 px-5 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-7 md:pb-5">
+                  <div className="hidden min-w-0 truncate text-[12.5px] font-medium text-ink-3 sm:block">
                     {chosen ? (
                       <>
-                        {pet?.name} · {dayLabel(chosen.off)} às <span className="font-mono num">{hhmm(chosen.startMin)}</span> com {VET[chosen.vetId].short}
+                        {pet?.name} · {dayLabel(chosen.off)} às <span className="num">{hhmm(chosen.startMin)}</span> com {VET[chosen.vetId].short}
                       </>
                     ) : (
-                      'Selecione o paciente e um horário sugerido.'
+                      'Selecione o paciente e um horário.'
                     )}
                   </div>
                   <div className="ml-auto flex gap-2">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>
+                    <Button variant="ghost" size="lg" onClick={() => onOpenChange(false)}>
                       Cancelar
                     </Button>
-                    <Button variant="accent" disabled={!canConfirm} onClick={confirm}>
-                      <CalendarPlus size={16} strokeWidth={1.8} />
+                    <Button variant="primary" size="lg" disabled={!canConfirm} onClick={confirm}>
                       Confirmar encaixe
                     </Button>
                   </div>
@@ -275,7 +258,7 @@ export function ScheduleDialog({ open, onOpenChange, all, onConfirm }: { open: b
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="eyebrow mb-1.5">{label}</div>
+      <div className="mb-2 pl-1 text-[12.5px] font-semibold text-ink-3">{label}</div>
       {children}
     </div>
   )
@@ -286,28 +269,26 @@ function SuggestionCard({ s, best, selected, onSelect }: { s: Suggestion; best: 
   return (
     <button
       onClick={onSelect}
-      className={cn(
-        'relative w-full rounded-xl border bg-card p-3.5 text-left transition-[border-color,box-shadow] hover:border-line-2',
-        selected ? 'border-sage-700 shadow-lift ring-1 ring-sage-700' : 'border-line shadow-card',
-      )}
+      className={cn('w-full rounded-[20px] bg-card p-3.5 text-left shadow-card transition-[box-shadow] hover:shadow-lift', selected && 'ring-2 ring-black')}
     >
       <div className="flex items-start gap-3">
-        <span className={cn('mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border', selected ? 'border-sage-800 bg-sage-800 text-paper' : 'border-line-2')}>{selected && <Check size={12} strokeWidth={3} />}</span>
+        <IconCircle size={40} tone={selected ? 'black' : 'muted'}>
+          {selected ? <Check size={17} strokeWidth={2.6} /> : <CalendarDays size={17} strokeWidth={1.9} />}
+        </IconCircle>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="font-display text-[17px] leading-none font-medium text-ink">{dayLabel(s.off)}</span>
-            <span className="font-mono text-[13px] font-medium text-ink num">{hhmm(s.startMin)}</span>
-            {best && <Badge tone="sage">Melhor opção</Badge>}
+            <span className="text-[15px] leading-none font-bold text-ink">{dayLabel(s.off)}</span>
+            <span className="text-[13px] font-bold text-ink-2 num">{hhmm(s.startMin)}</span>
+            {best && <Badge tone="lime">Melhor opção</Badge>}
           </div>
-          <div className="mt-2 flex items-center gap-2 text-[13px] font-medium text-ink">
+          <div className="mt-2 flex items-center gap-2 text-[13px] font-semibold text-ink">
             <VetAvatar vetId={s.vetId} size={20} />
             {s.title}
           </div>
-          <p className="mt-1 text-[12.5px] leading-snug text-ink-2">{s.why}</p>
+          <p className="mt-1 text-[12.5px] leading-snug text-ink-3">{s.why}</p>
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             <Badge tone={tone}>{s.kind === 'fora' ? `Fora da rota +${km1(s.extraKm)}` : `+${km1(s.extraKm)} na rota`}</Badge>
             <ZoneChip id={BAIRRO[s.bairro].zone} />
-            <span className="text-[11.5px] text-ink-3">{ZONE[BAIRRO[s.bairro].zone].name}</span>
           </div>
         </div>
       </div>

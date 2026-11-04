@@ -1,14 +1,16 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { AlertTriangle, CalendarPlus, ChevronLeft, ClipboardPen, Cpu, Hand, MessageCircle, Send } from 'lucide-react'
+import { CalendarCheck, CalendarPlus, ChevronLeft, ClipboardPen, Hand, Scale, Send, ShieldCheck, Syringe, TriangleAlert, type LucideIcon } from 'lucide-react'
 import { toast } from 'sonner'
-import { Button, PetAvatar, VetAvatar } from '@/components/ui'
+import { Badge, Button, Card, PetAvatar, VetAvatar } from '@/components/ui'
 import { VET, VETS, WEEK_PLAN, zoneOfPet, type Pet, type Tutor } from '@/data/mock'
 import { BAIRRO, ZONE } from '@/data/geo'
 import { ageLabel, day, fmt, relDays } from '@/data/time'
-import { firstName } from '@/lib/utils'
-import { ZoneChip } from './SidePanels'
-import { petFacts, type PatientModel } from './model'
+import { dueState } from '@/lib/status'
+import { cn, firstName } from '@/lib/utils'
+import { petFacts, toneText, type PatientModel } from './model'
+
+const nf = (n: number) => n.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 /** Próximo dia em que algum veterinário está escalado na zona do paciente */
 function suggestSlot(pet: Pet) {
@@ -22,6 +24,23 @@ function suggestSlot(pet: Pet) {
   return null
 }
 
+function Metric({ icon: Icon, label, value, delta, deltaCls, className }: { icon: LucideIcon; label: string; value: React.ReactNode; delta?: React.ReactNode; deltaCls?: string; className?: string }) {
+  return (
+    <div className={cn('flex min-w-0 items-center gap-3 py-4 lg:px-5 lg:first:pl-0', className)}>
+      <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-muted text-ink">
+        <Icon className="size-[18px]" strokeWidth={1.9} />
+      </span>
+      <div className="min-w-0">
+        <div className="truncate text-[12.5px] font-semibold text-ink-3">{label}</div>
+        <div className="flex flex-wrap items-baseline gap-x-2">
+          <span className="num text-[18px] leading-tight font-bold tracking-[-0.02em] text-ink">{value}</span>
+          {delta && <span className={cn('num text-[12px] font-semibold whitespace-nowrap', deltaCls)}>{delta}</span>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function PatientHeader({ pet, tutor, model }: { pet: Pet; tutor: Tutor; model: PatientModel }) {
   const nav = useNavigate()
   const f = petFacts(pet)
@@ -29,145 +48,182 @@ export function PatientHeader({ pet, tutor, model }: { pet: Pet; tutor: Tutor; m
 
   const schedule = () => {
     const s = suggestSlot(pet)
-    if (!s) return toast('Abrindo a agenda por região…')
+    if (!s) return toast('Abrindo a agenda')
     toast.success(`Sugestão: ${fmt.weekday(s.date)}, ${fmt.short(s.date)}`, {
-      description: `${s.vet.short} estará na ${s.zone.name} (${b?.name}). Encaixe sem desvio de rota.`,
+      description: `${s.vet.short} estará na ${s.zone.name} (${b?.name}).`,
       action: { label: 'Abrir agenda', onClick: () => nav('/agenda') },
     })
   }
   const sendCard = () =>
-    toast.success(`Carteira d${f.article} ${pet.name} enviada para ${firstName(tutor.name)}`, {
-      description: `PDF pelo WhatsApp · ${tutor.phone}`,
+    toast.success(`Carteira d${f.article} ${pet.name} enviada`, {
+      description: `PDF pelo WhatsApp para ${firstName(tutor.name)} · ${tutor.phone}`,
     })
 
   const vn = model.visitNow
   const alerts = pet.alerts ?? []
 
-  return (
-    <header>
-      <Link to="/pacientes" className="-ml-1.5 mb-4 inline-flex h-8 items-center gap-1 rounded-md px-1.5 text-[13px] text-ink-3 transition-colors hover:bg-paper-2 hover:text-ink">
-        <ChevronLeft className="size-4" /> Pacientes
-      </Link>
+  /* métricas */
+  const vac = model.current.map((d) => dueState(d.nextDate))
+  const vLate = vac.filter((s) => s.key === 'late').length
+  const vSoon = vac.filter((s) => s.key === 'soon').length
+  const vOk = vac.length - vLate
 
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-        <div className="grid min-w-0 flex-1 grid-cols-[88px_minmax(0,1fr)] gap-x-4 sm:grid-cols-[100px_minmax(0,1fr)] sm:gap-x-5">
-          <motion.div initial={{ scale: 0.94, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }} className="relative self-start sm:row-span-2">
-            <PetAvatar pet={pet} size={100} className="ring-4 ring-card shadow-lift max-sm:size-[88px]!" />
+  const w = model.weights
+  const ref = w.length > 3 ? w[w.length - 4] : w[0]
+  const wDelta = ref ? model.currentKg - ref.kg : 0
+  const [lo, hi] = pet.idealKg
+  const awayFromIdeal = (model.currentKg > hi && wDelta > 0) || (model.currentKg < lo && wDelta < 0)
+
+  const cd = model.lastContactDays
+  const chips = [f.species, pet.breed, ageLabel(pet.birth), `${nf(model.currentKg)} kg`, `${f.sex} ${f.neutered.toLowerCase()}`]
+
+  return (
+    <Card className="p-5 md:p-6">
+      <div className="flex items-center gap-2.5 text-[13px] font-semibold text-ink-3">
+        <Link to="/pacientes" aria-label="Voltar para pacientes" className="inline-flex size-[34px] items-center justify-center rounded-full bg-muted text-ink transition-[background,transform] hover:bg-muted-2 active:scale-95">
+          <ChevronLeft className="size-4" strokeWidth={2} />
+        </Link>
+        <Link to="/pacientes" className="hover:text-ink">
+          Pacientes
+        </Link>
+        <span className="text-ink-4">/</span>
+        <span className="text-ink">{pet.name}</span>
+      </div>
+
+      <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 items-center gap-4 md:gap-5">
+          <motion.div initial={{ scale: 0.94, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }} className="relative shrink-0">
+            <PetAvatar pet={pet} size={112} className="max-md:size-[84px]!" />
             {vn?.status === 'em-atendimento' && (
-              <span className="absolute right-0.5 bottom-1 flex size-5 items-center justify-center rounded-full border-[3px] border-paper bg-terra-500">
-                <span className="absolute inset-0 animate-ping rounded-full bg-terra-500 opacity-50" />
+              <span className="absolute right-1 bottom-1.5 flex size-5 items-center justify-center rounded-full bg-lime ring-[3px] ring-card md:right-2 md:bottom-2">
+                <span className="absolute inset-0 animate-ping rounded-full bg-lime opacity-60" />
               </span>
             )}
           </motion.div>
 
-          <div className="min-w-0 self-center sm:self-auto sm:pt-0.5">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <h1 className="font-display text-[38px] leading-[1] font-medium tracking-[-0.025em] text-ink sm:text-[46px]">{pet.name}</h1>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <h1 className="text-[28px] leading-[1.1] font-bold tracking-[-0.03em] text-ink md:text-[32px]">{pet.name}</h1>
               {vn && vn.status === 'em-atendimento' && (
-                <span className="inline-flex h-7 items-center gap-2 rounded-full bg-terra-100 pr-2.5 pl-1 text-[12px] font-medium text-terra-700">
+                <span className="inline-flex h-7 items-center gap-1.5 rounded-full bg-lime pr-3 pl-1 text-[12px] font-semibold text-lime-ink">
                   <VetAvatar vetId={vn.visit.vetId} size={20} />
-                  Em atendimento agora · {VET[vn.visit.vetId]?.short}
+                  Em atendimento
                 </span>
               )}
               {vn && vn.status === 'concluida' && (
-                <span className="inline-flex h-7 items-center gap-2 rounded-full bg-ok-bg pr-2.5 pl-1 text-[12px] font-medium text-ok">
-                  <VetAvatar vetId={vn.visit.vetId} size={20} />
-                  Atendido hoje · {VET[vn.visit.vetId]?.short}
-                </span>
+                <Badge tone="ok" dot>
+                  Atendido hoje
+                </Badge>
               )}
               {vn && (vn.status === 'agendada' || vn.status === 'a-caminho') && (
-                <span className="inline-flex h-7 items-center gap-2 rounded-full bg-info-bg px-2.5 text-[12px] font-medium text-info">
-                  Visita hoje às {fmt.time(vn.visit.start)} · {VET[vn.visit.vetId]?.short}
-                </span>
+                <Badge tone="info" dot>
+                  Visita hoje às {fmt.time(vn.visit.start)}
+                </Badge>
               )}
             </div>
-          </div>
-
-          <div className="col-span-2 mt-4 min-w-0 sm:col-span-1 sm:col-start-2 sm:mt-2">
-            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[14px] text-ink-2">
-              {[f.species, pet.breed, f.sex, f.neutered, ageLabel(pet.birth), `pelagem ${pet.coat.toLowerCase()}`].map((x, i) => (
-                <span key={i} className="inline-flex items-center gap-1.5">
-                  {i > 0 && <span className="text-ink-4">·</span>}
-                  {x}
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {chips.map((c) => (
+                <span key={c} className="inline-flex h-7 items-center rounded-full bg-muted px-3 text-[12.5px] font-semibold text-ink-2">
+                  {c}
                 </span>
               ))}
             </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-ink-3">
-              <span className="inline-flex items-center gap-1.5">
-                <Cpu className="size-3.5" strokeWidth={1.8} />
-                {pet.microchip ? <span className="num font-mono text-ink-2">{pet.microchip}</span> : 'Sem microchip'}
-              </span>
-              {model.nextVisit && (
+            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] font-medium text-ink-3">
+              {vn && <span>{VET[vn.visit.vetId]?.short} · {vn.visit.reason}</span>}
+              {!vn && model.nextVisit && (
                 <span>
-                  Próxima visita <span className="font-medium text-ink-2">{relDays(model.nextVisit.start)}</span> · {model.nextVisit.reason}
+                  Próxima visita <span className="text-ink-2">{relDays(model.nextVisit.start)}</span> · {model.nextVisit.reason}
                 </span>
               )}
+              {pet.microchip && <span className="num">Microchip {pet.microchip}</span>}
             </div>
-
-            {/* tutor compacto */}
-            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[13px]">
-              <span className="text-ink-3">
-                Tutor: <span className="font-medium text-ink">{tutor.name}</span>
-              </span>
-              <button
-                onClick={() => toast(`Abrindo conversa com ${firstName(tutor.name)} no WhatsApp`, { description: tutor.phone })}
-                className="num inline-flex h-7 items-center gap-1.5 rounded-md px-1.5 font-mono text-[12px] text-sage-700 transition-colors hover:bg-sage-50"
-              >
-                <MessageCircle className="size-3.5" strokeWidth={1.8} />
-                {tutor.phone}
-              </button>
-              <span className="inline-flex flex-wrap items-center gap-2 text-ink-2">
-                {tutor.address} · {b?.name}
-                <ZoneChip bairroId={tutor.bairro} />
-              </span>
-            </div>
-
-            {pet.temperament && (
-              <div className="mt-3 inline-flex max-w-full items-start gap-2 rounded-md border border-[#ead9a8] bg-[#fbf3dc] px-3 py-1.5 text-[13px] text-[#6b5520] shadow-[0_1px_0_rgba(107,85,32,.06)]">
-                <Hand className="mt-0.5 size-3.5 shrink-0" strokeWidth={1.8} />
-                <span>
-                  <span className="font-semibold">Manejo:</span> {pet.temperament}
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
-        <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:max-w-[340px] lg:justify-end">
-          <Button variant="primary" onClick={() => nav('/campo')} className="col-span-2 h-11 sm:h-9">
-            <ClipboardPen className="size-4" strokeWidth={1.8} /> Registrar atendimento
+        <div className="grid shrink-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:justify-end">
+          <Button variant="primary" onClick={() => nav('/campo')} className="col-span-2 h-11 sm:h-10">
+            <ClipboardPen className="size-4" strokeWidth={2} /> Registrar atendimento
           </Button>
-          <Button variant="outline" onClick={schedule} className="h-11 sm:h-9">
-            <CalendarPlus className="size-4" strokeWidth={1.8} /> Agendar visita
+          <Button variant="outline" onClick={schedule} className="h-11 sm:h-10">
+            <CalendarPlus className="size-4" strokeWidth={2} /> Agendar
           </Button>
-          <Button variant="outline" onClick={sendCard} className="h-11 sm:h-9">
-            <Send className="size-4" strokeWidth={1.8} /> <span className="sm:hidden">Enviar carteira</span>
-            <span className="hidden sm:inline">Enviar carteira ao tutor</span>
+          <Button variant="outline" onClick={sendCard} className="h-11 sm:h-10">
+            <Send className="size-4" strokeWidth={2} /> Enviar carteira
           </Button>
         </div>
       </div>
 
-      {alerts.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
-          role="alert"
-          className="mt-5 flex items-start gap-3 overflow-hidden rounded-lg border border-[#e9c3b9] bg-late-bg/70 py-2.5 pr-4 pl-3 shadow-[inset_3px_0_0_var(--color-late)]"
-        >
-          <span className="mt-px flex size-6 shrink-0 items-center justify-center rounded-full bg-late text-white">
-            <AlertTriangle className="size-3.5" strokeWidth={2.2} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="font-mono text-[10px] tracking-[0.1em] text-late/80 uppercase">Alerta clínico</div>
-            <ul className="text-[13.5px] leading-snug font-medium text-[#7d2a1f]">
-              {alerts.map((a) => (
-                <li key={a}>{a}</li>
-              ))}
-            </ul>
-          </div>
-        </motion.div>
+      {/* métricas em linha (ref. logip) */}
+      <div className="mt-5 grid grid-cols-2 border-y border-line lg:grid-cols-4 lg:divide-x lg:divide-line">
+        <Metric
+          icon={Syringe}
+          label="Vacinas em dia"
+          value={vac.length ? `${vOk}/${vac.length}` : '0'}
+          delta={vac.length ? (vLate ? `▼ ${vLate} atrasada${vLate > 1 ? 's' : ''}` : vSoon ? `${vSoon} vence em breve` : '▲ todas') : 'sem registro'}
+          deltaCls={vLate || !vac.length ? 'text-red' : vSoon ? 'text-yellow-ink' : 'text-green'}
+          className="pr-3"
+        />
+        <Metric
+          icon={Scale}
+          label="Peso"
+          value={`${nf(model.currentKg)} kg`}
+          delta={Math.abs(wDelta) >= 0.05 ? `${wDelta > 0 ? '▲ +' : '▼ −'}${nf(Math.abs(wDelta))}` : 'estável'}
+          deltaCls={Math.abs(wDelta) < 0.05 ? 'text-ink-3' : awayFromIdeal ? 'text-red' : 'text-green'}
+          className="border-l border-line pl-4 lg:border-l-0"
+        />
+        <Metric
+          icon={CalendarCheck}
+          label="Última visita"
+          value={cd === null ? 'Sem registro' : cd === 0 ? 'Hoje' : cd === 1 ? 'Ontem' : `há ${cd} dias`}
+          className="border-t border-line pr-3 lg:border-t-0"
+        />
+        <Metric
+          icon={ShieldCheck}
+          label="Índice preventivo"
+          value={model.index.score}
+          delta={model.index.label}
+          deltaCls={toneText[model.index.tone]}
+          className="border-t border-l border-line pl-4 lg:border-t-0 lg:border-l-0"
+        />
+      </div>
+
+      {(alerts.length > 0 || pet.temperament) && (
+        <div className="mt-4 grid gap-2 md:grid-cols-2">
+          {alerts.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
+              role="alert"
+              className={cn('flex items-center gap-3 rounded-[18px] bg-red-soft px-3.5 py-3', !pet.temperament && 'md:col-span-2')}
+            >
+              <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-red text-white">
+                <TriangleAlert className="size-4" strokeWidth={2} />
+              </span>
+              <div className="min-w-0">
+                <div className="text-[12px] font-semibold text-red">Alerta clínico</div>
+                {alerts.map((a) => (
+                  <div key={a} className="text-[13.5px] leading-snug font-semibold text-ink">
+                    {a}
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+          {pet.temperament && (
+            <div className={cn('flex items-center gap-3 rounded-[18px] bg-surface px-3.5 py-3', !alerts.length && 'md:col-span-2')}>
+              <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-card text-ink shadow-pill">
+                <Hand className="size-4" strokeWidth={1.9} />
+              </span>
+              <div className="min-w-0">
+                <div className="text-[12px] font-semibold text-ink-3">Manejo</div>
+                <div className="text-[13.5px] leading-snug font-semibold text-ink">{pet.temperament}</div>
+              </div>
+            </div>
+          )}
+        </div>
       )}
-    </header>
+    </Card>
   )
 }
+

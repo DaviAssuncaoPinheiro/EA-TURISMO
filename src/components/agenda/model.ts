@@ -135,7 +135,7 @@ function buildBase(): AVisit[] {
         const zb = BAIRROS.filter((b) => b.zone === zone)
         const own = TUTOR[pet.tutorId].bairro
         const bairro = r() < 0.55 || !zb.length ? own : zb[Math.floor(r() * zb.length)].id
-        const start = WORK_START + Math.floor(r() * 36) * 15 // 08:00–16:45
+        const start = WORK_START + Math.floor(r() * 36) * 15 // 08:00 a 16:45
         if (start + t.dur > WORK_END) continue
         if (start < 12 * 60 + 30 && start + t.dur > 12 * 60) continue
         const clash = out.some((v) => v.vetId === vet.id && v.off === off && start < v.startMin + v.dur + 15 && v.startMin < start + t.dur + 15)

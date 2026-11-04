@@ -57,7 +57,7 @@ export interface Contributor {
   id: string
   label: string
   detail: string
-  /** 0–1 */
+  /** de 0 a 1 */
   value: number
   weight: number
   tone: Health
@@ -309,11 +309,16 @@ export function petFacts(pet: Pet) {
   }
 }
 
-export const vetOf = (id: string) => VET[id] ?? { id, name: 'Veterinário', short: 'Vet', initials: 'V', crmv: 'CRMV-AM', focus: '', color: '#7b847d' }
+export const vetOf = (id: string) => VET[id] ?? { id, name: 'Veterinário', short: 'Vet', initials: 'V', crmv: 'CRMV-AM', focus: '', color: '#8a8f99' }
 
-export const toneText: Record<Health, string> = { ok: 'text-ok', warn: 'text-warn', late: 'text-late' }
-export const toneBg: Record<Health, string> = { ok: 'bg-ok', warn: 'bg-warn', late: 'bg-late' }
-export const toneVar: Record<Health, string> = { ok: 'var(--color-ok)', warn: 'var(--color-warn)', late: 'var(--color-late)' }
+export const toneText: Record<Health, string> = { ok: 'text-green', warn: 'text-yellow-ink', late: 'text-red' }
+export const toneBg: Record<Health, string> = { ok: 'bg-green', warn: 'bg-yellow', late: 'bg-red' }
+export const toneVar: Record<Health, string> = { ok: 'var(--color-green)', warn: 'var(--color-yellow)', late: 'var(--color-red)' }
+export const toneSoft: Record<Health, string> = { ok: 'bg-green-soft', warn: 'bg-yellow-soft', late: 'bg-red-soft' }
+export const toneBadge: Record<Health, 'ok' | 'warn' | 'late'> = { ok: 'ok', warn: 'warn', late: 'late' }
+
+/** Remove travessões vindos dos dados (intervalo "21-28 dias" vira "21 a 28 dias") */
+export const clean = (s: string) => s.replace(/(\d)\s*[\u2013\u2014]\s*(\d)/g, '$1 a $2').replace(/\s*[\u2013\u2014]\s*/g, ', ')
 
 /** hash determinístico pequeno (para rotações e variações visuais estáveis) */
 export function hash(s: string) {
