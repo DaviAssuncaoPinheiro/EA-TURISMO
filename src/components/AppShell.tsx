@@ -29,7 +29,6 @@ const NAV = [
   { to: '/regioes', label: 'Regiões', icon: Map },
   { to: '/pacientes', label: 'Pacientes', icon: PawPrint },
   { to: '/lembretes', label: 'Lembretes', icon: MessageCircle, badge: true },
-  { to: '/campo', label: 'Atendimento', icon: Stethoscope },
 ]
 
 export function AppShell({ children }: { children?: React.ReactNode }) {
@@ -166,7 +165,7 @@ export function AppShell({ children }: { children?: React.ReactNode }) {
       {/* Dock flutuante no celular (ref. apps de finanças e condomínio) */}
       <nav className="fixed inset-x-0 bottom-[max(14px,env(safe-area-inset-bottom))] z-30 flex justify-center px-4 lg:hidden">
         <div className="flex items-center gap-1 rounded-full bg-black p-1.5 shadow-float">
-          {NAV.filter((n) => n.to !== '/regioes').map((n) => (
+          {NAV.map((n) => (
             <NavLink
               key={n.to}
               to={n.to}

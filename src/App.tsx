@@ -11,6 +11,8 @@ const Pacientes = lazy(() => import('./pages/Pacientes'))
 const Paciente = lazy(() => import('./pages/Paciente'))
 const Lembretes = lazy(() => import('./pages/Lembretes'))
 const Campo = lazy(() => import('./pages/campo/Campo'))
+const Relatorio = lazy(() => import('./pages/public/Relatorio'))
+const Carteira = lazy(() => import('./pages/public/Carteira'))
 
 export default function App() {
   return (
@@ -19,6 +21,8 @@ export default function App() {
         <Suspense fallback={<div className="h-dvh bg-surface" />}>
         <Routes>
           <Route path="/campo/*" element={<Campo />} />
+          <Route path="/relatorio/:visitId" element={<Relatorio />} />
+          <Route path="/carteira/:petId" element={<Carteira />} />
           <Route element={<AppShell />}>
             <Route index element={<Hoje />} />
             <Route path="agenda" element={<Agenda />} />

@@ -5,11 +5,11 @@ import { ArrowRight, Check, Compass, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const STEPS = [
-  { to: '/', title: 'O dia de hoje', text: 'Veja as visitas da equipe e clique em "Otimizar rota" para reorganizar o trajeto por bairro.' },
-  { to: '/agenda', title: 'Agenda por região', text: 'Cada veterinário atende uma zona de Manaus por dia. Novos pedidos entram no dia em que a equipe já estará no bairro.' },
-  { to: '/campo', title: 'Atendimento no celular', text: 'Abra a visita do Bob e registre o atendimento como o veterinário faria na casa do tutor.' },
-  { to: '/pacientes/bob', title: 'Ficha do paciente', text: 'Tudo que foi registrado na visita aparece aqui: carteira de vacinação, peso e linha do tempo.' },
-  { to: '/lembretes', title: 'Lembretes automáticos', text: 'As vacinas e os retornos geram mensagens de WhatsApp para o tutor no momento certo.' },
+  { to: '/', title: 'O dia de hoje', text: 'Visitas da equipe no mapa, o kit para levar no carro e o botão para abrir cada endereço no Waze.' },
+  { to: '/agenda', title: 'Agenda por região', text: 'Cada veterinário atende uma zona de Manaus por dia. Novos pedidos entram no dia em que a equipe já está no bairro.' },
+  { to: '/campo/visita/v3', title: 'Atendimento do Bob', text: 'Veja o cartão de chegada, registre o exame, tire fotos e finalize. O tutor recebe um relatório por WhatsApp.' },
+  { to: '/pacientes/bob', title: 'Ficha do paciente', text: 'O que foi registrado aparece aqui: vacinas, peso, fotos antes e depois e a carteira digital.' },
+  { to: '/lembretes', title: 'Lembretes automáticos', text: 'Vacinas e retornos geram mensagens de WhatsApp para o tutor no momento certo.' },
 ]
 
 export function DemoGuide() {
@@ -23,7 +23,6 @@ export function DemoGuide() {
     setOpen(false)
     try { localStorage.setItem('vd-guide-closed', '1') } catch {}
   }
-  if (loc.pathname.startsWith('/campo')) return null
   if (typeof window !== 'undefined' && window.innerWidth < 1280) return null
 
   const step = STEPS[Math.max(0, current)]
