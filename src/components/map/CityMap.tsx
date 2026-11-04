@@ -144,8 +144,37 @@ const AVENUE_TEXT_PATHS = AVENIDAS.map((a) => {
 
 const RESERVA_DUCKE = 'M812,34 C850,22 900,18 944,32 C972,44 988,72 984,108 C980,134 958,152 930,150 C908,146 896,128 880,122 C856,112 830,104 812,88 C800,72 800,48 812,34 Z'
 const PONTE = 'M358,598 L318,680'
+/** Mata ao redor da cidade (tudo acima do limite norte/leste das zonas) */
+const FOREST =
+  'M-50,-50 L1050,-50 L1050,612 L878,598 L908,540 L946,424 L956,300 L936,186 L884,132 L802,96 L736,62 L620,38 L470,46 L356,78 L330,200 L70,262 L-50,240 Z'
 
 /* ───────────── hooks ───────────── */
+
+/** Pré-carrega fotos: no SVG, uma <image> quebrada mostraria o ícone do navegador. */
+const IMG_STATE = new Map<string, 'ok' | 'err' | 'loading'>()
+function useLoadedImages(urls: string[]) {
+  const [, tick] = React.useReducer((n: number) => n + 1, 0)
+  const key = urls.join('|')
+  React.useEffect(() => {
+    let alive = true
+    for (const url of urls) {
+      if (IMG_STATE.has(url)) continue
+      IMG_STATE.set(url, 'loading')
+      const img = new Image()
+      img.onload = () => {
+        IMG_STATE.set(url, 'ok')
+        if (alive) tick()
+      }
+      img.onerror = () => IMG_STATE.set(url, 'err')
+      img.src = url
+    }
+    return () => {
+      alive = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key])
+  return (url: string) => IMG_STATE.get(url) === 'ok'
+}
 
 function useSize<T extends HTMLElement>() {
   const ref = React.useRef<T>(null)
@@ -195,7 +224,17 @@ function useAnimatedBox(target: Box, ready: boolean) {
 
 /* ───────────── componente ───────────── */
 
-export function CityMap({
+export function CityMap(props: CityMapProps) {
+  const [probeRef, probe] = useSize<HTMLDivElement>()
+  const narrow = probe.w > 0 && probe.w < 520
+  return (
+    <div ref={probeRef} className={cn('w-full', !props.aspect && 'h-full')}>
+      <CityMapInner {...props} compact={props.compact ?? narrow} />
+    </div>
+  )
+}
+
+function CityMapInner({
   visits = [],
   routeOrder,
   compareOrder,
@@ -212,7 +251,7 @@ export function CityMap({
   heatUnit = 'visitas',
   focus = 'city',
   aspect,
-  compact = false,
+  compact,
   showBairros = 'auto',
   bairroHighlight,
   showAvenueNames,
@@ -226,6 +265,7 @@ export function CityMap({
   const [hoverZone, setHoverZone] = React.useState<ZoneId | null>(null)
   const [hoverVisit, setHoverVisit] = React.useState<string | null>(null)
 
+  const imgOk = useLoadedImages(visits.map((v) => PET[v.petId]?.photo).filter(Boolean) as string[])
   const ready = size.w > 0 && size.h > 0
   const ratio = ready ? size.w / size.h : aspect ?? 1000 / 680
 
@@ -257,21 +297,34 @@ export function CityMap({
 
   /* rótulos: zonas → pins → bairros */
   const zoneFont = px(compact ? 9.5 : 10.5)
-  const zoneLabelRects: Rect[] = ZONES.map((z) => {
-    const w = z.name.length * zoneFont * 0.68
-    const extra = heat ? px(30) : 0
-    return { x0: z.label[0] - w / 2, y0: z.label[1] - zoneFont, x1: z.label[0] + w / 2, y1: z.label[1] + zoneFont * 0.4 + extra }
-  })
-
   const pinRects = visits.map((v) => circleRect(points[v.id], pinR + px(3)))
   const baseRect = circleRect(BASE_PT, px(11))
+  const vetRect = vetNow ? circleRect(vetNow.at, px(13)) : null
+  const hitsAny = (r: Rect, list: Rect[]) => list.some((t) => r.x0 < t.x1 && r.x1 > t.x0 && r.y0 < t.y1 && r.y1 > t.y0)
+  // rótulo da zona desvia de pins (tenta o lugar original, depois acima/abaixo)
+  const zoneLabelPos: Record<string, Pt> = {}
+  const zoneLabelRects: Rect[] = ZONES.map((z) => {
+    const w = Math.max(z.name.length * zoneFont * 0.68, heat ? px(78) : 0)
+    const extra = heat ? px(overlay ? 54 : 30) : 0
+    const at = (dy: number): Rect => ({ x0: z.label[0] - w / 2, y0: z.label[1] + dy - zoneFont, x1: z.label[0] + w / 2, y1: z.label[1] + dy + zoneFont * 0.4 + extra })
+    const obst = [...pinRects, baseRect, ...(vetRect ? [vetRect] : [])]
+    let dy = 0
+    for (const c of [0, -px(26), px(26), -px(52), px(52)]) {
+      if (!hitsAny(at(c), obst)) {
+        dy = c
+        break
+      }
+    }
+    zoneLabelPos[z.id] = { x: z.label[0], y: z.label[1] + dy }
+    return at(dy)
+  })
 
   const petFont = px(compact ? 10.5 : 11.5)
   const pinLabels = React.useMemo(() => {
     const reqs: LabelReq[] = visits
       .filter((v) => v.id !== selectedVisitId)
       .map((v) => ({ id: v.id, x: points[v.id].x, y: points[v.id].y, text: PET[v.petId]?.name ?? '', size: petFont, gap: pinR + px(5), sides: ['r', 'l', 'b', 't'], charW: 0.6 }))
-    return placeLabels(reqs, [...pinRects, baseRect], box)
+    return placeLabels(reqs, [...pinRects, baseRect, ...(vetRect ? [vetRect] : [])], box)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visits, points, selectedVisitId, u, box.x, box.y])
 
@@ -295,7 +348,48 @@ export function CityMap({
   const routeColor = routeVariant === 'naive' ? 'var(--color-terra-600)' : 'var(--color-sage-800)'
 
   const selected = visits.find((v) => v.id === selectedVisitId)
+  const fitsX = (cx: number, halfW: number) => cx - halfW >= box.x && cx + halfW <= box.x + box.w
   const scaleUnits = 2 / KM_PER_UNIT
+
+  const zoneLabelsEl = (
+        <g pointerEvents="none">
+          {ZONES.map((z) => {
+            const isSel = selectedZone === z.id
+            const dim = (highlighted && !highlighted.has(z.id)) || (selectedZone && !isSel)
+            const hv = heat?.[z.id]
+            const t = hv != null ? hv / max : 0
+            const dark = heat && heatIsDark(t) && !dim
+            return (
+              <g key={z.id} opacity={dim ? 0.4 : 1}>
+                <text
+                  x={zoneLabelPos[z.id].x}
+                  y={zoneLabelPos[z.id].y}
+                  textAnchor="middle"
+                  fontSize={zoneFont}
+                  fontWeight={500}
+                  fill={heat ? (dark ? '#f4efe4' : 'var(--color-sage-900)') : z.hex}
+                  stroke={heat ? 'none' : LAND_CITY}
+                  strokeWidth={px(3)}
+                  paintOrder="stroke"
+                  style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', filter: heat ? undefined : 'brightness(0.78)' }}
+                >
+                  {z.name.toUpperCase()}
+                </text>
+                {heat && hv != null && (
+                  <text x={zoneLabelPos[z.id].x} y={zoneLabelPos[z.id].y + px(25)} textAnchor="middle" fill={dark ? '#f4efe4' : 'var(--color-sage-950)'}>
+                    <tspan fontSize={px(compact ? 18 : 24)} fontWeight={600} style={{ fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>
+                      {hv}
+                    </tspan>
+                    <tspan dx={px(4)} fontSize={px(9.5)} opacity={0.8}>
+                      {heatUnit}
+                    </tspan>
+                  </text>
+                )}
+              </g>
+            )
+          })}
+        </g>
+  )
 
   return (
     <div
@@ -342,13 +436,14 @@ export function CityMap({
         </defs>
 
         {/* terra fora da cidade, com textura de floresta */}
-        <rect x={-50} y={-50} width={1100} height={780} fill={LAND_OUT} onClick={() => { onSelectZone?.(null); onSelectVisit?.(null) }} />
-        <rect x={-50} y={-50} width={1100} height={780} fill={`url(#forest-${uid})`} pointerEvents="none" />
+        <rect x={-50} y={-50} width={1100} height={780} fill={LAND_CITY} onClick={() => { onSelectZone?.(null); onSelectVisit?.(null) }} />
+        <path d={FOREST} fill={LAND_OUT} pointerEvents="none" />
+        <path d={FOREST} fill={`url(#forest-${uid})`} pointerEvents="none" />
 
         {/* Reserva Ducke */}
         <path d={RESERVA_DUCKE} fill="#cfdccb" opacity={0.7} pointerEvents="none" />
         <path d={RESERVA_DUCKE} fill={`url(#ducke-${uid})`} pointerEvents="none" />
-        {!compact && (
+        {!compact && fitsX(898, px(36)) && (
           <text x={898} y={88} textAnchor="middle" fontSize={px(9.5)} fontStyle="italic" fill="var(--color-sage-700)" style={{ fontFamily: 'var(--font-display)' }} opacity={0.85} pointerEvents="none">
             Reserva Ducke
           </text>
@@ -490,9 +585,9 @@ export function CityMap({
               </text>
             </>
           )}
-          <text x={888} y={634} textAnchor="middle" fontSize={px(compact ? 7.5 : 8.5)} fill="#f4efe4" opacity={0.72} style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>
+          {fitsX(888, px(52)) && <text x={888} y={634} textAnchor="middle" fontSize={px(compact ? 7.5 : 8.5)} fill="#f4efe4" opacity={0.72} style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.1em' }}>
             ENCONTRO DAS ÁGUAS
-          </text>
+          </text>}
           {!compact && (
             <text x={968} y={671} textAnchor="end" fontSize={px(8)} fontStyle="italic" fill="#5a452c" opacity={0.75} style={{ fontFamily: 'var(--font-display)' }}>
               Rio Solimões
@@ -545,45 +640,7 @@ export function CityMap({
           })}
         </g>
 
-        {/* rótulos das zonas */}
-        <g pointerEvents="none">
-          {ZONES.map((z) => {
-            const isSel = selectedZone === z.id
-            const dim = (highlighted && !highlighted.has(z.id)) || (selectedZone && !isSel)
-            const hv = heat?.[z.id]
-            const t = hv != null ? hv / max : 0
-            const dark = heat && heatIsDark(t) && !dim
-            return (
-              <g key={z.id} opacity={dim ? 0.4 : 1}>
-                <text
-                  x={z.label[0]}
-                  y={z.label[1]}
-                  textAnchor="middle"
-                  fontSize={zoneFont}
-                  fontWeight={500}
-                  fill={heat ? (dark ? '#f4efe4' : 'var(--color-sage-900)') : z.hex}
-                  stroke={heat ? 'none' : LAND_CITY}
-                  strokeWidth={px(3)}
-                  paintOrder="stroke"
-                  style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.12em', filter: heat ? undefined : 'brightness(0.78)' }}
-                >
-                  {z.name.toUpperCase()}
-                </text>
-                {heat && hv != null && (
-                  <text x={z.label[0]} y={z.label[1] + px(25)} textAnchor="middle" fill={dark ? '#f4efe4' : 'var(--color-sage-950)'}>
-                    <tspan fontSize={px(compact ? 18 : 24)} fontWeight={600} style={{ fontFamily: 'var(--font-display)', fontVariantNumeric: 'tabular-nums' }}>
-                      {hv}
-                    </tspan>
-                    <tspan dx={px(4)} fontSize={px(9.5)} opacity={0.8}>
-                      {heatUnit}
-                    </tspan>
-                  </text>
-                )}
-              </g>
-            )
-          })}
-        </g>
-
+        {focus !== 'visits' && zoneLabelsEl}
         {/* rota */}
         {showRoute && compareD && (
           <motion.path
@@ -637,6 +694,8 @@ export function CityMap({
             />
           </g>
         )}
+
+        {focus === 'visits' && zoneLabelsEl}
 
         {/* base */}
         {(visits.length > 0 || focus === 'visits') && (
@@ -755,7 +814,7 @@ export function CityMap({
                   >
                     {pet?.name[0]}
                   </text>
-                  {pet && (
+                  {pet && imgOk(pet.photo) && (
                     <image
                       href={pet.photo}
                       x={-(r - px(1))}
@@ -796,12 +855,7 @@ export function CityMap({
             <text y={px(3.3)} textAnchor="middle" fontSize={px(8.5)} fontWeight={700} fill="#fff">
               {vetNow.initials}
             </text>
-            <g transform={`translate(0 ${-px(19)})`}>
-              <rect x={-px(17)} y={-px(7)} width={px(34)} height={px(13)} rx={px(6.5)} fill="var(--color-sage-950)" />
-              <text y={px(2.8)} textAnchor="middle" fontSize={px(7.5)} fill="#f4efe4" style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.08em' }}>
-                AGORA
-              </text>
-            </g>
+            <title>{vetNow.title ?? 'Veterinário agora'}</title>
           </motion.g>
         )}
 
