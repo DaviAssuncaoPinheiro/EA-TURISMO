@@ -1,0 +1,168 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/fraunces/full.css';
+@import '@fontsource-variable/instrument-sans/wdth.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+
+/*
+  Vet Domicílio — design tokens
+  Mundo: "caderno de campo do veterinário em Manaus".
+  Papel osso, tinta verde-sálvia profunda, terracota como único acento de ação.
+  O Rio Negro (chá escuro) só aparece no mapa — é o elemento de lugar.
+*/
+
+@theme {
+  --font-display: 'Fraunces Variable', ui-serif, Georgia, serif;
+  --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* superfícies */
+  --color-paper: #f4efe4;
+  --color-paper-2: #ece5d6;
+  --color-card: #fffcf6;
+  --color-card-2: #faf6ee;
+  --color-line: #e2d9c7;
+  --color-line-2: #d3c8b2;
+
+  /* tinta */
+  --color-ink: #1b2620;
+  --color-ink-2: #46524b;
+  --color-ink-3: #7b847d;
+  --color-ink-4: #a7ada5;
+
+  /* sálvia (marca) */
+  --color-sage-950: #142a21;
+  --color-sage-900: #1e3a2e;
+  --color-sage-800: #2a4c3c;
+  --color-sage-700: #2f5443;
+  --color-sage-600: #3f6a55;
+  --color-sage-500: #5e8a72;
+  --color-sage-300: #a9c3b1;
+  --color-sage-200: #cbdccf;
+  --color-sage-100: #e1ebe2;
+  --color-sage-50: #eef3ec;
+
+  /* terracota (ação/atenção) */
+  --color-terra-700: #9a4424;
+  --color-terra-600: #b9542e;
+  --color-terra-500: #d06a3f;
+  --color-terra-200: #f0c9b4;
+  --color-terra-100: #f7e3d6;
+  --color-terra-50: #fbf0e8;
+
+  /* status */
+  --color-ok: #3f7f55;
+  --color-ok-bg: #e2eee3;
+  --color-warn: #b7801c;
+  --color-warn-bg: #f6ead0;
+  --color-late: #a8392b;
+  --color-late-bg: #f6dcd6;
+  --color-info: #3e6487;
+  --color-info-bg: #dfe8f0;
+
+  /* rio negro (mapa) */
+  --color-river: #2a2420;
+  --color-river-2: #3a302a;
+  --color-solimoes: #b99a6b;
+
+  /* zonas de Manaus */
+  --color-z-oeste: #5e8a72;
+  --color-z-centrosul: #d06a3f;
+  --color-z-sul: #c9962f;
+  --color-z-norte: #4f7596;
+  --color-z-leste: #8a6a4e;
+  --color-z-centrooeste: #4c8784;
+
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
+  --radius-2xl: 28px;
+
+  --shadow-card: 0 1px 0 rgba(27, 38, 32, 0.04), 0 1px 2px rgba(27, 38, 32, 0.06);
+  --shadow-lift: 0 1px 0 rgba(27, 38, 32, 0.04), 0 8px 24px -8px rgba(27, 38, 32, 0.18);
+  --shadow-float: 0 24px 60px -20px rgba(20, 42, 33, 0.35), 0 2px 6px rgba(20, 42, 33, 0.08);
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.45;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+  ::selection {
+    background: var(--color-sage-200);
+    color: var(--color-sage-950);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-terra-500);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+  button {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  /* Fraunces com eixo SOFT alto: serifa acolhedora, nunca "jornal" */
+  .font-display {
+    font-family: var(--font-display);
+    font-variation-settings: 'SOFT' 100, 'WONK' 0;
+    letter-spacing: -0.015em;
+  }
+  .font-display-tight {
+    font-family: var(--font-display);
+    font-variation-settings: 'SOFT' 100, 'WONK' 1;
+    letter-spacing: -0.03em;
+  }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-ink-3);
+  }
+  .hairline {
+    border-color: var(--color-line);
+  }
+  /* textura de papel sutil, usada só na carteira de vacinação */
+  .paper-grain {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .3 0 0 0 0 .2 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .scroll-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-line-2) transparent;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
