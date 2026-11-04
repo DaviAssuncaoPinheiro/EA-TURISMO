@@ -25,8 +25,8 @@ const STEP_COPY: Copy[] = [
   { title: 'Anamnese', line: 'Relato por voz, sintomas marcados sozinhos.', tip: 'Toque em Ditar por voz.' },
   { title: 'Exame físico', line: 'Sinais vitais com referência por espécie.', tip: 'Toque no tórax da silhueta.' },
   { title: 'Vacinas', line: 'Lote e validade lidos pela câmera.', tip: 'Ligue a vacina atrasada.' },
-  { title: 'Receita', line: 'Dose, frequência e duração em toques.', tip: 'Toque em Adicionar medicamento.' },
-  { title: 'Lembretes', line: 'Sugeridos a partir desta visita.', tip: 'Toque em Finalizar atendimento.' },
+  { title: 'Prescrição', line: 'Dose, frequência e duração em toques.', tip: 'Toque em Adicionar medicamento.' },
+  { title: 'Retorno', line: 'Lembretes sugeridos a partir desta visita.', tip: 'Toque em Finalizar atendimento.' },
 ]
 
 type Stage = '0' | '1' | '2' | '3'
@@ -103,7 +103,7 @@ export function SidePanel({ height }: { height: number }) {
       </div>
 
       {/* etapa atual */}
-      <div className="flex min-h-0 flex-1 flex-col rounded-[28px] bg-card p-6 shadow-card">
+      <div className="rounded-[28px] bg-card p-6 shadow-card">
         <Segmented<Stage>
           value={stage}
           onChange={goStage}
@@ -116,7 +116,7 @@ export function SidePanel({ height }: { height: number }) {
           ]}
         />
         <AnimatePresence mode="wait">
-          <motion.div key={copy.title} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25, ease: EASE_OUT }} className="mt-8">
+          <motion.div key={copy.title} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25, ease: EASE_OUT }} className="mt-7 min-h-[180px]">
             {depth === 2 && <div className="mb-1 text-[13px] font-semibold text-ink-3">Etapa {step + 1} de 5</div>}
             <h1 className="text-[32px] leading-[1.08] font-bold tracking-[-0.035em] text-ink">{copy.title}</h1>
             <p className="mt-2 text-[15px] leading-snug font-medium text-ink-3">{copy.line}</p>
@@ -149,7 +149,7 @@ export function SidePanel({ height }: { height: number }) {
       </div>
 
       {/* seletor de veterinário */}
-      <div className="rounded-[28px] bg-card p-4 shadow-card">
+      <div className="mt-auto rounded-[28px] bg-card p-4 shadow-card">
         <div className="px-1 pb-3 text-[15px] font-bold tracking-[-0.01em] text-ink">Celular de</div>
         <div className="grid grid-cols-3 gap-2">
           {VETS.map((v) => {

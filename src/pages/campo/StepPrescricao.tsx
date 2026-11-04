@@ -121,7 +121,7 @@ export function StepPrescricao({ visit, pet, draft, patch }: StepProps) {
                         {def.name} {def.conc} <span className="font-semibold text-ink-3">· {m.dur.toLowerCase()}</span>
                       </div>
                       <div className="font-medium text-ink-2">
-                        Dar {m.dose.toLowerCase()} ({def.form}) {m.freq.toLowerCase()}
+                        Dar {m.dose.toLowerCase()}{m.dose.toLowerCase().includes(def.form.split(' ')[0]) ? '' : ` (${def.form})`} {m.freq.toLowerCase()}
                         {def.hint ? `. ${def.hint}.` : '.'}
                       </div>
                     </div>

@@ -148,7 +148,7 @@ export default function DoneScreen() {
             <span className="text-[15px] font-bold text-ink">Total</span>
             <span className="num text-[32px] leading-none font-bold tracking-[-0.03em] text-ink">{brl(total)}</span>
           </div>
-          <div className="no-scrollbar -mx-5 mt-4 flex gap-2 overflow-x-auto px-5">
+          <div className="mt-4 grid grid-cols-2 gap-2">
             {PAY.map((p) => {
               const on = pay === p.k
               return (
@@ -156,7 +156,7 @@ export default function DoneScreen() {
                   key={p.k}
                   scale={0.95}
                   onClick={() => !paid && setPay(p.k)}
-                  className={cn('inline-flex h-11 shrink-0 items-center gap-2 rounded-full px-4 text-[14px] font-semibold transition-colors', on ? 'bg-black text-white' : 'bg-muted text-ink-2')}
+                  className={cn('inline-flex h-11 items-center justify-center gap-2 rounded-full px-4 text-[14px] font-semibold transition-colors', on ? 'bg-black text-white' : 'bg-muted text-ink-2')}
                 >
                   <p.icon className={cn('size-4', on && 'text-lime')} strokeWidth={2} />
                   {p.k}

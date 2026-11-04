@@ -55,8 +55,8 @@ export function StepRetorno({ visit, pet, draft, patch }: StepProps) {
 
   return (
     <div className="pb-2">
-      <StepIntro eyebrow="Etapa 5 de 5" title="Lembretes">
-        Sugeridos a partir desta visita
+      <StepIntro eyebrow="Etapa 5 de 5" title="Retorno">
+        Lembretes sugeridos a partir desta visita
       </StepIntro>
 
       <Block title={`Para ${pet.name}`} hint={`${active.length} de ${sugg.length} ativos, por WhatsApp`} bodyClassName="px-2 pb-2">
