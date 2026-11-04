@@ -31,7 +31,6 @@ export const hm = (min: number) => {
   const m = Math.round(min % 60)
   return h ? `${h}h${String(m).padStart(2, '0')}` : `${m} min`
 }
-export const km1 = (n: number) => `${n.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`
 export const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 /** offset do dia (a partir de hoje) -> segunda da semana + n */
@@ -211,9 +210,8 @@ export function loadOf(list: AVisit[]) {
   const legs = legsOf(list)
   const service = list.reduce((s, v) => s + v.dur, 0)
   const travel = legs.reduce((s, l) => s + l.min, 0)
-  const km = legs.reduce((s, l) => s + l.km, 0) + (list.length ? kmBetween(list[list.length - 1].bairro, 'adrianopolis') : 0)
   const cap = WORK_END - WORK_START - 60 // 9h menos 1h de almoço
-  return { count: list.length, service, travel, km, ratio: (service + travel) / cap }
+  return { count: list.length, service, travel, ratio: (service + travel) / cap }
 }
 
 /* ───────────── sugestões de encaixe ───────────── */
@@ -284,7 +282,7 @@ export function suggest(all: AVisit[], bairro: string, urgency: 'rotina' | 'sema
       cands.push(...rest)
       for (const s of cands) if (tryAt(s)) { slot = s; break }
       if (slot == null) continue
-      // custo extra de rota: desvio entre vizinhos na sequência
+      // custo extra de deslocamento (interno, só para ranquear): desvio entre vizinhos na sequência
       const before = [...vs].reverse().find((v) => v.startMin + v.dur <= slot!) ?? null
       const after = vs.find((v) => v.startMin >= slot! + dur) ?? null
       const direct = before && after ? kmBetween(before.bairro, after.bairro) : 0
@@ -299,23 +297,23 @@ export function suggest(all: AVisit[], bairro: string, urgency: 'rotina' | 'sema
       let title = ''
       if (kind === 'bairro') {
         title = `${vet.short} já estará em ${bname}`
-        why = `Já tem atendimento marcado em ${bname} neste dia. Entra na mesma rota.`
+        why = `Já tem atendimento marcado em ${bname} neste dia. Entra no mesmo bairro, sem desvio.`
       } else if (kind === 'zona') {
         title = `${vet.short} cobre a ${zname}`
-        why = `Dia de ${zname} na escala. Fica a ${km1(nearKm)} da visita mais próxima.`
+        why = `Dia de ${zname} na escala. Mesma zona das visitas do dia.`
       } else if (kind === 'vizinha') {
         title = `${vet.short} passa perto de ${bname}`
-        why = `Zona vizinha à ${zname}. Encaixe com pequeno desvio de rota.`
+        why = `Zona vizinha à ${zname}. Encaixe com pouco desvio.`
       } else {
-        title = `${vet.short} · fora da rota`
-        why = `Não é dia de ${zname}. Desvio de ${km1(extraKm)} e atraso nas visitas seguintes.`
+        title = `${vet.short} · fora da zona`
+        why = `Não é dia de ${zname}. Pode atrasar as visitas seguintes.`
       }
       list.push({ key: `${vet.id}-${off}-${slot}`, vetId: vet.id, off, startMin: slot, bairro, extraKm, kind, title, why, zones, score })
     }
   }
   list.sort((a, b) => a.score - b.score)
   const top = list.slice(0, 3)
-  // mostra também a melhor opção "fora da rota" de outro veterinário, para o contraste ficar claro
+  // mostra também a melhor opção "fora da zona" de outro veterinário, para o contraste ficar claro
   const contrast = list.slice(3).find((x) => (x.kind === 'fora' || x.kind === 'vizinha') && !top.some((t) => t.vetId === x.vetId))
   if (contrast) top.push(contrast)
   else if (list[3]) top.push(list[3])

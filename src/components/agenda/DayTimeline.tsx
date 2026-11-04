@@ -1,10 +1,10 @@
 import { motion } from 'motion/react'
-import { Navigation } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { Tip, VetAvatar } from '@/components/ui'
 import { BAIRRO, ZONE } from '@/data/geo'
 import { PET, type Vet } from '@/data/mock'
 import { cn } from '@/lib/utils'
-import { DAY_END, DAY_START, NOW_MIN, hhmm, hm, km1, legsOf, loadOf, visitsOf, zonesOfDay, type AVisit } from './model'
+import { DAY_END, DAY_START, NOW_MIN, hhmm, hm, loadOf, visitsOf, zonesOfDay, type AVisit } from './model'
 import { CapacityBar, InnerBadge, zoneInk, zoneTint } from './shared'
 import { visitBadge } from './WeekGrid'
 
@@ -32,7 +32,7 @@ export function DayTimeline({ off, vets, all, freshId }: { off: number; vets: Ve
                   <div className="min-w-0 flex-1 leading-tight">
                     <div className="truncate text-[13.5px] font-bold text-ink">{vet.short}</div>
                     <div className="text-[11.5px] text-ink-3 num">
-                      {load.count} visitas · {hm(load.service + load.travel)} · {km1(load.km)}
+                      {load.count} visitas · {hm(load.service)}
                     </div>
                   </div>
                 </div>
@@ -45,7 +45,7 @@ export function DayTimeline({ off, vets, all, freshId }: { off: number; vets: Ve
                       </span>
                     ))
                   ) : (
-                    <span className="hatch inline-flex h-5 items-center rounded-full px-2 text-[10.5px] font-semibold text-ink-3">Sem rota</span>
+                    <span className="hatch inline-flex h-5 items-center rounded-full px-2 text-[10.5px] font-semibold text-ink-3">Sem escala</span>
                   )}
                 </div>
                 <CapacityBar ratio={load.ratio} className="mt-2.5" />
@@ -78,7 +78,6 @@ export function DayTimeline({ off, vets, all, freshId }: { off: number; vets: Ve
 
 function Column({ off, vetId, all, freshId, total }: { off: number; vetId: string; all: AVisit[]; freshId: string | null; total: number }) {
   const list = visitsOf(all, vetId, off)
-  const legs = legsOf(list)
   return (
     <div className="relative overflow-hidden rounded-[20px] bg-card shadow-card" style={{ height: total }}>
       {HOURS.map((h) => (
@@ -89,26 +88,8 @@ function Column({ off, vetId, all, freshId, total }: { off: number; vetId: strin
         <span className="rounded-full bg-card/90 px-2.5 py-0.5 text-[11px] font-semibold text-ink-3">Almoço</span>
       </div>
 
-      {legs.map((l, i) => {
-        const h = Math.max(y(l.endMin) - y(l.startMin), 0)
-        if (h < 6) return null
-        const from = i ? BAIRRO[list[i - 1].bairro].name : 'Base'
-        return (
-          <Tip key={`leg${l.toId}`} content={`Deslocamento de ${from} para ${BAIRRO[list[i].bairro].name}: ${l.min} min, ${km1(l.km)}`}>
-            <div className="hatch absolute inset-x-2 flex items-center gap-1.5 overflow-hidden rounded-[10px] px-2 text-[10.5px] font-bold text-ink-2 num" style={{ top: y(l.startMin), height: h }}>
-              {h >= 16 && (
-                <>
-                  <Navigation size={10} strokeWidth={2.2} className="shrink-0" />
-                  <span className="truncate">{l.min} min</span>
-                </>
-              )}
-            </div>
-          </Tip>
-        )
-      })}
-
       {list.map((v) => (
-        <TimeBlock key={v.id} v={v} fresh={v.id === freshId} past={off < 0 || (off === 0 && v.startMin + v.dur <= NOW_MIN)} />
+        <TimeBlock key={v.id} canOpen={off === 0 && v.origin === 'real'} v={v} fresh={v.id === freshId} past={off < 0 || (off === 0 && v.startMin + v.dur <= NOW_MIN)} />
       ))}
 
       {off === 0 && <div className="pointer-events-none absolute inset-x-0 z-10 border-t-2 border-dashed border-blue" style={{ top: y(NOW_MIN) }} />}
@@ -116,7 +97,8 @@ function Column({ off, vetId, all, freshId, total }: { off: number; vetId: strin
   )
 }
 
-function TimeBlock({ v, fresh, past }: { v: AVisit; fresh: boolean; past: boolean }) {
+function TimeBlock({ v, fresh, past, canOpen }: { v: AVisit; fresh: boolean; past: boolean; canOpen: boolean }) {
+  const navigate = useNavigate()
   const zid = BAIRRO[v.bairro].zone
   const z = ZONE[zid]
   const h = Math.max((v.dur / 60) * HPX - 2, 24)
@@ -127,7 +109,9 @@ function TimeBlock({ v, fresh, past }: { v: AVisit; fresh: boolean; past: boolea
       initial={fresh ? { opacity: 0, scale: 0.94, y: -8 } : { opacity: 0, y: 4 }}
       animate={{ opacity: past ? 0.62 : 1, scale: 1, y: 0 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className={cn('absolute inset-x-2 z-[5] overflow-hidden rounded-[14px] px-3 py-1.5', fresh && 'ring-2 ring-black ring-offset-2 ring-offset-card')}
+      onClick={canOpen ? () => navigate(`/campo/visita/${v.id}`) : undefined}
+      title={canOpen ? 'Abrir visita' : undefined}
+      className={cn('absolute inset-x-2 z-[5] overflow-hidden rounded-[14px] px-3 py-1.5', canOpen && 'cursor-pointer hover:brightness-95', fresh && 'ring-2 ring-black ring-offset-2 ring-offset-card')}
       style={{ top: y(v.startMin) + 1, height: h, background: z.hex, color: zoneInk(zid) }}
     >
       <div className="flex items-center gap-1.5">
@@ -143,6 +127,7 @@ function TimeBlock({ v, fresh, past }: { v: AVisit; fresh: boolean; past: boolea
           {hhmm(v.startMin)} às {hhmm(v.startMin + v.dur)} · {BAIRRO[v.bairro].name}
         </div>
       )}
+      {canOpen && h >= 66 && <div className="mt-1 text-[11px] font-bold underline underline-offset-2">Abrir visita</div>}
       {roomy && (
         <div className="mt-1.5 flex items-center gap-1.5">
           <span className="rounded-full bg-white/25 px-2 py-px text-[10.5px] font-bold">{v.type}</span>

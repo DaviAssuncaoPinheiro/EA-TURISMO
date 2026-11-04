@@ -1,10 +1,11 @@
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Tip, VetAvatar } from '@/components/ui'
 import { BAIRRO, ZONE } from '@/data/geo'
 import { PET, TUTOR, type Vet } from '@/data/mock'
 import { day, fmt } from '@/data/time'
 import { cn } from '@/lib/utils'
-import { NOW_MIN, cap, hhmm, hm, km1, loadOf, visitsOf, zonesOfDay, type AVisit } from './model'
+import { NOW_MIN, cap, hhmm, hm, loadOf, visitsOf, zonesOfDay, type AVisit } from './model'
 import { CapacityBar, InnerBadge, zoneInk, zoneTint } from './shared'
 
 export function visitBadge(v: AVisit) {
@@ -16,7 +17,8 @@ export function visitBadge(v: AVisit) {
   return null
 }
 
-export function VisitBlock({ v, onOpen, fresh, past }: { v: AVisit; onOpen: () => void; fresh?: boolean; past?: boolean }) {
+export function VisitBlock({ v, onOpen, fresh, past, canOpen }: { v: AVisit; onOpen: () => void; fresh?: boolean; past?: boolean; canOpen?: boolean }) {
+  const navigate = useNavigate()
   const pet = PET[v.petIds[0]]
   const zid = BAIRRO[v.bairro].zone
   const z = ZONE[zid]
@@ -36,6 +38,7 @@ export function VisitBlock({ v, onOpen, fresh, past }: { v: AVisit; onOpen: () =
           <div className="opacity-80">
             {BAIRRO[v.bairro].name} · {z.short}
           </div>
+          {canOpen && <div className="font-semibold">Clique para abrir a visita</div>}
         </div>
       }
     >
@@ -44,7 +47,7 @@ export function VisitBlock({ v, onOpen, fresh, past }: { v: AVisit; onOpen: () =
         initial={fresh ? { opacity: 0, scale: 0.92, y: -6 } : false}
         animate={{ opacity: past ? 0.62 : 1, scale: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-        onClick={onOpen}
+        onClick={canOpen ? () => navigate(`/campo/visita/${v.id}`) : onOpen}
         className={cn('flex w-full flex-col gap-1 rounded-[14px] px-2.5 py-2 text-left transition-[filter,box-shadow] hover:brightness-95', fresh && 'ring-2 ring-black ring-offset-2 ring-offset-card')}
         style={{ background: z.hex, color: zoneInk(zid) }}
       >
@@ -143,7 +146,7 @@ function Row({ vet, days, all, freshId, onOpenDay }: { vet: Vet; days: number[];
         if (!list.length && !zones.length) {
           return (
             <div key={off} className="hatch flex min-h-[132px] items-center justify-center rounded-[18px]">
-              <span className="rounded-full bg-card/80 px-2.5 py-1 text-[11px] font-semibold text-ink-3">Sem rota</span>
+              <span className="rounded-full bg-card/80 px-2.5 py-1 text-[11px] font-semibold text-ink-3">Sem escala</span>
             </div>
           )
         }
@@ -160,7 +163,7 @@ function Row({ vet, days, all, freshId, onOpenDay }: { vet: Vet; days: number[];
             <div className="flex flex-1 flex-col gap-1">
               {list.length === 0 && <div className="m-auto py-3 text-center text-[11.5px] font-medium text-ink-4">Livre</div>}
               {list.map((v) => (
-                <VisitBlock key={v.id} v={v} fresh={v.id === freshId} past={past || (today && v.startMin + v.dur < NOW_MIN)} onOpen={() => onOpenDay(off)} />
+                <VisitBlock key={v.id} canOpen={today && v.origin === 'real'} v={v} fresh={v.id === freshId} past={past || (today && v.startMin + v.dur < NOW_MIN)} onOpen={() => onOpenDay(off)} />
               ))}
             </div>
             {list.length > 0 && (
@@ -168,7 +171,7 @@ function Row({ vet, days, all, freshId, onOpenDay }: { vet: Vet; days: number[];
                 <div className="mb-1.5 flex items-baseline justify-between gap-1 text-[10.5px] font-medium text-ink-3 num">
                   <span className="font-bold text-ink-2">{load.count} visitas</span>
                   <span>
-                    {hm(load.service + load.travel)} · {km1(load.km).replace(' km', '')} km
+                    {hm(load.service)}
                   </span>
                 </div>
                 <CapacityBar ratio={load.ratio} />

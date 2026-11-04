@@ -6,7 +6,7 @@ import { Badge, Button, IconButton, IconCircle, PetAvatar, Segmented, VetAvatar 
 import { BAIRRO, BAIRROS, ZONES } from '@/data/geo'
 import { PET, PETS, TUTOR, VET, type VisitType } from '@/data/mock'
 import { cn } from '@/lib/utils'
-import { dayLabel, hhmm, km1, suggest, type AVisit, type Suggestion } from './model'
+import { dayLabel, hhmm, suggest, type AVisit, type Suggestion } from './model'
 import { ZoneChip } from './shared'
 
 const TYPE_OPTIONS: { type: VisitType; dur: number }[] = [
@@ -212,7 +212,7 @@ export function ScheduleDialog({ open, onOpenChange, all, onConfirm }: { open: b
                           <MapPin size={20} strokeWidth={1.9} />
                         </IconCircle>
                         <div className="text-[14px] font-bold text-ink">Escolha um paciente</div>
-                        <p className="mt-1 max-w-[240px] text-[12.5px] text-ink-3">Os horários aparecem aqui, ordenados pela rota.</p>
+                        <p className="mt-1 max-w-[240px] text-[12.5px] text-ink-3">Os horários aparecem aqui, ordenados por proximidade.</p>
                       </div>
                     ) : (
                       <ul className="space-y-2">
@@ -265,7 +265,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function SuggestionCard({ s, best, selected, onSelect }: { s: Suggestion; best: boolean; selected: boolean; onSelect: () => void }) {
-  const tone = s.kind === 'fora' ? 'late' : s.extraKm <= 2.5 ? 'ok' : 'warn'
+  const tone = s.kind === 'fora' ? 'late' : s.kind === 'vizinha' ? 'warn' : 'ok'
   return (
     <button
       onClick={onSelect}
@@ -287,7 +287,7 @@ function SuggestionCard({ s, best, selected, onSelect }: { s: Suggestion; best: 
           </div>
           <p className="mt-1 text-[12.5px] leading-snug text-ink-3">{s.why}</p>
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-            <Badge tone={tone}>{s.kind === 'fora' ? `Fora da rota +${km1(s.extraKm)}` : `+${km1(s.extraKm)} na rota`}</Badge>
+            <Badge tone={tone}>{{ bairro: 'Mesmo bairro', zona: 'Mesma zona', vizinha: 'Zona vizinha', fora: 'Fora da zona' }[s.kind]}</Badge>
             <ZoneChip id={BAIRRO[s.bairro].zone} />
           </div>
         </div>

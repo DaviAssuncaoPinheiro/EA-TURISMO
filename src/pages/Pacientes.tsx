@@ -1,11 +1,10 @@
 import * as React from 'react'
-import { CalendarClock, PawPrint, Scale, Search, SearchX, Syringe, X } from 'lucide-react'
+import { Search, SearchX, X } from 'lucide-react'
 import { PatientCards, PatientTable, type Sort, type SortKey } from '@/components/patients/PatientViews'
 import { buildRows, vacRank, type PatientRow } from '@/components/patients/model'
-import { Chip, Empty, IconCircle, Segmented } from '@/components/ui'
+import { Chip, Empty, Segmented } from '@/components/ui'
 import { ZONES, type ZoneId } from '@/data/geo'
 import { VET } from '@/data/mock'
-import { cn } from '@/lib/utils'
 import { useDemo } from '@/store'
 
 type Species = 'todos' | 'cão' | 'gato'
@@ -53,9 +52,6 @@ export default function Pacientes() {
 
   const late = rows.filter((r) => r.vac.key === 'late').length
   const soon = rows.filter((r) => r.vac.key === 'soon').length
-  const dogs = rows.filter((r) => r.pet.species === 'cão').length
-  const cats = rows.length - dogs
-  const heavy = rows.filter((r) => r.weight > r.pet.idealKg[1]).length
   const filtering = q || species !== 'todos' || vac !== 'todas' || zone !== 'todas'
   const clear = () => {
     setQ('')
@@ -69,13 +65,6 @@ export default function Pacientes() {
       <div className="mb-4 flex items-center gap-3">
         <h1 className="text-[28px] leading-[1.1] font-bold tracking-[-0.03em] text-ink md:text-[32px]">Pacientes</h1>
         <span className="inline-flex h-8 items-center rounded-full bg-card px-3 text-[13px] font-bold text-ink-2 shadow-pill num">{rows.length}</span>
-      </div>
-
-      <div className="mb-4 grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-        <Stat icon={<Syringe size={18} strokeWidth={1.9} />} tone="coral" label="Vacina atrasada" value={late} onClick={() => setVac(vac === 'late' ? 'todas' : 'late')} active={vac === 'late'} />
-        <Stat icon={<CalendarClock size={18} strokeWidth={1.9} />} tone="yellow" label="Vencem em 30 dias" value={soon} onClick={() => setVac(vac === 'soon' ? 'todas' : 'soon')} active={vac === 'soon'} />
-        <Stat icon={<PawPrint size={18} strokeWidth={1.9} />} tone="blue" label="Cães e gatos" value={`${dogs} e ${cats}`} />
-        <Stat icon={<Scale size={18} strokeWidth={1.9} />} tone="violet" label="Acima do peso" value={heavy} />
       </div>
 
       <div className="mb-4 space-y-3">
@@ -115,6 +104,7 @@ export default function Pacientes() {
             ).map(([k, label]) => (
               <Chip key={k} active={vac === k} onClick={() => setVac(k)} className="shrink-0">
                 {label}
+                {(k === 'soon' || k === 'late') && <span className="ml-1.5 opacity-70 num">{k === 'late' ? late : soon}</span>}
               </Chip>
             ))}
           </div>
@@ -155,18 +145,5 @@ export default function Pacientes() {
         </>
       )}
     </div>
-  )
-}
-
-function Stat({ icon, tone, label, value, onClick, active }: { icon: React.ReactNode; tone: 'coral' | 'yellow' | 'blue' | 'violet'; label: string; value: number | string; onClick?: () => void; active?: boolean }) {
-  const Tag = onClick ? 'button' : 'div'
-  return (
-    <Tag onClick={onClick} className={cn('rounded-[22px] bg-card p-4 text-left shadow-card transition-[box-shadow,transform]', onClick && 'hover:shadow-lift active:scale-[.98]', active && 'ring-2 ring-black')}>
-      <IconCircle size={36} tone={tone}>
-        {icon}
-      </IconCircle>
-      <div className="mt-3 text-[12.5px] font-medium text-ink-3">{label}</div>
-      <div className="mt-0.5 text-[28px] leading-none font-bold tracking-[-0.02em] text-ink num">{value}</div>
-    </Tag>
   )
 }

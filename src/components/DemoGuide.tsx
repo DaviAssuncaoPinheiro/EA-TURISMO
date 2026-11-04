@@ -43,12 +43,12 @@ export function DemoGuide() {
           >
             <div className="mb-2 flex items-center gap-2">
               <Compass className="size-3.5 text-white/50" />
-              <span className="text-[12px] font-semibold text-white/50">Roteiro da demo · {idx + 1} de {STEPS.length}</span>
+              <span className="text-[12px] font-semibold text-white/50">Guia da demo · {idx + 1} de {STEPS.length}</span>
               <div className="ml-auto flex items-center gap-1">
                 {STEPS.map((s, i) => (
                   <button key={s.to} aria-label={s.title} onClick={() => nav(s.to)} className={cn('h-1.5 rounded-full transition-all', i === idx ? 'w-4 bg-lime' : i < idx ? 'w-1.5 bg-white/60' : 'w-1.5 bg-white/20')} />
                 ))}
-                <button onClick={close} aria-label="Fechar roteiro" className="ml-1.5 rounded p-1 text-white/50 hover:bg-white/10 hover:text-white"><X className="size-3.5" /></button>
+                <button onClick={close} aria-label="Fechar guia" className="ml-1.5 rounded p-1 text-white/50 hover:bg-white/10 hover:text-white"><X className="size-3.5" /></button>
               </div>
             </div>
             <div className="text-[14px] font-semibold">{step.title}</div>
@@ -74,7 +74,7 @@ export function DemoGuide() {
             onClick={() => setOpen(true)}
             className="flex h-10 items-center gap-2 rounded-full bg-black px-4 text-[13px] font-semibold text-white shadow-float hover:bg-black-2"
           >
-            <Compass className="size-4" /> Roteiro
+            <Compass className="size-4" /> Guia da demo
           </motion.button>
         )}
       </AnimatePresence>

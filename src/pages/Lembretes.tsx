@@ -9,11 +9,10 @@ import { daysFromToday } from '@/data/time'
 import { REMINDER_KIND } from '@/lib/status'
 import { cn } from '@/lib/utils'
 import { useDemo } from '@/store'
-import { enrich, GROUPS, TICKET, type GroupKey, type Item, type ReminderKind } from '@/components/reminders/data'
+import { enrich, GROUPS, type GroupKey, type Item, type ReminderKind } from '@/components/reminders/data'
 import { Panel as Drawer, useIsDesktop } from '@/components/reminders/Panel'
 import { BoardCard, ListRow } from '@/components/reminders/ReminderItem'
 import { ReminderDetail } from '@/components/reminders/ReminderDetail'
-import { ResultStrip } from '@/components/reminders/ResultStrip'
 import { INITIAL_RULES, RulesPanel } from '@/components/reminders/RulesPanel'
 
 const KINDS = Object.keys(REMINDER_KIND) as ReminderKind[]
@@ -48,12 +47,6 @@ export default function Lembretes() {
     return m
   }, [items])
   const selected = all.find((i) => i.r.id === selId) ?? null
-
-  // resultados (sobre todos os lembretes, sem filtro)
-  const lateVacc = all.filter((i) => i.r.kind === 'vacina' && daysFromToday(i.r.dueDate) < 0)
-  const lateBooked = lateVacc.filter((i) => i.r.status === 'agendado' || i.r.status === 'confirmado').length
-  const won = all.filter((i) => i.r.status === 'agendado' || i.r.status === 'confirmado')
-  const revenue = won.reduce((s, i) => s + TICKET[i.r.kind], 0) + 2860 // base do mês já recuperada antes de hoje
 
   const batch = all.filter((i) => (i.r.status === 'programado' && daysFromToday(i.r.sendDate) <= 10) || i.r.status === 'sem-resposta')
 
@@ -97,9 +90,7 @@ export default function Lembretes() {
         }
       />
 
-      <ResultStrip lateVaccines={lateVacc.length} lateBooked={lateBooked} revenue={revenue} visits={won.length} />
-
-      <div className="mt-5 flex flex-col gap-3">
+      <div className="mt-4 flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <div className="no-scrollbar -mx-4 flex min-w-0 flex-1 gap-2 overflow-x-auto px-4 py-1 md:mx-0 md:px-0">
             <Chip active={kind === 'todos'} onClick={() => setKind('todos')} className="shrink-0">Todos <span className="num opacity-60">{all.length}</span></Chip>
