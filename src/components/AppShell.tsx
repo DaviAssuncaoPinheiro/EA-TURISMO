@@ -2,7 +2,7 @@ import * as React from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Command } from 'cmdk'
 import { AnimatePresence, motion } from 'motion/react'
-import { Bell, CalendarDays, House, Map, MessageCircle, PawPrint, Plus, Search, Settings, Smartphone } from 'lucide-react'
+import { Bell, CalendarDays, House, Map, MessageCircle, PawPrint, Plus, Search, Settings, Smartphone, Stethoscope } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { CURRENT_USER, PETS, TUTOR, VETS } from '@/data/mock'
@@ -29,9 +29,10 @@ const NAV = [
   { to: '/regioes', label: 'Regiões', icon: Map },
   { to: '/pacientes', label: 'Pacientes', icon: PawPrint },
   { to: '/lembretes', label: 'Lembretes', icon: MessageCircle, badge: true },
+  { to: '/campo', label: 'Atendimento', icon: Stethoscope },
 ]
 
-export function AppShell() {
+export function AppShell({ children }: { children?: React.ReactNode }) {
   const [cmdOpen, setCmdOpen] = React.useState(false)
   const loc = useLocation()
   const nav = useNavigate()
@@ -79,12 +80,6 @@ export function AppShell() {
               </NavLink>
             </Tip>
           ))}
-          <div className="my-1 h-px w-6 bg-line-2" />
-          <Tip content="App do veterinário" side="right">
-            <NavLink to="/campo" className="flex size-11 items-center justify-center rounded-full bg-black text-lime transition-transform hover:scale-105">
-              <Smartphone className="size-[19px]" strokeWidth={1.9} />
-            </NavLink>
-          </Tip>
         </nav>
         <Tip content="Reiniciar demonstração" side="right">
           <button onClick={() => { reset(); toast('Demonstração reiniciada') }} className="flex size-11 items-center justify-center rounded-full text-ink-3 hover:bg-card hover:text-ink">
@@ -160,7 +155,7 @@ export function AppShell() {
         <main className="scroll-thin flex-1 overflow-y-auto">
           <React.Suspense fallback={<div className="h-[60vh]" />}>
             <motion.div key={loc.pathname} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: [0.25, 1, 0.5, 1] }}>
-              <Outlet />
+              {children ?? <Outlet />}
             </motion.div>
           </React.Suspense>
         </main>
@@ -169,7 +164,7 @@ export function AppShell() {
       {/* Dock flutuante no celular (ref. apps de finanças e condomínio) */}
       <nav className="fixed inset-x-0 bottom-[max(14px,env(safe-area-inset-bottom))] z-30 flex justify-center px-4 lg:hidden">
         <div className="flex items-center gap-1 rounded-full bg-black p-1.5 shadow-float">
-          {[...NAV.slice(0, 2), { to: '/campo', label: 'App vet', icon: Smartphone }, ...NAV.slice(3)].map((n) => (
+          {NAV.filter((n) => n.to !== '/regioes').map((n) => (
             <NavLink
               key={n.to}
               to={n.to}
@@ -245,7 +240,7 @@ function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (
                   })}
                 </Command.Group>
                 <Command.Group heading="Telas">
-                  {[...NAV, { to: '/campo', label: 'App do veterinário' }].map((n) => (
+                  {NAV.map((n) => (
                     <Command.Item key={n.to} value={n.label} onSelect={() => go(n.to)} className="flex cursor-pointer items-center gap-2 rounded-2xl px-3 py-2.5 text-[14px] font-semibold data-[selected=true]:bg-muted">
                       {n.label}
                     </Command.Item>
